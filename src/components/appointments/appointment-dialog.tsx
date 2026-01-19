@@ -67,10 +67,8 @@ export function AppointmentDialog({
 }: AppointmentDialogProps) {
   const { data: patients } = trpc.patient.list.useQuery({ limit: 100 });
 
-  // Get doctors (users with DOCTOR role) - simplified for now
-  const doctors = [
-    { id: "doctor1", name: "サンプル医師" },
-  ];
+  // Get doctors (users with DOCTOR role)
+  const { data: doctors } = trpc.appointment.doctors.useQuery();
 
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
@@ -169,7 +167,7 @@ export function AppointmentDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {doctors.map((doctor) => (
+                      {doctors?.map((doctor) => (
                         <SelectItem key={doctor.id} value={doctor.id}>
                           {doctor.name}
                         </SelectItem>
