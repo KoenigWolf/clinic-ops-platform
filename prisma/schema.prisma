@@ -25,6 +25,10 @@ model Tenant {
   auditLogs     AuditLog[]
   entDiagnosisTemplates EntDiagnosisTemplate[]
 
+  // 問診・文書テンプレート
+  questionnaireTemplates QuestionnaireTemplate[]
+  documentTemplates      DocumentTemplate[]
+
   @@map("tenants")
 }
 
@@ -146,6 +150,13 @@ model Patient {
   endoscopyExams    EndoscopyExam[]
   allergyTests      AllergyTest[]
 
+  // 問診・文書・メッセージ
+  questionnaireResponses QuestionnaireResponse[]
+  documents              Document[]
+  messages               PatientMessage[]
+  notifications          PatientNotification[]
+  medicationRecords      MedicationRecord[]
+
   @@unique([tenantId, patientNumber])
   @@index([tenantId])
   @@index([lastName, firstName])
@@ -203,6 +214,10 @@ model MedicalRecord {
   endoscopyExams    EndoscopyExam[]
   allergyTests      AllergyTest[]
 
+  // 問診・文書
+  questionnaireResponses QuestionnaireResponse[]
+  documents              Document[]
+
   @@index([patientId])
   @@index([doctorId])
   @@index([recordDate])
@@ -237,6 +252,8 @@ model Prescription {
 
   medicalRecordId String?
   medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  medicationRecords MedicationRecord[]
 
   @@index([patientId])
   @@index([doctorId])
@@ -341,6 +358,7 @@ model Appointment {
   doctor   User @relation("DoctorAppointments", fields: [doctorId], references: [id])
 
   videoSession VideoSession?
+  questionnaireResponses QuestionnaireResponse[]
 
   @@index([tenantId])
   @@index([patientId])
@@ -749,4 +767,268 @@ enum EntCategory {
   ALLERGY  // アレルギー
   VERTIGO  // めまい
   OTHER    // その他
+}
+
+// ==================== Web問診システム ====================
+
+model QuestionnaireTemplate {
+  id          String   @id @default(cuid())
+  name        String   // テンプレート名
+  description String?  // 説明
+  category    QuestionnaireCategory @default(GENERAL)
+
+  // 問診項目 (JSON配列)
+  questions   Json     // [{id, type, question, options?, required, category}]
+
+  // 設定
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false) // デフォルト問診票
+  sortOrder   Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  responses   QuestionnaireResponse[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@map("questionnaire_templates")
+}
+
+model QuestionnaireResponse {
+  id          String   @id @default(cuid())
+
+  // 回答内容 (JSON)
+  answers     Json     // {questionId: answer}
+
+  // 自動生成されたサマリー
+  summary     String?  @db.Text
+
+  // SOAPへの転記用テキスト
+  subjective  String?  @db.Text // 主訴・現病歴
+
+  // ステータス
+  status      QuestionnaireStatus @default(SUBMITTED)
+  submittedAt DateTime @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  templateId  String
+  template    QuestionnaireTemplate @relation(fields: [templateId], references: [id])
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  @@index([patientId])
+  @@index([templateId])
+  @@index([appointmentId])
+  @@index([status])
+  @@map("questionnaire_responses")
+}
+
+enum QuestionnaireCategory {
+  GENERAL      // 一般
+  FIRST_VISIT  // 初診
+  FOLLOW_UP    // 再診
+  PEDIATRIC    // 小児科
+  INTERNAL     // 内科
+  ENT          // 耳鼻科
+  DERMATOLOGY  // 皮膚科
+  ORTHOPEDIC   // 整形外科
+  MENTAL       // 心療内科
+  OTHER        // その他
+}
+
+enum QuestionnaireStatus {
+  DRAFT      // 下書き
+  SUBMITTED  // 提出済み
+  REVIEWED   // 確認済み
+  APPLIED    // カルテ適用済み
+}
+
+// ==================== 文書テンプレート ====================
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  name        String   // テンプレート名
+  category    DocumentCategory
+
+  // テンプレート内容 (プレースホルダー対応)
+  content     String   @db.Text
+
+  // メタ情報
+  description String?
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  documents   Document[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@map("document_templates")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  category    DocumentCategory
+
+  // 発行情報
+  issuedAt    DateTime @default(now())
+  issuedBy    String?
+
+  // PDF生成
+  pdfUrl      String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  templateId  String?
+  template    DocumentTemplate? @relation(fields: [templateId], references: [id])
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  @@index([patientId])
+  @@index([category])
+  @@map("documents")
+}
+
+enum DocumentCategory {
+  REFERRAL         // 紹介状
+  CERTIFICATE      // 診断書
+  MEDICAL_CERT     // 医療証明書
+  PRESCRIPTION     // 処方箋
+  CONSENT          // 同意書
+  SICK_LEAVE       // 休職証明書
+  INSURANCE        // 保険関係書類
+  OTHER            // その他
+}
+
+// ==================== 患者ポータル ====================
+
+model PatientMessage {
+  id          String   @id @default(cuid())
+  subject     String?  // 件名
+  content     String   @db.Text
+
+  // 送信者情報
+  senderType  MessageSenderType
+  senderId    String   // User ID or Patient ID
+
+  // 既読管理
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+
+  // 添付ファイル
+  attachments Json?    // [{name, url, type}]
+
+  createdAt   DateTime @default(now())
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([createdAt])
+  @@map("patient_messages")
+}
+
+model PatientNotification {
+  id          String   @id @default(cuid())
+  title       String
+  message     String
+  type        NotificationType
+
+  // リンク先
+  linkUrl     String?
+
+  // 既読管理
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+
+  createdAt   DateTime @default(now())
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([isRead])
+  @@map("patient_notifications")
+}
+
+model MedicationRecord {
+  id          String   @id @default(cuid())
+
+  // お薬情報
+  medicationName String
+  dosage      String?
+  frequency   String?
+  startDate   DateTime?
+  endDate     DateTime?
+
+  // 処方元
+  prescribedBy String?
+  pharmacyName String?
+
+  // メモ
+  notes       String?
+
+  // 種類
+  type        MedicationType @default(PRESCRIPTION)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  prescriptionId String?
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
+
+  @@index([patientId])
+  @@map("medication_records")
+}
+
+enum MessageSenderType {
+  STAFF    // 医療スタッフ
+  PATIENT  // 患者
+  SYSTEM   // システム通知
+}
+
+enum NotificationType {
+  APPOINTMENT  // 予約関連
+  LAB_RESULT   // 検査結果
+  PRESCRIPTION // 処方関連
+  MESSAGE      // メッセージ
+  REMINDER     // リマインダー
+  GENERAL      // 一般
+}
+
+enum MedicationType {
+  PRESCRIPTION // 処方薬
+  OTC          // 市販薬
+  SUPPLEMENT   // サプリメント
 }
