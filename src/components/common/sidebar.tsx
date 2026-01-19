@@ -31,7 +31,7 @@ const navigation = [
   { name: "ダッシュボード", href: "/", icon: Home },
   { name: "患者管理", href: "/patients", icon: Users },
   { name: "診療記録", href: "/records", icon: FileText },
-  { name: "耳鼻科検査", href: "/ent", icon: Ear },
+  { name: "耳鼻科検査", href: "/ent/dashboard", icon: Ear },
   { name: "予約管理", href: "/appointments", icon: Calendar },
   { name: "オンライン診療", href: "/video", icon: Video },
   { name: "処方管理", href: "/prescriptions", icon: Pill },

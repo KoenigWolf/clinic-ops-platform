@@ -13,8 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Ear, Eye, Activity, FlaskConical } from "lucide-react";
+import { Plus, Ear, Eye, Activity, FlaskConical, FileText, Settings, Printer, BarChart3 } from "lucide-react";
+import Link from "next/link";
 import { AudiogramChart, getHearingLevel, calculateFourFrequencyAverage } from "@/components/ent/audiogram-chart";
+import { HearingProgressChart } from "@/components/ent/hearing-progress-chart";
 import { AudiometryDialog } from "@/components/ent/audiometry-dialog";
 import { TympanometryDialog } from "@/components/ent/tympanometry-dialog";
 import { VestibularDialog } from "@/components/ent/vestibular-dialog";
@@ -100,12 +102,26 @@ function EntContent() {
           <h1 className="text-2xl font-bold text-gray-900">耳鼻科検査</h1>
           <p className="text-gray-500">聴力検査・内視鏡・平衡機能検査など</p>
         </div>
-        {selectedPatientId && (
-          <Button onClick={openNewTest}>
-            <Plus className="mr-2 h-4 w-4" />
-            新規{getTabLabel()}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          <Link href="/ent/dashboard">
+            <Button variant="outline">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              ダッシュボード
+            </Button>
+          </Link>
+          <Link href="/ent/templates">
+            <Button variant="outline">
+              <FileText className="mr-2 h-4 w-4" />
+              診断テンプレート
+            </Button>
+          </Link>
+          {selectedPatientId && (
+            <Button onClick={openNewTest}>
+              <Plus className="mr-2 h-4 w-4" />
+              新規{getTabLabel()}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Patient Selector */}
@@ -181,7 +197,14 @@ function EntContent() {
                 </CardContent>
               </Card>
             ) : (
-              audiometryTests?.map((test) => {
+              <>
+                {/* Progress Chart - Show when there are 2+ tests */}
+                {audiometryTests && audiometryTests.length >= 2 && (
+                  <HearingProgressChart tests={audiometryTests} />
+                )}
+
+                {/* Individual Test Cards */}
+                {audiometryTests?.map((test) => {
                 const rightAvg = calculateFourFrequencyAverage(
                   test.rightAir500, test.rightAir1000, test.rightAir2000, test.rightAir4000
                 );
@@ -214,7 +237,7 @@ function EntContent() {
                             {test.testType === "PURE_TONE" ? "純音聴力検査" : test.testType}
                           </CardDescription>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
                           {rightLevel && (
                             <Badge variant="outline" className={rightLevel.color}>
                               右: {rightLevel.level} ({rightAvg?.toFixed(1)}dB)
@@ -225,6 +248,14 @@ function EntContent() {
                               左: {leftLevel.level} ({leftAvg?.toFixed(1)}dB)
                             </Badge>
                           )}
+                          <Link
+                            href={`/ent/report?patientId=${selectedPatientId}&testId=${test.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button variant="outline" size="sm">
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          </Link>
                         </div>
                       </div>
                     </CardHeader>
@@ -239,7 +270,8 @@ function EntContent() {
                     </CardContent>
                   </Card>
                 );
-              })
+              })}
+              </>
             )}
           </TabsContent>
 

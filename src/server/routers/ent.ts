@@ -123,6 +123,198 @@ const diagnosisTemplateSchema = z.object({
 });
 
 export const entRouter = router({
+  // ==================== 統計・ダッシュボード ====================
+
+  stats: protectedProcedure.query(async ({ ctx }) => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Get counts by test type
+    const [audiometryCount, tympanometryCount, vestibularCount, endoscopyCount, allergyCount] =
+      await Promise.all([
+        ctx.prisma.audiometryTest.count({
+          where: { patient: { tenantId: ctx.tenantId } },
+        }),
+        ctx.prisma.tympanometryTest.count({
+          where: { patient: { tenantId: ctx.tenantId } },
+        }),
+        ctx.prisma.vestibularTest.count({
+          where: { patient: { tenantId: ctx.tenantId } },
+        }),
+        ctx.prisma.endoscopyExam.count({
+          where: { patient: { tenantId: ctx.tenantId } },
+        }),
+        ctx.prisma.allergyTest.count({
+          where: { patient: { tenantId: ctx.tenantId } },
+        }),
+      ]);
+
+    // Get recent counts (last 30 days)
+    const [recentAudiometry, recentTympanometry, recentVestibular, recentEndoscopy, recentAllergy] =
+      await Promise.all([
+        ctx.prisma.audiometryTest.count({
+          where: {
+            patient: { tenantId: ctx.tenantId },
+            testDate: { gte: thirtyDaysAgo },
+          },
+        }),
+        ctx.prisma.tympanometryTest.count({
+          where: {
+            patient: { tenantId: ctx.tenantId },
+            testDate: { gte: thirtyDaysAgo },
+          },
+        }),
+        ctx.prisma.vestibularTest.count({
+          where: {
+            patient: { tenantId: ctx.tenantId },
+            testDate: { gte: thirtyDaysAgo },
+          },
+        }),
+        ctx.prisma.endoscopyExam.count({
+          where: {
+            patient: { tenantId: ctx.tenantId },
+            examDate: { gte: thirtyDaysAgo },
+          },
+        }),
+        ctx.prisma.allergyTest.count({
+          where: {
+            patient: { tenantId: ctx.tenantId },
+            testDate: { gte: thirtyDaysAgo },
+          },
+        }),
+      ]);
+
+    return {
+      totals: {
+        audiometry: audiometryCount,
+        tympanometry: tympanometryCount,
+        vestibular: vestibularCount,
+        endoscopy: endoscopyCount,
+        allergy: allergyCount,
+        total: audiometryCount + tympanometryCount + vestibularCount + endoscopyCount + allergyCount,
+      },
+      recent: {
+        audiometry: recentAudiometry,
+        tympanometry: recentTympanometry,
+        vestibular: recentVestibular,
+        endoscopy: recentEndoscopy,
+        allergy: recentAllergy,
+        total: recentAudiometry + recentTympanometry + recentVestibular + recentEndoscopy + recentAllergy,
+      },
+    };
+  }),
+
+  recentTests: protectedProcedure
+    .input(z.object({ limit: z.number().default(10) }))
+    .query(async ({ ctx, input }) => {
+      // Get recent tests from all categories
+      const [audiometry, tympanometry, vestibular, endoscopy, allergy] = await Promise.all([
+        ctx.prisma.audiometryTest.findMany({
+          where: { patient: { tenantId: ctx.tenantId } },
+          orderBy: { testDate: "desc" },
+          take: input.limit,
+          include: { patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true } } },
+        }),
+        ctx.prisma.tympanometryTest.findMany({
+          where: { patient: { tenantId: ctx.tenantId } },
+          orderBy: { testDate: "desc" },
+          take: input.limit,
+          include: { patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true } } },
+        }),
+        ctx.prisma.vestibularTest.findMany({
+          where: { patient: { tenantId: ctx.tenantId } },
+          orderBy: { testDate: "desc" },
+          take: input.limit,
+          include: { patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true } } },
+        }),
+        ctx.prisma.endoscopyExam.findMany({
+          where: { patient: { tenantId: ctx.tenantId } },
+          orderBy: { examDate: "desc" },
+          take: input.limit,
+          include: { patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true } } },
+        }),
+        ctx.prisma.allergyTest.findMany({
+          where: { patient: { tenantId: ctx.tenantId } },
+          orderBy: { testDate: "desc" },
+          take: input.limit,
+          include: { patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true } } },
+        }),
+      ]);
+
+      // Combine and sort all tests by date
+      const allTests = [
+        ...audiometry.map((t) => ({ ...t, type: "audiometry" as const, date: t.testDate })),
+        ...tympanometry.map((t) => ({ ...t, type: "tympanometry" as const, date: t.testDate })),
+        ...vestibular.map((t) => ({ ...t, type: "vestibular" as const, date: t.testDate })),
+        ...endoscopy.map((t) => ({ ...t, type: "endoscopy" as const, date: t.examDate })),
+        ...allergy.map((t) => ({ ...t, type: "allergy" as const, date: t.testDate })),
+      ]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, input.limit);
+
+      return allTests;
+    }),
+
+  hearingLevelDistribution: protectedProcedure.query(async ({ ctx }) => {
+    const audiometryTests = await ctx.prisma.audiometryTest.findMany({
+      where: { patient: { tenantId: ctx.tenantId } },
+      select: {
+        rightAir500: true,
+        rightAir1000: true,
+        rightAir2000: true,
+        rightAir4000: true,
+        leftAir500: true,
+        leftAir1000: true,
+        leftAir2000: true,
+        leftAir4000: true,
+      },
+    });
+
+    // Calculate distribution
+    const distribution = {
+      normal: 0,
+      mild: 0,
+      moderate: 0,
+      moderatelySevere: 0,
+      severe: 0,
+      profound: 0,
+    };
+
+    const getLevel = (avg: number | null) => {
+      if (avg === null) return null;
+      if (avg <= 25) return "normal";
+      if (avg <= 40) return "mild";
+      if (avg <= 55) return "moderate";
+      if (avg <= 70) return "moderatelySevere";
+      if (avg <= 90) return "severe";
+      return "profound";
+    };
+
+    const calc4FreqAvg = (
+      f500: number | null,
+      f1000: number | null,
+      f2000: number | null,
+      f4000: number | null
+    ) => {
+      const values = [f500, f1000, f2000, f4000].filter((v) => v !== null) as number[];
+      if (values.length < 4) return null;
+      return (values[0] + values[1] + values[1] + values[2]) / 4;
+    };
+
+    audiometryTests.forEach((test) => {
+      const rightAvg = calc4FreqAvg(test.rightAir500, test.rightAir1000, test.rightAir2000, test.rightAir4000);
+      const leftAvg = calc4FreqAvg(test.leftAir500, test.leftAir1000, test.leftAir2000, test.leftAir4000);
+
+      const rightLevel = getLevel(rightAvg);
+      const leftLevel = getLevel(leftAvg);
+
+      if (rightLevel) distribution[rightLevel]++;
+      if (leftLevel) distribution[leftLevel]++;
+    });
+
+    return distribution;
+  }),
+
   // ==================== 聴力検査 ====================
 
   audiometry: router({
