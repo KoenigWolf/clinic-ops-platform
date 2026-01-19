@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 
 interface EndoscopyDialogProps {
   open: boolean;
@@ -68,6 +69,11 @@ export function EndoscopyDialog({
 
   const [interpretation, setInterpretation] = useState("");
 
+  // Image upload state
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const createMutation = trpc.ent.endoscopy.create.useMutation({
     onSuccess: () => {
       toast.success("内視鏡検査を保存しました");
@@ -104,8 +110,54 @@ export function EndoscopyDialog({
       setOtoscopyRight("");
       setOtoscopyLeft("");
       setInterpretation("");
+      setImageUrls([]);
     }
   }, [open]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const newUrls: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("patientId", patientId);
+      formData.append("examType", examType);
+
+      try {
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          newUrls.push(data.url);
+        } else {
+          const error = await response.json();
+          toast.error(error.error || "アップロードに失敗しました");
+        }
+      } catch {
+        toast.error("アップロードに失敗しました");
+      }
+    }
+
+    setImageUrls([...imageUrls, ...newUrls]);
+    setIsUploading(false);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = () => {
     const data = {
@@ -123,6 +175,7 @@ export function EndoscopyDialog({
       otoscopyRight: otoscopyRight || undefined,
       otoscopyLeft: otoscopyLeft || undefined,
       interpretation: interpretation || undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
     };
 
     if (examId) {
@@ -163,11 +216,15 @@ export function EndoscopyDialog({
           </div>
 
           <Tabs defaultValue="nasal" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="nasal">鼻腔</TabsTrigger>
               <TabsTrigger value="pharyngeal">咽頭</TabsTrigger>
               <TabsTrigger value="laryngeal">喉頭</TabsTrigger>
               <TabsTrigger value="otoscopy">耳鏡</TabsTrigger>
+              <TabsTrigger value="images">
+                <ImageIcon className="h-4 w-4 mr-1" />
+                画像
+              </TabsTrigger>
             </TabsList>
 
             {/* Nasal Tab */}
@@ -330,6 +387,71 @@ export function EndoscopyDialog({
                   />
                 </div>
               </div>
+            </TabsContent>
+
+            {/* Images Tab */}
+            <TabsContent value="images" className="space-y-4">
+              {/* Upload Area */}
+              <div
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                />
+                {isUploading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
+                    <p className="text-gray-500">アップロード中...</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-10 w-10 text-gray-400" />
+                    <p className="text-gray-600 font-medium">
+                      クリックまたはドラッグ＆ドロップで画像をアップロード
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      JPEG, PNG, WebP, GIF (最大10MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Uploaded Images */}
+              {imageUrls.length > 0 && (
+                <div className="space-y-2">
+                  <Label>アップロード済み画像 ({imageUrls.length}枚)</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {imageUrls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`内視鏡画像 ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {imageUrls.length === 0 && !isUploading && (
+                <p className="text-gray-400 text-sm text-center">
+                  まだ画像がアップロードされていません
+                </p>
+              )}
             </TabsContent>
           </Tabs>
 
