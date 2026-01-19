@@ -5,6 +5,7 @@ import { appointmentRouter } from "./appointment";
 import { videoRouter } from "./video";
 import { prescriptionRouter } from "./prescription";
 import { billingRouter } from "./billing";
+import { entRouter } from "./ent";
 
 export const appRouter = router({
   patient: patientRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   video: videoRouter,
   prescription: prescriptionRouter,
   billing: billingRouter,
+  ent: entRouter,
 });
 
 export type AppRouter = typeof appRouter;
