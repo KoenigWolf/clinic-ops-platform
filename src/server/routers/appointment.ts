@@ -48,14 +48,24 @@ export const appointmentRouter = router({
       const { date, doctorId, patientId, status, page, limit } = input;
       const skip = (page - 1) * limit;
 
+      // Build date range filter properly without mutating input
+      let dateFilter = {};
+      if (date) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+        dateFilter = {
+          appointmentDate: {
+            gte: startOfDay,
+            lt: endOfDay,
+          },
+        };
+      }
+
       const where = {
         tenantId: ctx.tenantId,
-        ...(date && {
-          appointmentDate: {
-            gte: new Date(date.setHours(0, 0, 0, 0)),
-            lt: new Date(date.setHours(23, 59, 59, 999)),
-          },
-        }),
+        ...dateFilter,
         ...(doctorId && { doctorId }),
         ...(patientId && { patientId }),
         ...(status && { status }),
