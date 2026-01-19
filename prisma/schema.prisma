@@ -579,38 +579,28 @@ model TympanometryTest {
 }
 
 enum TympanogramType {
-  TYPE_A   // 正常
-  TYPE_AS  // 硬化
-  TYPE_AD  // 弛緩
-  TYPE_B   // 扁平（滲出性中耳炎など）
-  TYPE_C   // 陰圧（耳管機能不全）
+  A   // 正常
+  As  // 硬化
+  Ad  // 弛緩
+  B   // 扁平（滲出性中耳炎など）
+  C   // 陰圧（耳管機能不全）
 }
 
 // 平衡機能検査（めまい検査）
 model VestibularTest {
   id       String   @id @default(cuid())
   testDate DateTime @default(now())
-  testType VestibularTestType
+  testType VestibularTestType @default(CALORIC)
 
-  // 眼振検査
-  spontaneousNystagmus    Boolean? // 自発眼振
-  nystagmusDirection      String?  // 眼振方向
-  nystagmusIntensity      Int?     // 眼振強度 (度/秒)
-
-  // 頭位・頭位変換眼振検査
-  positionalNystagmus     Boolean?
-  positionalNystagmusType String?
-
-  // カロリックテスト
-  rightCaloricResponse    Int?  // CP値
-  leftCaloricResponse     Int?
-  canalParesis            Int?  // CP (%)
-  directionalPreponderance Int? // DP (%)
-
-  // 重心動揺検査
-  swayArea                Float? // 動揺面積 (cm²)
-  swayLength              Float? // 総軌跡長 (cm)
-  rombergRatio            Float? // ロンベルグ率
+  // 臨床情報
+  chiefComplaint    String?  // 主訴
+  vertigoType       String?  // めまいの種類
+  nystagmusFindings String?  // 眼振所見
+  rombergTest       String?  // Romberg検査
+  mannTest          String?  // Mann検査
+  caloricResponse   String?  // 温度刺激検査所見
+  headImpulseTest   String?  // Head Impulse Test
+  dixHallpikeResult String?  // Dix-Hallpike検査
 
   interpretation String?
   notes          String?
@@ -629,34 +619,45 @@ model VestibularTest {
 }
 
 enum VestibularTestType {
+  CALORIC       // 温度刺激検査
+  POSTUROGRAPHY // 重心動揺検査
   ENG           // 電気眼振図
   VNG           // ビデオ眼振図
-  CALORIC       // カロリックテスト
-  POSTUROGRAPHY // 重心動揺検査
-  VEMP          // 前庭誘発筋電位
   VHIT          // Video Head Impulse Test
+  VEMP          // 前庭誘発筋電位
+  ROTATION      // 回転検査
 }
 
 // 内視鏡検査記録
 model EndoscopyExam {
   id       String   @id @default(cuid())
   examDate DateTime @default(now())
-  examType EndoscopyType
+  examType EndoscopyType @default(NASAL)
 
-  // 所見
-  nasalCavityRight    String? // 右鼻腔所見
-  nasalCavityLeft     String? // 左鼻腔所見
-  nasopharynx         String? // 上咽頭所見
-  oropharynx          String? // 中咽頭所見
-  hypopharynx         String? // 下咽頭所見
-  larynx              String? // 喉頭所見
-  vocalCords          String? // 声帯所見
+  // 鼻腔所見
+  nasalFindings     String? // 鼻腔所見（総合）
+  nasalSeptum       String? // 鼻中隔
+  inferiorTurbinate String? // 下鼻甲介
+  middleMeatus      String? // 中鼻道
+
+  // 咽頭所見
+  pharyngealFindings String? // 咽頭所見
+  tonsils            String? // 扁桃
+
+  // 喉頭所見
+  laryngealFindings String? // 喉頭所見
+  vocalCords        String? // 声帯所見
+  epiglottis        String? // 喉頭蓋
+
+  // 耳鏡検査
+  otoscopyRight String? // 右耳鏡所見
+  otoscopyLeft  String? // 左耳鏡所見
 
   // 画像
-  imageUrls           Json?   // 画像URL配列
+  imageUrls Json @default("[]") // 画像URL配列
 
-  interpretation      String?
-  notes               String?
+  interpretation String?
+  notes          String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -672,10 +673,10 @@ model EndoscopyExam {
 }
 
 enum EndoscopyType {
-  NASAL          // 鼻腔内視鏡
-  NASOPHARYNGEAL // 上咽頭内視鏡
-  LARYNGEAL      // 喉頭内視鏡
-  FLEXIBLE       // 軟性内視鏡
+  NASAL      // 鼻腔内視鏡
+  PHARYNGEAL // 咽頭内視鏡
+  LARYNGEAL  // 喉頭内視鏡
+  OTOSCOPY   // 耳鏡検査
 }
 
 // アレルギー検査
@@ -709,9 +710,8 @@ model AllergyTest {
 enum AllergyTestType {
   RAST       // RAST検査（特異的IgE）
   SKIN_PRICK // 皮膚プリックテスト
-  PATCH      // パッチテスト
   MAST       // MAST検査
-  VIEW_ALLERGY // View アレルギー39
+  CAP        // CAP (UniCAP)
 }
 
 // 耳鼻科診断テンプレート
@@ -743,17 +743,10 @@ model EntDiagnosisTemplate {
 }
 
 enum EntCategory {
-  EAR_INFECTION      // 耳感染症（中耳炎など）
-  HEARING_LOSS       // 難聴
-  TINNITUS           // 耳鳴
-  VERTIGO            // めまい
-  NASAL_ALLERGY      // アレルギー性鼻炎
-  SINUSITIS          // 副鼻腔炎
-  EPISTAXIS          // 鼻出血
-  PHARYNGITIS        // 咽頭炎
-  TONSILLITIS        // 扁桃炎
-  LARYNGITIS         // 喉頭炎
-  VOCAL_DISORDER     // 音声障害
-  SLEEP_APNEA        // 睡眠時無呼吸
-  OTHER              // その他
+  EAR      // 耳疾患
+  NOSE     // 鼻疾患
+  THROAT   // 咽喉頭疾患
+  ALLERGY  // アレルギー
+  VERTIGO  // めまい
+  OTHER    // その他
 }
