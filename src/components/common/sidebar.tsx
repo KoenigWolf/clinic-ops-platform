@@ -25,17 +25,23 @@ import {
   LogOut,
   ChevronDown,
   Ear,
+  ClipboardList,
+  FileSignature,
+  BarChart3,
 } from "lucide-react";
 
 const navigation = [
   { name: "ダッシュボード", href: "/", icon: Home },
   { name: "患者管理", href: "/patients", icon: Users },
   { name: "診療記録", href: "/records", icon: FileText },
+  { name: "Web問診", href: "/questionnaire", icon: ClipboardList },
   { name: "耳鼻科検査", href: "/ent/dashboard", icon: Ear },
   { name: "予約管理", href: "/appointments", icon: Calendar },
   { name: "オンライン診療", href: "/video", icon: Video },
   { name: "処方管理", href: "/prescriptions", icon: Pill },
+  { name: "文書管理", href: "/documents", icon: FileSignature },
   { name: "請求管理", href: "/billing", icon: Receipt },
+  { name: "経営分析", href: "/analytics", icon: BarChart3 },
   { name: "設定", href: "/settings", icon: Settings },
 ];
 
