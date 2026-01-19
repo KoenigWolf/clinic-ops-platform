@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Video, Clock, User } from "lucide-react";
+import { Plus, Video, Clock, User, Phone } from "lucide-react";
 import { AppointmentDialog } from "@/components/appointments/appointment-dialog";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import { toast } from "sonner";
 
 const statusLabels: Record<string, string> = {
   SCHEDULED: "予約済",
@@ -32,6 +34,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AppointmentsPage() {
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -42,6 +45,32 @@ export default function AppointmentsPage() {
   const updateStatusMutation = trpc.appointment.updateStatus.useMutation({
     onSuccess: () => refetch(),
   });
+
+  // Video session mutations
+  const createSessionMutation = trpc.video.createSession.useMutation();
+  const getTokenMutation = trpc.video.getToken.useMutation();
+  const startSessionMutation = trpc.video.startSession.useMutation();
+
+  const handleStartOnlineConsultation = async (appointmentId: string) => {
+    try {
+      // Update status to IN_PROGRESS
+      await updateStatusMutation.mutateAsync({ id: appointmentId, status: "IN_PROGRESS" });
+
+      // Create video session
+      const session = await createSessionMutation.mutateAsync({ appointmentId });
+
+      // Get token and room URL
+      const { token, roomUrl } = await getTokenMutation.mutateAsync({ sessionId: session.id });
+
+      // Start session
+      await startSessionMutation.mutateAsync({ sessionId: session.id });
+
+      // Navigate to video page with session info
+      router.push(`/video?sessionId=${session.id}&roomUrl=${encodeURIComponent(roomUrl)}&token=${encodeURIComponent(token || "")}`);
+    } catch (error) {
+      toast.error("オンライン診療の開始に失敗しました");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -154,17 +183,29 @@ export default function AppointmentsPage() {
                         </Button>
                       )}
                       {apt.status === "WAITING" && (
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            updateStatusMutation.mutate({
-                              id: apt.id,
-                              status: "IN_PROGRESS",
-                            })
-                          }
-                        >
-                          開始
-                        </Button>
+                        apt.isOnline ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleStartOnlineConsultation(apt.id)}
+                            disabled={createSessionMutation.isPending}
+                            className="gap-1 bg-purple-600 hover:bg-purple-700"
+                          >
+                            <Phone className="h-4 w-4" />
+                            {createSessionMutation.isPending ? "準備中..." : "オンライン診療開始"}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              updateStatusMutation.mutate({
+                                id: apt.id,
+                                status: "IN_PROGRESS",
+                              })
+                            }
+                          >
+                            開始
+                          </Button>
+                        )
                       )}
                       {apt.status === "IN_PROGRESS" && (
                         <Button

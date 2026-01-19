@@ -1,26 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Video, Phone, PhoneOff, User, Clock } from "lucide-react";
+import { Video, Phone, User, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
 import { VideoRoom } from "@/components/video/video-room";
 
-export default function VideoPage() {
+// Wrapper component that uses searchParams
+function VideoPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [activeSession, setActiveSession] = useState<{
     sessionId: string;
     roomUrl: string;
     token: string | null;
   } | null>(null);
 
-  // Get today's online appointments
+  // Check for URL parameters (coming from appointments page)
+  useEffect(() => {
+    const sessionId = searchParams.get("sessionId");
+    const roomUrl = searchParams.get("roomUrl");
+    const token = searchParams.get("token");
+
+    if (sessionId && roomUrl) {
+      setActiveSession({
+        sessionId,
+        roomUrl,
+        token: token || null,
+      });
+      // Clear URL params
+      router.replace("/video");
+    }
+  }, [searchParams, router]);
+
+  // Get today's online appointments (refetch every 10 seconds)
   const { data: appointments } = trpc.appointment.list.useQuery({
     date: new Date(),
+  }, {
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   });
 
   const onlineAppointments = appointments?.appointments.filter(
@@ -195,5 +220,18 @@ export default function VideoPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Main export with Suspense boundary for useSearchParams
+export default function VideoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
+      </div>
+    }>
+      <VideoPageContent />
+    </Suspense>
   );
 }
