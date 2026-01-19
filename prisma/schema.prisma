@@ -23,6 +23,7 @@ model Tenant {
   appointments  Appointment[]
   invoices      Invoice[]
   auditLogs     AuditLog[]
+  entDiagnosisTemplates EntDiagnosisTemplate[]
 
   @@map("tenants")
 }
@@ -139,6 +140,11 @@ model Patient {
   medicalImages   MedicalImage[]
   appointments    Appointment[]
   invoices        Invoice[]
+  audiometryTests   AudiometryTest[]
+  tympanometryTests TympanometryTest[]
+  vestibularTests   VestibularTest[]
+  endoscopyExams    EndoscopyExam[]
+  allergyTests      AllergyTest[]
 
   @@unique([tenantId, patientNumber])
   @@index([tenantId])
@@ -191,6 +197,11 @@ model MedicalRecord {
   prescriptions Prescription[]
   labResults    LabResult[]
   medicalImages MedicalImage[]
+  audiometryTests   AudiometryTest[]
+  tympanometryTests TympanometryTest[]
+  vestibularTests   VestibularTest[]
+  endoscopyExams    EndoscopyExam[]
+  allergyTests      AllergyTest[]
 
   @@index([patientId])
   @@index([doctorId])
@@ -463,4 +474,279 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ==================== 耳鼻科専用機能 ====================
+
+// 聴力検査（オージオグラム）
+model AudiometryTest {
+  id        String   @id @default(cuid())
+  testDate  DateTime @default(now())
+  testType  AudiometryType @default(PURE_TONE)
+
+  // 右耳 気導聴力 (dB) - 周波数ごと
+  rightAir125   Int?
+  rightAir250   Int?
+  rightAir500   Int?
+  rightAir1000  Int?
+  rightAir2000  Int?
+  rightAir4000  Int?
+  rightAir8000  Int?
+
+  // 左耳 気導聴力 (dB)
+  leftAir125    Int?
+  leftAir250    Int?
+  leftAir500    Int?
+  leftAir1000   Int?
+  leftAir2000   Int?
+  leftAir4000   Int?
+  leftAir8000   Int?
+
+  // 右耳 骨導聴力 (dB)
+  rightBone250  Int?
+  rightBone500  Int?
+  rightBone1000 Int?
+  rightBone2000 Int?
+  rightBone4000 Int?
+
+  // 左耳 骨導聴力 (dB)
+  leftBone250   Int?
+  leftBone500   Int?
+  leftBone1000  Int?
+  leftBone2000  Int?
+  leftBone4000  Int?
+
+  // 語音聴力検査
+  rightSpeechDiscrimination Int? // 右耳語音明瞭度 (%)
+  leftSpeechDiscrimination  Int? // 左耳語音明瞭度 (%)
+
+  interpretation String? // 所見・解釈
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  @@index([patientId])
+  @@index([testDate])
+  @@map("audiometry_tests")
+}
+
+enum AudiometryType {
+  PURE_TONE      // 純音聴力検査
+  SPEECH         // 語音聴力検査
+  IMPEDANCE      // インピーダンス検査
+  ABR            // 聴性脳幹反応
+  OAE            // 耳音響放射
+}
+
+// ティンパノメトリー（鼓膜検査）
+model TympanometryTest {
+  id       String   @id @default(cuid())
+  testDate DateTime @default(now())
+
+  // 右耳
+  rightType       TympanogramType?
+  rightPeakPressure Int?  // ピーク圧 (daPa)
+  rightCompliance   Float? // コンプライアンス (ml)
+  rightEarCanalVol  Float? // 外耳道容積 (ml)
+
+  // 左耳
+  leftType        TympanogramType?
+  leftPeakPressure  Int?
+  leftCompliance    Float?
+  leftEarCanalVol   Float?
+
+  interpretation String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  @@index([patientId])
+  @@map("tympanometry_tests")
+}
+
+enum TympanogramType {
+  A   // 正常
+  As  // 硬化
+  Ad  // 弛緩
+  B   // 扁平（滲出性中耳炎など）
+  C   // 陰圧（耳管機能不全）
+}
+
+// 平衡機能検査（めまい検査）
+model VestibularTest {
+  id       String   @id @default(cuid())
+  testDate DateTime @default(now())
+  testType VestibularTestType @default(CALORIC)
+
+  // 臨床情報
+  chiefComplaint    String?  // 主訴
+  vertigoType       String?  // めまいの種類
+  nystagmusFindings String?  // 眼振所見
+  rombergTest       String?  // Romberg検査
+  mannTest          String?  // Mann検査
+  caloricResponse   String?  // 温度刺激検査所見
+  headImpulseTest   String?  // Head Impulse Test
+  dixHallpikeResult String?  // Dix-Hallpike検査
+
+  interpretation String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  @@index([patientId])
+  @@map("vestibular_tests")
+}
+
+enum VestibularTestType {
+  CALORIC       // 温度刺激検査
+  POSTUROGRAPHY // 重心動揺検査
+  ENG           // 電気眼振図
+  VNG           // ビデオ眼振図
+  VHIT          // Video Head Impulse Test
+  VEMP          // 前庭誘発筋電位
+  ROTATION      // 回転検査
+}
+
+// 内視鏡検査記録
+model EndoscopyExam {
+  id       String   @id @default(cuid())
+  examDate DateTime @default(now())
+  examType EndoscopyType @default(NASAL)
+
+  // 鼻腔所見
+  nasalFindings     String? // 鼻腔所見（総合）
+  nasalSeptum       String? // 鼻中隔
+  inferiorTurbinate String? // 下鼻甲介
+  middleMeatus      String? // 中鼻道
+
+  // 咽頭所見
+  pharyngealFindings String? // 咽頭所見
+  tonsils            String? // 扁桃
+
+  // 喉頭所見
+  laryngealFindings String? // 喉頭所見
+  vocalCords        String? // 声帯所見
+  epiglottis        String? // 喉頭蓋
+
+  // 耳鏡検査
+  otoscopyRight String? // 右耳鏡所見
+  otoscopyLeft  String? // 左耳鏡所見
+
+  // 画像
+  imageUrls Json @default("[]") // 画像URL配列
+
+  interpretation String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  @@index([patientId])
+  @@map("endoscopy_exams")
+}
+
+enum EndoscopyType {
+  NASAL      // 鼻腔内視鏡
+  PHARYNGEAL // 咽頭内視鏡
+  LARYNGEAL  // 喉頭内視鏡
+  OTOSCOPY   // 耳鏡検査
+}
+
+// アレルギー検査
+model AllergyTest {
+  id       String   @id @default(cuid())
+  testDate DateTime @default(now())
+  testType AllergyTestType
+
+  // 検査結果 (JSON形式で保存)
+  results  Json // { "スギ": 4, "ヒノキ": 3, "ダニ": 2, ... }
+
+  totalIgE        Float? // 総IgE値
+  eosinophilCount Int?   // 好酸球数
+
+  interpretation String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+
+  @@index([patientId])
+  @@map("allergy_tests")
+}
+
+enum AllergyTestType {
+  RAST       // RAST検査（特異的IgE）
+  SKIN_PRICK // 皮膚プリックテスト
+  MAST       // MAST検査
+  CAP        // CAP (UniCAP)
+}
+
+// 耳鼻科診断テンプレート
+model EntDiagnosisTemplate {
+  id          String   @id @default(cuid())
+  name        String   // テンプレート名
+  category    EntCategory
+  icdCode     String?  // ICD-10コード
+
+  // SOAP テンプレート
+  subjectiveTemplate  String? // 主訴テンプレート
+  objectiveTemplate   String? // 所見テンプレート
+  assessmentTemplate  String? // 評価テンプレート
+  planTemplate        String? // 計画テンプレート
+
+  // よく使う処方
+  commonPrescriptions Json? // [{medicationName, dosage, frequency}]
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([category])
+  @@map("ent_diagnosis_templates")
+}
+
+enum EntCategory {
+  EAR      // 耳疾患
+  NOSE     // 鼻疾患
+  THROAT   // 咽喉頭疾患
+  ALLERGY  // アレルギー
+  VERTIGO  // めまい
+  OTHER    // その他
 }
