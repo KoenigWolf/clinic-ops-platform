@@ -431,3 +431,7 @@ NEXTAUTH_SECRET=
 NEXTAUTH_URL=
 DAILY_API_KEY=         # Daily.co
 ```
+
+## 関連ドキュメント
+
+- [診療フローガイド](docs/WORKFLOW.md) - 対面診療・オンライン診療・会計等の業務フロー
