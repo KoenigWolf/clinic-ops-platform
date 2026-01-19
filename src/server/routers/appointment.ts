@@ -15,6 +15,22 @@ const appointmentSchema = z.object({
 });
 
 export const appointmentRouter = router({
+  // Get doctors (users with DOCTOR role)
+  doctors: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.user.findMany({
+      where: {
+        tenantId: ctx.tenantId,
+        role: "DOCTOR",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+      orderBy: { name: "asc" },
+    });
+  }),
+
   // List appointments
   list: protectedProcedure
     .input(z.object({
