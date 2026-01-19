@@ -9,7 +9,7 @@ const audiometrySchema = z.object({
   patientId: z.string(),
   medicalRecordId: z.string().optional(),
   testDate: z.date().optional(),
-  testType: z.enum(["PURE_TONE", "SPEECH", "TYMPANOMETRY", "OAE", "ABR"]).default("PURE_TONE"),
+  testType: z.enum(["PURE_TONE", "SPEECH", "IMPEDANCE", "OAE", "ABR"]).default("PURE_TONE"),
   // 右耳気導
   rightAir125: z.number().nullable().optional(),
   rightAir250: z.number().nullable().optional(),
@@ -104,7 +104,7 @@ const allergyTestSchema = z.object({
   medicalRecordId: z.string().optional(),
   testDate: z.date().optional(),
   testType: z.enum(["RAST", "SKIN_PRICK", "MAST", "CAP"]).default("RAST"),
-  results: z.record(z.any()).optional(),
+  results: z.record(z.string(), z.any()).optional(),
   totalIgE: z.number().nullable().optional(),
   interpretation: z.string().optional(),
 });
