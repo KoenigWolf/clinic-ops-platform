@@ -8,6 +8,9 @@ node_modules
 .next
 out
 
+# TypeScript build info
+*.tsbuildinfo
+
 # OS / editor
 .DS_Store
 .idea
