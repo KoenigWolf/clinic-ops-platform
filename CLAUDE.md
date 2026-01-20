@@ -76,12 +76,27 @@ where: { tenantId: ctx.tenantId }
 where: {}
 ```
 
+## セキュリティ
+
+### 主要ファイル
+
+- `src/lib/security.ts` - ヘッダー、レート制限、サニタイズ
+- `src/lib/audit.ts` - HIPAA準拠監査ログ（`logPhiAccess`, `logPhiModification`）
+
+### 必須ルール
+
+- PHIエンティティへのアクセスは監査ログ記録
+- 入力は `sanitizeHtml`, `sanitizeEmail` でサニタイズ
+- パスワードは `validatePassword` で検証
+
+詳細は [docs/SECURITY.md](docs/SECURITY.md) を参照。
+
 ## 開発時の注意点
 
 1. テナントID - 全クエリで必ず tenantId フィルタを適用
 2. 型安全 - tRPC + Prisma で型を活用、any 禁止
 3. エラーハンドリング - ユーザーフレンドリーな日本語メッセージ
-4. セキュリティ - 患者データは当該患者のみアクセス可
+4. セキュリティ - 患者データは当該患者のみアクセス可、PHIアクセスは監査ログ必須
 5. レスポンシブ - モバイル対応を考慮
 6. パフォーマンス - 必要なフィールドのみ select/include
 
@@ -102,4 +117,5 @@ DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, DAILY_API_KEY
 
 ## 関連ドキュメント
 
-- docs/WORKFLOW.md - 対面診療・オンライン診療・会計等の業務フロー
+- [docs/WORKFLOW.md](docs/WORKFLOW.md) - 対面診療・オンライン診療・会計等の業務フロー
+- [docs/SECURITY.md](docs/SECURITY.md) - セキュリティガイドライン（HIPAA準拠、認証、監査ログ等）
