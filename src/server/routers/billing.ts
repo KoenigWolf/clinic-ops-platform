@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure, adminProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 
 const invoiceItemSchema = z.object({
@@ -24,7 +24,7 @@ function generateInvoiceNumber(): string {
 }
 
 export const billingRouter = router({
-  // List invoices
+  // List invoices with stats
   list: protectedProcedure
     .input(z.object({
       patientId: z.string().optional(),
@@ -42,7 +42,11 @@ export const billingRouter = router({
         ...(status && { status }),
       };
 
-      const [invoices, total] = await Promise.all([
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      const [invoices, total, monthlyRevenueResult, unpaidCount, overdueCount] = await Promise.all([
         ctx.prisma.invoice.findMany({
           where,
           skip,
@@ -54,12 +58,32 @@ export const billingRouter = router({
           },
         }),
         ctx.prisma.invoice.count({ where }),
+        // 今月の売上
+        ctx.prisma.invoice.aggregate({
+          where: {
+            tenantId: ctx.tenantId,
+            status: "PAID",
+            paidAt: { gte: firstDayOfMonth, lte: lastDayOfMonth },
+          },
+          _sum: { total: true },
+        }),
+        // 未払い件数
+        ctx.prisma.invoice.count({
+          where: { tenantId: ctx.tenantId, status: "SENT" },
+        }),
+        // 期限超過件数
+        ctx.prisma.invoice.count({
+          where: { tenantId: ctx.tenantId, status: "OVERDUE" },
+        }),
       ]);
 
       return {
         invoices,
         total,
         pages: Math.ceil(total / limit),
+        monthlyRevenue: monthlyRevenueResult._sum.total || 0,
+        unpaidCount,
+        overdueCount,
       };
     }),
 
