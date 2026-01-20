@@ -30,6 +30,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: null,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       await expect(caller.test()).rejects.toThrow(TRPCError);
@@ -50,6 +51,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: { expires: "2025-01-01" } as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       await expect(caller.test()).rejects.toThrow(TRPCError);
@@ -80,6 +82,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: sessionWithoutTenantId as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       await expect(caller.test()).rejects.toThrow(TRPCError);
@@ -115,6 +118,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: validSession as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       const result = await caller.test();
@@ -146,6 +150,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: doctorSession as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       await expect(caller.test()).rejects.toThrow(TRPCError);
@@ -176,6 +181,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: adminSession as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       const result = await caller.test();
@@ -206,6 +212,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: adminSession as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       const result = await caller.test();
@@ -234,6 +241,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: doctorSession as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       const result = await caller.test();
@@ -262,6 +270,7 @@ describe("tRPC Middleware", () => {
       const caller = testRouter.createCaller({
         prisma: {} as never,
         session: staffSession as never,
+        requestMeta: { ipAddress: undefined, userAgent: undefined },
       });
 
       await expect(caller.test()).rejects.toThrow(TRPCError);
