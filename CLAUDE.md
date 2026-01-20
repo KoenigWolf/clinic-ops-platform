@@ -5,9 +5,9 @@
 
 ## 技術スタック
 
-- Next.js 14+ (App Router)
+- Next.js 16 (App Router) + React 19
 - TypeScript
-- Tailwind CSS + shadcn/ui
+- Tailwind CSS 4 + shadcn/ui
 - tRPC
 - Prisma + PostgreSQL
 - NextAuth.js v5
@@ -26,8 +26,10 @@ src/
 │   ├── (dashboard)/         # スタッフ向けダッシュボード
 │   └── (portal)/            # 患者ポータル
 ├── components/
-│   └── ui/                  # shadcn/ui (変更禁止)
-├── lib/                     # ユーティリティ
+│   ├── ui/                  # shadcn/ui (変更禁止)
+│   ├── layout/              # 共通レイアウト (PageHeader, EmptyState等)
+│   └── [feature]/           # 機能別コンポーネント (appointments, billing, ent, patients, records, video)
+├── lib/                     # ユーティリティ (trpc, auth, security, audit, labels, design-tokens等)
 └── server/routers/          # tRPC API
 ```
 
@@ -39,7 +41,11 @@ src/
 
 ### 主要モデル
 
-Tenant, User, Patient, Appointment, MedicalRecord, Prescription, VideoSession, LabResult, Invoice
+- **コア**: Tenant, User, Patient, Appointment, MedicalRecord, Prescription, LabResult, Invoice
+- **ビデオ**: VideoSession
+- **耳鼻科(ENT)**: AudiometryTest, TympanometryTest, VestibularTest, EndoscopyExam, AllergyTest, EntDiagnosisTemplate
+- **問診・ドキュメント**: QuestionnaireTemplate, QuestionnaireResponse, DocumentTemplate, Document
+- **患者ポータル**: PatientMessage, PatientNotification, MedicationRecord
 
 ### User ロール
 
@@ -80,12 +86,16 @@ where: {}
 
 ### 主要ファイル
 
-- `src/lib/security.ts` - ヘッダー、レート制限、サニタイズ
+- `src/lib/security.ts` - レート制限、サニタイズ、PHIエンティティ判定
 - `src/lib/audit.ts` - HIPAA準拠監査ログ（`logPhiAccess`, `logPhiModification`）
+
+### PHIエンティティ (監査ログ必須)
+
+Patient, MedicalRecord, Prescription, LabResult, AudiometryTest
 
 ### 必須ルール
 
-- PHIエンティティへのアクセスは監査ログ記録
+- PHIエンティティへのアクセス・変更は監査ログ記録
 - 入力は `sanitizeHtml`, `sanitizeEmail` でサニタイズ
 - パスワードは `validatePassword` で検証
 
