@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -45,6 +45,9 @@ import {
   PanelLeft,
   Menu,
 } from "lucide-react";
+
+const emptySubscribe = () => () => {};
+const useIsMounted = () => useSyncExternalStore(emptySubscribe, () => true, () => false);
 
 export const navigation = [
   { name: "ダッシュボード", href: "/", icon: Home },
@@ -302,6 +305,7 @@ export function MobileHeader() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+  const mounted = useIsMounted();
 
   const userInitials = session?.user?.name
     ?.split(" ")
@@ -318,12 +322,13 @@ export function MobileHeader() {
         <span className="text-lg font-bold bg-gradient-to-r from-white to-teal-200 bg-clip-text text-transparent">Karute</span>
       </Link>
 
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="text-white hover:bg-slate-800/60">
-            <Menu className="h-5 w-5" />
-          </Button>
-        </SheetTrigger>
+      {mounted ? (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-white hover:bg-slate-800/60">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
         <SheetContent side="right" className={cn("w-72 p-0", sidebar.bg)}>
           <nav className="flex flex-col h-full">
             <div className={cn("flex items-center gap-2 h-14 px-4 border-b", sidebar.border)}>
@@ -393,7 +398,12 @@ export function MobileHeader() {
             </div>
           </nav>
         </SheetContent>
-      </Sheet>
+        </Sheet>
+      ) : (
+        <Button variant="ghost" size="icon" className="text-white hover:bg-slate-800/60">
+          <Menu className="h-5 w-5" />
+        </Button>
+      )}
     </div>
   );
 }
