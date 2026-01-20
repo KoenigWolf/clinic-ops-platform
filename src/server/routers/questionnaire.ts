@@ -35,6 +35,52 @@ const responseSchema = z.object({
 });
 
 export const questionnaireRouter = router({
+  // ==================== ダッシュボード用 ====================
+
+  // 問診ページ初期表示用 - templates / pending / list を一括取得
+  dashboard: protectedProcedure.query(async ({ ctx }) => {
+    const [templates, pendingResponses, allResponses] = await Promise.all([
+      // テンプレート一覧
+      ctx.prisma.questionnaireTemplate.findMany({
+        where: { tenantId: ctx.tenantId, isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      }),
+      // 未確認の問診
+      ctx.prisma.questionnaireResponse.findMany({
+        where: {
+          status: "SUBMITTED",
+          patient: { tenantId: ctx.tenantId },
+        },
+        include: {
+          template: { select: { name: true, category: true } },
+          patient: {
+            select: { id: true, firstName: true, lastName: true, patientNumber: true },
+          },
+          appointment: {
+            select: { appointmentDate: true, startTime: true },
+          },
+        },
+        orderBy: { submittedAt: "asc" },
+        take: 20,
+      }),
+      // 回答一覧
+      ctx.prisma.questionnaireResponse.findMany({
+        where: { patient: { tenantId: ctx.tenantId } },
+        include: {
+          template: true,
+          patient: {
+            select: { id: true, firstName: true, lastName: true, patientNumber: true },
+          },
+          appointment: true,
+        },
+        orderBy: { submittedAt: "desc" },
+        take: 50,
+      }),
+    ]);
+
+    return { templates, pendingResponses, allResponses };
+  }),
+
   // ==================== テンプレート管理 ====================
 
   template: router({
