@@ -377,7 +377,8 @@ describe("DashboardPage", () => {
 
       await waitFor(() => {
         expect(screen.getByText("鈴木 一郎")).toBeInTheDocument();
-        expect(screen.getByText("患者番号: P001")).toBeInTheDocument();
+        // 日付が表示されていることを確認（新UIでは患者番号ではなく日付を表示）
+        expect(screen.getByText("1/19")).toBeInTheDocument();
       });
     });
   });
