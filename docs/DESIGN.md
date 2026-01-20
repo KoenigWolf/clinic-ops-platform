@@ -9,53 +9,49 @@
 3. **控えめなシャドウ** - `shadow-sm`で奥行きを表現
 4. **一貫したラディウス** - `rounded-xl`で統一感
 
-## ファイル構成
+## スタイリング方針
 
-| ファイル | 目的 |
-|---------|------|
-| `src/lib/design-tokens.ts` | カラー、タイポグラフィ、ステータス設定 |
-| `src/components/layout/` | 再利用可能レイアウトコンポーネント |
+Tailwindクラスを直接使用。過度な中央管理は行わない。
 
-## カラーシステム
+### 例外：中央管理が有効なケース
 
-すべてのカラーは `design-tokens.ts` の `colors` オブジェクトで管理。
+| ファイル | 管理対象 |
+|---------|---------|
+| `src/lib/design-tokens.ts` | sidebar スタイル、ステータス設定 |
+| `src/app/globals.css` | サイドバー幅（CSS変数） |
 
-### ベースカラー
+## カラー規約
 
-| 用途 | トークン |
-|------|---------|
-| ページ背景 | `colors.bg.page` |
-| カード背景 | `colors.bg.card` |
-| ホバー | `colors.bg.hover` |
-| テキスト（メイン） | `colors.text.primary` |
-| テキスト（補助） | `colors.text.muted` |
+Tailwindのグレースケールを直接使用。
+
+| 用途 | クラス |
+|------|--------|
+| ページ背景 | `bg-gray-100` |
+| カード背景 | `bg-white` |
+| ホバー | `bg-gray-50/50` |
+| テキスト（メイン） | `text-gray-900` |
+| テキスト（補助） | `text-gray-600` |
+| テキスト（ミュート） | `text-gray-500` |
+| テキスト（薄い） | `text-gray-400` |
 
 ### セマンティックカラー
 
-| 意味 | 背景トークン | テキストトークン |
-|------|-------------|-----------------|
-| 成功/アクティブ | `colors.success.bgLight` | `colors.success.text` |
-| 警告/待機 | `colors.warning.bgLight` | `colors.warning.text` |
-| エラー/危険 | `colors.error.bgLight` | `colors.error.text` |
-| 情報 | `colors.info.bgLight` | `colors.info.text` |
-
-### ステータスカラー
-
-| 状態 | 用途 |
-|------|------|
-| `colors.status.active` | アクティブ（emerald系） |
-| `colors.status.pending` | 待機中（amber系） |
-| `colors.status.inactive` | 非アクティブ（gray系） |
+| 意味 | 背景 | テキスト |
+|------|------|----------|
+| 成功 | `bg-emerald-50` | `text-emerald-600` |
+| 警告 | `bg-amber-50` | `text-amber-600` |
+| エラー | `bg-red-50` | `text-red-600` |
+| 情報 | `bg-blue-50` | `text-blue-600` |
 
 ## ステータス設定
 
-`design-tokens.ts` で定義済み。label, dot, text, bg を持つ。
+`design-tokens.ts` で定義。label, dot, text, bg を持つ。
 
-| 設定名 | 対象ステータス |
-|--------|---------------|
+| 設定名 | 対象 |
+|--------|------|
 | `appointmentStatusConfig` | SCHEDULED, CONFIRMED, WAITING, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW |
 | `prescriptionStatusConfig` | PENDING, DISPENSED, CANCELLED |
-| `invoiceStatusConfig` | PENDING, PAID, OVERDUE, CANCELLED |
+| `invoiceStatusConfig` | DRAFT, SENT, PENDING, PAID, OVERDUE, CANCELLED |
 
 ## レイアウトコンポーネント
 
@@ -76,37 +72,15 @@
 | `DateDisplay` | 日付表示 |
 | `VerticalSeparator` | 縦区切り線 |
 
-## タイポグラフィ
-
-`typography` オブジェクトで管理。
-
-| 用途 | トークン |
-|------|---------|
-| ページタイトル | `typography.pageTitle` |
-| セクションヘッダー | `typography.sectionHeader` |
-| カードタイトル | `typography.cardTitle` |
-| 統計値 | `typography.statValue` |
-| 時刻 | `typography.time` |
-| ラベル | `typography.label` |
-
 ## 使用方法
 
 ```tsx
-import { colors, typography, appointmentStatusConfig } from "@/lib/design-tokens";
+import { appointmentStatusConfig } from "@/lib/design-tokens";
 import { PageHeader, StatCard, StatusBadge } from "@/components/layout";
 ```
 
-カラーやタイポグラフィは className に直接適用。ステータス設定は label, dot, text, bg プロパティを持つ。
+## NG事項
 
-## 禁止事項
-
-- ハードコードカラー（`bg-blue-500`等）を直接使用 → `colors` を使用
 - `shadow-md`以上の強いシャドウ
 - 装飾目的のカラー使用
-
-## 拡張時
-
-1. 新しいカラー → `design-tokens.ts` の `colors` に追加
-2. 新しいステータス → `*StatusConfig` に追加
-3. 新しいコンポーネント → `layout/` に配置してexport
-4. このガイドラインに追記
+- Tailwindで直接書けるものを過度に中央管理
