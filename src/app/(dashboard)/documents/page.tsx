@@ -81,7 +81,7 @@ export default function DocumentsPage() {
     category: categoryFilter,
   });
 
-  const { data: documents, refetch: refetchDocuments } = trpc.document.list.useQuery({
+  const { data: documents } = trpc.document.list.useQuery({
     category: categoryFilter,
     limit: 50,
   });

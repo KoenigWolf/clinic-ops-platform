@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Ear, Eye, Activity, FlaskConical, FileText, Settings, Printer, BarChart3 } from "lucide-react";
+import { Plus, Ear, Eye, Activity, FlaskConical, FileText, Printer, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { AudiogramChart, getHearingLevel, calculateFourFrequencyAverage } from "@/components/ent/audiogram-chart";
 import { HearingProgressChart } from "@/components/ent/hearing-progress-chart";

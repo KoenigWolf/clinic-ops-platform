@@ -52,8 +52,6 @@ export default function BillingPage() {
     limit: 20,
   });
 
-  const { data: monthlyRevenue } = trpc.billing.monthlyRevenue.useQuery();
-
   const updateStatusMutation = trpc.billing.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("ステータスを更新しました");
@@ -99,7 +97,7 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              ¥{(monthlyRevenue || 0).toLocaleString()}
+              ¥{(data?.monthlyRevenue || 0).toLocaleString()}
             </p>
           </CardContent>
         </Card>
@@ -113,7 +111,7 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {data?.invoices.filter((i) => i.status === "SENT").length || 0}件
+              {data?.unpaidCount || 0}件
             </p>
           </CardContent>
         </Card>
@@ -127,7 +125,7 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {data?.invoices.filter((i) => i.status === "OVERDUE").length || 0}件
+              {data?.overdueCount || 0}件
             </p>
           </CardContent>
         </Card>

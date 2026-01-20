@@ -7,7 +7,6 @@ import type {
   Appointment,
   Invoice,
   User,
-  Tenant,
 } from "@prisma/client";
 
 // Patient with relations

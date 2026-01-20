@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure, doctorProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 
 const appointmentSchema = z.object({

@@ -67,7 +67,7 @@ export default function AppointmentsPage() {
 
       // Navigate to video page with session info
       router.push(`/video?sessionId=${session.id}&roomUrl=${encodeURIComponent(roomUrl)}&token=${encodeURIComponent(token || "")}`);
-    } catch (error) {
+    } catch {
       toast.error("オンライン診療の開始に失敗しました");
     }
   };

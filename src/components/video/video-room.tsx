@@ -12,9 +12,7 @@ import {
   VideoOff,
   Monitor,
   MonitorOff,
-  Settings,
   Users,
-  MessageSquare,
 } from "lucide-react";
 
 interface VideoRoomProps {
@@ -33,6 +31,12 @@ export function VideoRoom({ roomUrl, token, onLeave }: VideoRoomProps) {
   const [error, setError] = useState<string | null>(null);
   const [networkQuality, setNetworkQuality] = useState<"good" | "poor" | "unknown">("unknown");
 
+  // Helper function to update participant count
+  const updateParticipantCount = useCallback((daily: DailyCall) => {
+    const participants = daily.participants();
+    setParticipantCount(Object.keys(participants).length);
+  }, []);
+
   // Initialize Daily.co
   useEffect(() => {
     if (!roomUrl) return;
@@ -42,10 +46,9 @@ export function VideoRoom({ roomUrl, token, onLeave }: VideoRoomProps) {
       token: token || undefined,
     });
 
-    setCallObject(daily);
-
     // Event handlers
     daily.on("joined-meeting", () => {
+      setCallObject(daily);
       setIsJoining(false);
       updateParticipantCount(daily);
     });
@@ -85,12 +88,7 @@ export function VideoRoom({ roomUrl, token, onLeave }: VideoRoomProps) {
     return () => {
       daily.destroy();
     };
-  }, [roomUrl, token, onLeave]);
-
-  const updateParticipantCount = (daily: DailyCall) => {
-    const participants = daily.participants();
-    setParticipantCount(Object.keys(participants).length);
-  };
+  }, [roomUrl, token, onLeave, updateParticipantCount]);
 
   const handleToggleMute = useCallback(() => {
     if (callObject) {

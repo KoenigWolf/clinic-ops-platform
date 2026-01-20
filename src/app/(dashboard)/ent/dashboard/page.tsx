@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 
 function DashboardContent() {
-  const { data: stats, isLoading: statsLoading } = trpc.ent.stats.useQuery();
+  const { data: stats } = trpc.ent.stats.useQuery();
   const { data: recentTests, isLoading: recentLoading } = trpc.ent.recentTests.useQuery({ limit: 8 });
   const { data: hearingDistribution, isLoading: distLoading } = trpc.ent.hearingLevelDistribution.useQuery();
 

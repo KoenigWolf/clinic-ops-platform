@@ -52,17 +52,13 @@ export default function QuestionnairePage() {
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [activeTab, setActiveTab] = useState("responses");
 
-  const categoryFilter = selectedCategory === "ALL" ? undefined : selectedCategory as never;
+  const { data } = trpc.questionnaire.dashboard.useQuery();
 
-  const { data: templates } = trpc.questionnaire.template.list.useQuery({
-    category: categoryFilter,
-  });
-
-  const { data: pendingResponses } = trpc.questionnaire.response.pending.useQuery();
-
-  const { data: allResponses } = trpc.questionnaire.response.list.useQuery({
-    limit: 50,
-  });
+  const templates = selectedCategory === "ALL"
+    ? data?.templates
+    : data?.templates?.filter((t) => t.category === selectedCategory);
+  const pendingResponses = data?.pendingResponses;
+  const allResponses = data?.allResponses;
 
   return (
     <div className="space-y-6">
@@ -119,7 +115,7 @@ export default function QuestionnairePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">テンプレート数</p>
-                <p className="text-2xl font-bold">{templates?.length || 0}</p>
+                <p className="text-2xl font-bold">{data?.templates?.length || 0}</p>
               </div>
               <FileText className="h-8 w-8 text-purple-200" />
             </div>

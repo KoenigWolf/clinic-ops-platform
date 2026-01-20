@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Clock, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 

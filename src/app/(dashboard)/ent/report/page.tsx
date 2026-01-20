@@ -4,8 +4,6 @@ import { Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Printer, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AudiogramChart, getHearingLevel, calculateFourFrequencyAverage } from "@/components/ent/audiogram-chart";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -59,14 +59,14 @@ const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
-    if (saved !== null) {
-      setCollapsed(saved === "true");
+  const [collapsed, setCollapsed] = useState(() => {
+    // Initialize from localStorage (client-side only)
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      return saved === "true";
     }
-  }, []);
+    return false;
+  });
 
   const toggleCollapsed = () => {
     const newValue = !collapsed;

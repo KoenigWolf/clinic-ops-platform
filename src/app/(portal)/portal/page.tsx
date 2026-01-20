@@ -9,7 +9,6 @@ import {
   MessageSquare,
   Pill,
   Bell,
-  FileText,
   ChevronRight,
   Clock,
   AlertCircle,
