@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -110,17 +110,21 @@ export function AllergyDialog({
     },
   });
 
-  useEffect(() => {
-    if (!open) {
-      // Reset form
-      setTestType("RAST");
-      setTotalIgE("");
-      setResults([]);
-      setNewAllergen("");
-      setNewClass("");
-      setInterpretation("");
+  const resetForm = () => {
+    setTestType("RAST");
+    setTotalIgE("");
+    setResults([]);
+    setNewAllergen("");
+    setNewClass("");
+    setInterpretation("");
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
     }
-  }, [open]);
+    onOpenChange(newOpen);
+  };
 
   const addAllergenResult = () => {
     if (newAllergen && newClass) {
@@ -166,7 +170,7 @@ export function AllergyDialog({
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{testId ? "アレルギー検査の編集" : "新規アレルギー検査"}</DialogTitle>
@@ -331,7 +335,7 @@ export function AllergyDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             キャンセル
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>

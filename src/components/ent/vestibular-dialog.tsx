@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -48,17 +47,6 @@ export function VestibularDialog({
   testId,
   onSuccess,
 }: VestibularDialogProps) {
-  const [testType, setTestType] = useState("CALORIC");
-  const [chiefComplaint, setChiefComplaint] = useState("");
-  const [vertigoType, setVertigoType] = useState("");
-  const [nystagmusFindings, setNystagmusFindings] = useState("");
-  const [rombergTest, setRombergTest] = useState("");
-  const [mannTest, setMannTest] = useState("");
-  const [caloricResponse, setCaloricResponse] = useState("");
-  const [headImpulseTest, setHeadImpulseTest] = useState("");
-  const [dixHallpikeResult, setDixHallpikeResult] = useState("");
-  const [interpretation, setInterpretation] = useState("");
-
   const createMutation = trpc.ent.vestibular.create.useMutation({
     onSuccess: () => {
       toast.success("平衡機能検査を保存しました");
@@ -79,35 +67,23 @@ export function VestibularDialog({
     },
   });
 
-  useEffect(() => {
-    if (!open) {
-      // Reset form
-      setTestType("CALORIC");
-      setChiefComplaint("");
-      setVertigoType("");
-      setNystagmusFindings("");
-      setRombergTest("");
-      setMannTest("");
-      setCaloricResponse("");
-      setHeadImpulseTest("");
-      setDixHallpikeResult("");
-      setInterpretation("");
-    }
-  }, [open]);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
 
-  const handleSubmit = () => {
     const data = {
       patientId,
-      testType: testType as "CALORIC" | "POSTUROGRAPHY" | "ENG" | "VNG" | "VHIT" | "VEMP" | "ROTATION",
-      chiefComplaint: chiefComplaint || undefined,
-      vertigoType: vertigoType || undefined,
-      nystagmusFindings: nystagmusFindings || undefined,
-      rombergTest: rombergTest || undefined,
-      mannTest: mannTest || undefined,
-      caloricResponse: caloricResponse || undefined,
-      headImpulseTest: headImpulseTest || undefined,
-      dixHallpikeResult: dixHallpikeResult || undefined,
-      interpretation: interpretation || undefined,
+      testType: formData.get("testType") as "CALORIC" | "POSTUROGRAPHY" | "ENG" | "VNG" | "VHIT" | "VEMP" | "ROTATION",
+      chiefComplaint: (formData.get("chiefComplaint") as string) || undefined,
+      vertigoType: (formData.get("vertigoType") as string) || undefined,
+      nystagmusFindings: (formData.get("nystagmusFindings") as string) || undefined,
+      rombergTest: (formData.get("rombergTest") as string) || undefined,
+      mannTest: (formData.get("mannTest") as string) || undefined,
+      caloricResponse: (formData.get("caloricResponse") as string) || undefined,
+      headImpulseTest: (formData.get("headImpulseTest") as string) || undefined,
+      dixHallpikeResult: (formData.get("dixHallpikeResult") as string) || undefined,
+      interpretation: (formData.get("interpretation") as string) || undefined,
     };
 
     if (testId) {
@@ -119,6 +95,9 @@ export function VestibularDialog({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  // Use key to reset form when dialog closes/opens
+  const formKey = `${testId || "new"}-${open}`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -129,11 +108,11 @@ export function VestibularDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form key={formKey} onSubmit={handleSubmit} className="space-y-4">
           {/* Test Type */}
           <div className="space-y-2">
             <Label>検査種類</Label>
-            <Select value={testType} onValueChange={setTestType}>
+            <Select name="testType" defaultValue="CALORIC">
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -151,8 +130,7 @@ export function VestibularDialog({
           <div className="space-y-2">
             <Label>主訴</Label>
             <Input
-              value={chiefComplaint}
-              onChange={(e) => setChiefComplaint(e.target.value)}
+              name="chiefComplaint"
               placeholder="例: 回転性めまい、ふらつき"
             />
           </div>
@@ -160,7 +138,7 @@ export function VestibularDialog({
           {/* Vertigo Type */}
           <div className="space-y-2">
             <Label>めまいの種類</Label>
-            <Select value={vertigoType} onValueChange={setVertigoType}>
+            <Select name="vertigoType">
               <SelectTrigger>
                 <SelectValue placeholder="選択..." />
               </SelectTrigger>
@@ -178,8 +156,7 @@ export function VestibularDialog({
           <div className="space-y-2">
             <Label>眼振所見</Label>
             <Textarea
-              value={nystagmusFindings}
-              onChange={(e) => setNystagmusFindings(e.target.value)}
+              name="nystagmusFindings"
               placeholder="自発眼振、注視眼振、頭位眼振など"
               rows={2}
             />
@@ -189,7 +166,7 @@ export function VestibularDialog({
             {/* Romberg Test */}
             <div className="space-y-2">
               <Label>Romberg検査</Label>
-              <Select value={rombergTest} onValueChange={setRombergTest}>
+              <Select name="rombergTest">
                 <SelectTrigger>
                   <SelectValue placeholder="選択..." />
                 </SelectTrigger>
@@ -204,7 +181,7 @@ export function VestibularDialog({
             {/* Mann Test */}
             <div className="space-y-2">
               <Label>Mann検査</Label>
-              <Select value={mannTest} onValueChange={setMannTest}>
+              <Select name="mannTest">
                 <SelectTrigger>
                   <SelectValue placeholder="選択..." />
                 </SelectTrigger>
@@ -221,8 +198,7 @@ export function VestibularDialog({
           <div className="space-y-2">
             <Label>温度刺激検査所見</Label>
             <Textarea
-              value={caloricResponse}
-              onChange={(e) => setCaloricResponse(e.target.value)}
+              name="caloricResponse"
               placeholder="CP、DP、眼振の方向・持続時間など"
               rows={2}
             />
@@ -232,8 +208,7 @@ export function VestibularDialog({
           <div className="space-y-2">
             <Label>Head Impulse Test</Label>
             <Input
-              value={headImpulseTest}
-              onChange={(e) => setHeadImpulseTest(e.target.value)}
+              name="headImpulseTest"
               placeholder="正常/catch-up saccade あり"
             />
           </div>
@@ -241,7 +216,7 @@ export function VestibularDialog({
           {/* Dix-Hallpike Test */}
           <div className="space-y-2">
             <Label>Dix-Hallpike検査</Label>
-            <Select value={dixHallpikeResult} onValueChange={setDixHallpikeResult}>
+            <Select name="dixHallpikeResult">
               <SelectTrigger>
                 <SelectValue placeholder="選択..." />
               </SelectTrigger>
@@ -258,22 +233,21 @@ export function VestibularDialog({
           <div className="space-y-2">
             <Label>総合所見・診断</Label>
             <Textarea
-              value={interpretation}
-              onChange={(e) => setInterpretation(e.target.value)}
+              name="interpretation"
               placeholder="検査結果の総合評価、疑い病名など"
               rows={3}
             />
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            キャンセル
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "保存中..." : "保存"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              キャンセル
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -94,25 +94,29 @@ export function EndoscopyDialog({
     },
   });
 
-  useEffect(() => {
-    if (!open) {
-      // Reset form
-      setExamType("NASAL");
-      setNasalFindings("");
-      setNasalSeptum("");
-      setInferiorTurbinate("");
-      setMiddleMeatus("");
-      setPharyngealFindings("");
-      setTonsils("");
-      setLaryngealFindings("");
-      setVocalCords("");
-      setEpiglottis("");
-      setOtoscopyRight("");
-      setOtoscopyLeft("");
-      setInterpretation("");
-      setImageUrls([]);
+  const resetForm = () => {
+    setExamType("NASAL");
+    setNasalFindings("");
+    setNasalSeptum("");
+    setInferiorTurbinate("");
+    setMiddleMeatus("");
+    setPharyngealFindings("");
+    setTonsils("");
+    setLaryngealFindings("");
+    setVocalCords("");
+    setEpiglottis("");
+    setOtoscopyRight("");
+    setOtoscopyLeft("");
+    setInterpretation("");
+    setImageUrls([]);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
     }
-  }, [open]);
+    onOpenChange(newOpen);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -188,7 +192,7 @@ export function EndoscopyDialog({
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{examId ? "内視鏡検査の編集" : "新規内視鏡検査"}</DialogTitle>
@@ -468,7 +472,7 @@ export function EndoscopyDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             キャンセル
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>

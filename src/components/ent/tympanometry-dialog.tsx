@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -80,20 +80,24 @@ export function TympanometryDialog({
     },
   });
 
-  useEffect(() => {
-    if (!open) {
-      // Reset form when closing
-      setRightType("");
-      setRightPeakPressure("");
-      setRightCompliance("");
-      setRightEarCanalVolume("");
-      setLeftType("");
-      setLeftPeakPressure("");
-      setLeftCompliance("");
-      setLeftEarCanalVolume("");
-      setInterpretation("");
+  const resetForm = () => {
+    setRightType("");
+    setRightPeakPressure("");
+    setRightCompliance("");
+    setRightEarCanalVolume("");
+    setLeftType("");
+    setLeftPeakPressure("");
+    setLeftCompliance("");
+    setLeftEarCanalVolume("");
+    setInterpretation("");
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
     }
-  }, [open]);
+    onOpenChange(newOpen);
+  };
 
   const parseNum = (val: string): number | null => {
     const num = parseFloat(val);
@@ -124,7 +128,7 @@ export function TympanometryDialog({
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{testId ? "ティンパノメトリーの編集" : "新規ティンパノメトリー"}</DialogTitle>
@@ -255,7 +259,7 @@ export function TympanometryDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             キャンセル
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>

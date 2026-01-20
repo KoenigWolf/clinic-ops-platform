@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -35,6 +35,28 @@ interface AudiometryDialogProps {
 const FREQUENCIES = ["125", "250", "500", "1000", "2000", "4000", "8000"];
 const BONE_FREQUENCIES = ["250", "500", "1000", "2000", "4000"];
 
+interface FormData {
+  testType: string;
+  interpretation: string;
+  rightAir: Record<string, string>;
+  leftAir: Record<string, string>;
+  rightBone: Record<string, string>;
+  leftBone: Record<string, string>;
+  rightSpeech: string;
+  leftSpeech: string;
+}
+
+const initialFormData: FormData = {
+  testType: "PURE_TONE",
+  interpretation: "",
+  rightAir: {},
+  leftAir: {},
+  rightBone: {},
+  leftBone: {},
+  rightSpeech: "",
+  leftSpeech: "",
+};
+
 export function AudiometryDialog({
   open,
   onOpenChange,
@@ -42,25 +64,56 @@ export function AudiometryDialog({
   testId,
   onSuccess,
 }: AudiometryDialogProps) {
-  const [testType, setTestType] = useState("PURE_TONE");
-  const [interpretation, setInterpretation] = useState("");
-
-  // Air conduction
-  const [rightAir, setRightAir] = useState<Record<string, string>>({});
-  const [leftAir, setLeftAir] = useState<Record<string, string>>({});
-
-  // Bone conduction
-  const [rightBone, setRightBone] = useState<Record<string, string>>({});
-  const [leftBone, setLeftBone] = useState<Record<string, string>>({});
-
-  // Speech discrimination
-  const [rightSpeech, setRightSpeech] = useState("");
-  const [leftSpeech, setLeftSpeech] = useState("");
-
   const { data: existingTest } = trpc.ent.audiometry.get.useQuery(
     { id: testId! },
     { enabled: !!testId }
   );
+
+  // Derive form data from existing test (memoized to avoid re-computation)
+  const formData = useMemo<FormData>(() => {
+    if (!existingTest) {
+      return initialFormData;
+    }
+
+    return {
+      testType: existingTest.testType,
+      interpretation: existingTest.interpretation || "",
+      rightAir: {
+        "125": existingTest.rightAir125?.toString() || "",
+        "250": existingTest.rightAir250?.toString() || "",
+        "500": existingTest.rightAir500?.toString() || "",
+        "1000": existingTest.rightAir1000?.toString() || "",
+        "2000": existingTest.rightAir2000?.toString() || "",
+        "4000": existingTest.rightAir4000?.toString() || "",
+        "8000": existingTest.rightAir8000?.toString() || "",
+      },
+      leftAir: {
+        "125": existingTest.leftAir125?.toString() || "",
+        "250": existingTest.leftAir250?.toString() || "",
+        "500": existingTest.leftAir500?.toString() || "",
+        "1000": existingTest.leftAir1000?.toString() || "",
+        "2000": existingTest.leftAir2000?.toString() || "",
+        "4000": existingTest.leftAir4000?.toString() || "",
+        "8000": existingTest.leftAir8000?.toString() || "",
+      },
+      rightBone: {
+        "250": existingTest.rightBone250?.toString() || "",
+        "500": existingTest.rightBone500?.toString() || "",
+        "1000": existingTest.rightBone1000?.toString() || "",
+        "2000": existingTest.rightBone2000?.toString() || "",
+        "4000": existingTest.rightBone4000?.toString() || "",
+      },
+      leftBone: {
+        "250": existingTest.leftBone250?.toString() || "",
+        "500": existingTest.leftBone500?.toString() || "",
+        "1000": existingTest.leftBone1000?.toString() || "",
+        "2000": existingTest.leftBone2000?.toString() || "",
+        "4000": existingTest.leftBone4000?.toString() || "",
+      },
+      rightSpeech: existingTest.rightSpeechDiscrimination?.toString() || "",
+      leftSpeech: existingTest.leftSpeechDiscrimination?.toString() || "",
+    };
+  }, [existingTest]);
 
   const createMutation = trpc.ent.audiometry.create.useMutation({
     onSuccess: () => {
@@ -82,73 +135,40 @@ export function AudiometryDialog({
     },
   });
 
-  useEffect(() => {
-    if (existingTest) {
-      setTestType(existingTest.testType);
-      setInterpretation(existingTest.interpretation || "");
-
-      // Load air conduction values
-      setRightAir({
-        "125": existingTest.rightAir125?.toString() || "",
-        "250": existingTest.rightAir250?.toString() || "",
-        "500": existingTest.rightAir500?.toString() || "",
-        "1000": existingTest.rightAir1000?.toString() || "",
-        "2000": existingTest.rightAir2000?.toString() || "",
-        "4000": existingTest.rightAir4000?.toString() || "",
-        "8000": existingTest.rightAir8000?.toString() || "",
-      });
-      setLeftAir({
-        "125": existingTest.leftAir125?.toString() || "",
-        "250": existingTest.leftAir250?.toString() || "",
-        "500": existingTest.leftAir500?.toString() || "",
-        "1000": existingTest.leftAir1000?.toString() || "",
-        "2000": existingTest.leftAir2000?.toString() || "",
-        "4000": existingTest.leftAir4000?.toString() || "",
-        "8000": existingTest.leftAir8000?.toString() || "",
-      });
-
-      // Load bone conduction values
-      setRightBone({
-        "250": existingTest.rightBone250?.toString() || "",
-        "500": existingTest.rightBone500?.toString() || "",
-        "1000": existingTest.rightBone1000?.toString() || "",
-        "2000": existingTest.rightBone2000?.toString() || "",
-        "4000": existingTest.rightBone4000?.toString() || "",
-      });
-      setLeftBone({
-        "250": existingTest.leftBone250?.toString() || "",
-        "500": existingTest.leftBone500?.toString() || "",
-        "1000": existingTest.leftBone1000?.toString() || "",
-        "2000": existingTest.leftBone2000?.toString() || "",
-        "4000": existingTest.leftBone4000?.toString() || "",
-      });
-
-      setRightSpeech(existingTest.rightSpeechDiscrimination?.toString() || "");
-      setLeftSpeech(existingTest.leftSpeechDiscrimination?.toString() || "");
-    } else {
-      // Reset form
-      setTestType("PURE_TONE");
-      setInterpretation("");
-      setRightAir({});
-      setLeftAir({});
-      setRightBone({});
-      setLeftBone({});
-      setRightSpeech("");
-      setLeftSpeech("");
-    }
-  }, [existingTest, testId, open]);
-
   const parseNum = (val: string): number | null => {
     const num = parseInt(val);
     return isNaN(num) ? null : num;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formDataObj = new FormData(form);
+
+    const testType = formDataObj.get("testType") as string;
+    const interpretation = formDataObj.get("interpretation") as string;
+    const rightSpeech = formDataObj.get("rightSpeech") as string;
+    const leftSpeech = formDataObj.get("leftSpeech") as string;
+
+    const rightAir: Record<string, string> = {};
+    const leftAir: Record<string, string> = {};
+    const rightBone: Record<string, string> = {};
+    const leftBone: Record<string, string> = {};
+
+    FREQUENCIES.forEach((freq) => {
+      rightAir[freq] = formDataObj.get(`rightAir_${freq}`) as string || "";
+      leftAir[freq] = formDataObj.get(`leftAir_${freq}`) as string || "";
+    });
+
+    BONE_FREQUENCIES.forEach((freq) => {
+      rightBone[freq] = formDataObj.get(`rightBone_${freq}`) as string || "";
+      leftBone[freq] = formDataObj.get(`leftBone_${freq}`) as string || "";
+    });
+
     const data = {
       patientId,
       testType: testType as "PURE_TONE" | "SPEECH" | "IMPEDANCE" | "OAE" | "ABR",
       interpretation: interpretation || undefined,
-      // Right air
       rightAir125: parseNum(rightAir["125"]),
       rightAir250: parseNum(rightAir["250"]),
       rightAir500: parseNum(rightAir["500"]),
@@ -156,7 +176,6 @@ export function AudiometryDialog({
       rightAir2000: parseNum(rightAir["2000"]),
       rightAir4000: parseNum(rightAir["4000"]),
       rightAir8000: parseNum(rightAir["8000"]),
-      // Left air
       leftAir125: parseNum(leftAir["125"]),
       leftAir250: parseNum(leftAir["250"]),
       leftAir500: parseNum(leftAir["500"]),
@@ -164,19 +183,16 @@ export function AudiometryDialog({
       leftAir2000: parseNum(leftAir["2000"]),
       leftAir4000: parseNum(leftAir["4000"]),
       leftAir8000: parseNum(leftAir["8000"]),
-      // Right bone
       rightBone250: parseNum(rightBone["250"]),
       rightBone500: parseNum(rightBone["500"]),
       rightBone1000: parseNum(rightBone["1000"]),
       rightBone2000: parseNum(rightBone["2000"]),
       rightBone4000: parseNum(rightBone["4000"]),
-      // Left bone
       leftBone250: parseNum(leftBone["250"]),
       leftBone500: parseNum(leftBone["500"]),
       leftBone1000: parseNum(leftBone["1000"]),
       leftBone2000: parseNum(leftBone["2000"]),
       leftBone4000: parseNum(leftBone["4000"]),
-      // Speech
       rightSpeechDiscrimination: parseNum(rightSpeech),
       leftSpeechDiscrimination: parseNum(leftSpeech),
     };
@@ -190,6 +206,9 @@ export function AudiometryDialog({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  // Use key to reset form when testId changes or dialog closes/opens
+  const formKey = `${testId || "new"}-${open}`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -200,11 +219,11 @@ export function AudiometryDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <form key={formKey} onSubmit={handleSubmit} className="space-y-6">
           {/* Test Type */}
           <div className="space-y-2">
             <Label>検査種類</Label>
-            <Select value={testType} onValueChange={setTestType}>
+            <Select name="testType" defaultValue={formData.testType}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -234,8 +253,8 @@ export function AudiometryDialog({
                       <Label className="text-xs">{freq}Hz</Label>
                       <Input
                         type="number"
-                        value={rightAir[freq] || ""}
-                        onChange={(e) => setRightAir({ ...rightAir, [freq]: e.target.value })}
+                        name={`rightAir_${freq}`}
+                        defaultValue={formData.rightAir[freq] || ""}
                         className="mt-1 text-center"
                         placeholder="dB"
                       />
@@ -253,8 +272,8 @@ export function AudiometryDialog({
                       <Label className="text-xs">{freq}Hz</Label>
                       <Input
                         type="number"
-                        value={leftAir[freq] || ""}
-                        onChange={(e) => setLeftAir({ ...leftAir, [freq]: e.target.value })}
+                        name={`leftAir_${freq}`}
+                        defaultValue={formData.leftAir[freq] || ""}
                         className="mt-1 text-center"
                         placeholder="dB"
                       />
@@ -274,8 +293,8 @@ export function AudiometryDialog({
                       <Label className="text-xs">{freq}Hz</Label>
                       <Input
                         type="number"
-                        value={rightBone[freq] || ""}
-                        onChange={(e) => setRightBone({ ...rightBone, [freq]: e.target.value })}
+                        name={`rightBone_${freq}`}
+                        defaultValue={formData.rightBone[freq] || ""}
                         className="mt-1 text-center"
                         placeholder="dB"
                       />
@@ -293,8 +312,8 @@ export function AudiometryDialog({
                       <Label className="text-xs">{freq}Hz</Label>
                       <Input
                         type="number"
-                        value={leftBone[freq] || ""}
-                        onChange={(e) => setLeftBone({ ...leftBone, [freq]: e.target.value })}
+                        name={`leftBone_${freq}`}
+                        defaultValue={formData.leftBone[freq] || ""}
                         className="mt-1 text-center"
                         placeholder="dB"
                       />
@@ -311,8 +330,8 @@ export function AudiometryDialog({
               <Label>右耳 語音弁別能 (%)</Label>
               <Input
                 type="number"
-                value={rightSpeech}
-                onChange={(e) => setRightSpeech(e.target.value)}
+                name="rightSpeech"
+                defaultValue={formData.rightSpeech}
                 placeholder="0-100"
                 min={0}
                 max={100}
@@ -322,8 +341,8 @@ export function AudiometryDialog({
               <Label>左耳 語音弁別能 (%)</Label>
               <Input
                 type="number"
-                value={leftSpeech}
-                onChange={(e) => setLeftSpeech(e.target.value)}
+                name="leftSpeech"
+                defaultValue={formData.leftSpeech}
                 placeholder="0-100"
                 min={0}
                 max={100}
@@ -335,22 +354,22 @@ export function AudiometryDialog({
           <div className="space-y-2">
             <Label>所見・解釈</Label>
             <Textarea
-              value={interpretation}
-              onChange={(e) => setInterpretation(e.target.value)}
+              name="interpretation"
+              defaultValue={formData.interpretation}
               placeholder="検査結果の所見を入力..."
               rows={3}
             />
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            キャンセル
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "保存中..." : "保存"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              キャンセル
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

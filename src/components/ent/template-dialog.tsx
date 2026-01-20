@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -48,31 +48,66 @@ const CATEGORIES = [
   { value: "OTHER", label: "その他" },
 ];
 
+interface FormData {
+  name: string;
+  category: string;
+  icdCode: string;
+  subjectiveTemplate: string;
+  objectiveTemplate: string;
+  assessmentTemplate: string;
+  planTemplate: string;
+  prescriptions: Prescription[];
+}
+
+const initialFormData: FormData = {
+  name: "",
+  category: "EAR",
+  icdCode: "",
+  subjectiveTemplate: "",
+  objectiveTemplate: "",
+  assessmentTemplate: "",
+  planTemplate: "",
+  prescriptions: [],
+};
+
 export function TemplateDialog({
   open,
   onOpenChange,
   templateId,
   onSuccess,
 }: TemplateDialogProps) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState<string>("EAR");
-  const [icdCode, setIcdCode] = useState("");
-  const [subjectiveTemplate, setSubjectiveTemplate] = useState("");
-  const [objectiveTemplate, setObjectiveTemplate] = useState("");
-  const [assessmentTemplate, setAssessmentTemplate] = useState("");
-  const [planTemplate, setPlanTemplate] = useState("");
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const { data: existingTemplate } = trpc.ent.template.get.useQuery(
+    { id: templateId! },
+    { enabled: !!templateId }
+  );
 
-  // New prescription form
+  // Derive form data from existing template (memoized)
+  const formData = useMemo<FormData>(() => {
+    if (!existingTemplate) {
+      return initialFormData;
+    }
+
+    return {
+      name: existingTemplate.name,
+      category: existingTemplate.category,
+      icdCode: existingTemplate.icdCode || "",
+      subjectiveTemplate: existingTemplate.subjectiveTemplate || "",
+      objectiveTemplate: existingTemplate.objectiveTemplate || "",
+      assessmentTemplate: existingTemplate.assessmentTemplate || "",
+      planTemplate: existingTemplate.planTemplate || "",
+      prescriptions: (existingTemplate.commonPrescriptions as unknown as Prescription[]) || [],
+    };
+  }, [existingTemplate]);
+
+  // State for dynamically added prescriptions
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [newRxName, setNewRxName] = useState("");
   const [newRxDosage, setNewRxDosage] = useState("");
   const [newRxFrequency, setNewRxFrequency] = useState("");
   const [newRxDuration, setNewRxDuration] = useState("");
 
-  const { data: existingTemplate } = trpc.ent.template.get.useQuery(
-    { id: templateId! },
-    { enabled: !!templateId }
-  );
+  // Sync prescriptions when formData changes
+  const effectivePrescriptions = prescriptions.length > 0 ? prescriptions : formData.prescriptions;
 
   const createMutation = trpc.ent.template.create.useMutation({
     onSuccess: () => {
@@ -94,35 +129,11 @@ export function TemplateDialog({
     },
   });
 
-  useEffect(() => {
-    if (existingTemplate) {
-      setName(existingTemplate.name);
-      setCategory(existingTemplate.category);
-      setIcdCode(existingTemplate.icdCode || "");
-      setSubjectiveTemplate(existingTemplate.subjectiveTemplate || "");
-      setObjectiveTemplate(existingTemplate.objectiveTemplate || "");
-      setAssessmentTemplate(existingTemplate.assessmentTemplate || "");
-      setPlanTemplate(existingTemplate.planTemplate || "");
-      if (existingTemplate.commonPrescriptions && Array.isArray(existingTemplate.commonPrescriptions)) {
-        setPrescriptions(existingTemplate.commonPrescriptions as unknown as Prescription[]);
-      }
-    } else if (!templateId) {
-      // Reset form for new template
-      setName("");
-      setCategory("EAR");
-      setIcdCode("");
-      setSubjectiveTemplate("");
-      setObjectiveTemplate("");
-      setAssessmentTemplate("");
-      setPlanTemplate("");
-      setPrescriptions([]);
-    }
-  }, [existingTemplate, templateId, open]);
-
   const addPrescription = () => {
     if (newRxName) {
+      const currentPrescriptions = prescriptions.length > 0 ? prescriptions : formData.prescriptions;
       setPrescriptions([
-        ...prescriptions,
+        ...currentPrescriptions,
         {
           name: newRxName,
           dosage: newRxDosage,
@@ -138,10 +149,16 @@ export function TemplateDialog({
   };
 
   const removePrescription = (index: number) => {
-    setPrescriptions(prescriptions.filter((_, i) => i !== index));
+    const currentPrescriptions = prescriptions.length > 0 ? prescriptions : formData.prescriptions;
+    setPrescriptions(currentPrescriptions.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+
+    const name = fd.get("name") as string;
     if (!name) {
       toast.error("テンプレート名は必須です");
       return;
@@ -149,13 +166,13 @@ export function TemplateDialog({
 
     const data = {
       name,
-      category: category as "EAR" | "NOSE" | "THROAT" | "ALLERGY" | "VERTIGO" | "OTHER",
-      icdCode: icdCode || undefined,
-      subjectiveTemplate: subjectiveTemplate || undefined,
-      objectiveTemplate: objectiveTemplate || undefined,
-      assessmentTemplate: assessmentTemplate || undefined,
-      planTemplate: planTemplate || undefined,
-      commonPrescriptions: prescriptions.length > 0 ? prescriptions : undefined,
+      category: fd.get("category") as "EAR" | "NOSE" | "THROAT" | "ALLERGY" | "VERTIGO" | "OTHER",
+      icdCode: (fd.get("icdCode") as string) || undefined,
+      subjectiveTemplate: (fd.get("subjectiveTemplate") as string) || undefined,
+      objectiveTemplate: (fd.get("objectiveTemplate") as string) || undefined,
+      assessmentTemplate: (fd.get("assessmentTemplate") as string) || undefined,
+      planTemplate: (fd.get("planTemplate") as string) || undefined,
+      commonPrescriptions: effectivePrescriptions.length > 0 ? effectivePrescriptions : undefined,
     };
 
     if (templateId) {
@@ -165,34 +182,48 @@ export function TemplateDialog({
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setPrescriptions([]);
+      setNewRxName("");
+      setNewRxDosage("");
+      setNewRxFrequency("");
+      setNewRxDuration("");
+    }
+    onOpenChange(newOpen);
+  };
+
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const formKey = `${templateId || "new"}-${open}`;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {templateId ? "テンプレートの編集" : "新規テンプレート"}
           </DialogTitle>
           <DialogDescription>
-            よく使う診断・所見・処方をテンプレートとして保存できます
+            診療テンプレートを作成・編集します
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form key={formKey} onSubmit={handleSubmit} className="space-y-4">
           {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>テンプレート名 *</Label>
               <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                name="name"
+                defaultValue={formData.name}
                 placeholder="例: 急性中耳炎"
+                required
               />
             </div>
+
             <div className="space-y-2">
-              <Label>カテゴリ *</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Label>カテゴリ</Label>
+              <Select name="category" defaultValue={formData.category}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -210,84 +241,76 @@ export function TemplateDialog({
           <div className="space-y-2">
             <Label>ICD-10コード</Label>
             <Input
-              value={icdCode}
-              onChange={(e) => setIcdCode(e.target.value)}
+              name="icdCode"
+              defaultValue={formData.icdCode}
               placeholder="例: H65.0"
             />
           </div>
 
           {/* SOAP Templates */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-semibold">SOAP テンプレート</h3>
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-semibold">SOAPテンプレート</h4>
 
             <div className="space-y-2">
-              <Label className="text-blue-600">S (主訴・現病歴)</Label>
+              <Label>S (主観的所見)</Label>
               <Textarea
-                value={subjectiveTemplate}
-                onChange={(e) => setSubjectiveTemplate(e.target.value)}
-                placeholder="例: 〇日前から耳痛あり。発熱(+)。"
+                name="subjectiveTemplate"
+                defaultValue={formData.subjectiveTemplate}
+                placeholder="主訴、症状の経過など"
                 rows={2}
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-green-600">O (所見)</Label>
+              <Label>O (客観的所見)</Label>
               <Textarea
-                value={objectiveTemplate}
-                onChange={(e) => setObjectiveTemplate(e.target.value)}
-                placeholder="例: 右鼓膜発赤・膨隆(+)。光錐消失。"
+                name="objectiveTemplate"
+                defaultValue={formData.objectiveTemplate}
+                placeholder="検査結果、診察所見など"
                 rows={2}
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-orange-600">A (評価)</Label>
+              <Label>A (評価・診断)</Label>
               <Textarea
-                value={assessmentTemplate}
-                onChange={(e) => setAssessmentTemplate(e.target.value)}
-                placeholder="例: 急性中耳炎（右）"
+                name="assessmentTemplate"
+                defaultValue={formData.assessmentTemplate}
+                placeholder="診断名、病状評価など"
                 rows={2}
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-purple-600">P (計画)</Label>
+              <Label>P (計画)</Label>
               <Textarea
-                value={planTemplate}
-                onChange={(e) => setPlanTemplate(e.target.value)}
-                placeholder="例: 抗生剤処方。3日後再診。"
+                name="planTemplate"
+                defaultValue={formData.planTemplate}
+                placeholder="治療計画、指導内容など"
                 rows={2}
               />
             </div>
           </div>
 
-          {/* Common Prescriptions */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-semibold">よく使う処方</h3>
+          {/* Prescriptions */}
+          <div className="space-y-2">
+            <Label>よく使う処方</Label>
 
-            {/* Existing prescriptions */}
-            {prescriptions.length > 0 && (
-              <div className="space-y-2">
-                {prescriptions.map((rx, index) => (
+            {effectivePrescriptions.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {effectivePrescriptions.map((rx, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-2 bg-blue-50 rounded"
                   >
-                    <div>
-                      <span className="font-medium">{rx.name}</span>
-                      {rx.dosage && (
-                        <span className="text-gray-600 ml-2">{rx.dosage}</span>
-                      )}
-                      {rx.frequency && (
-                        <span className="text-gray-600 ml-2">{rx.frequency}</span>
-                      )}
-                      {rx.duration && (
-                        <Badge variant="outline" className="ml-2">
-                          {rx.duration}
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{rx.name}</Badge>
+                      <span className="text-sm text-gray-600">
+                        {rx.dosage} {rx.frequency} {rx.duration}
+                      </span>
                     </div>
                     <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => removePrescription(index)}
@@ -299,30 +322,29 @@ export function TemplateDialog({
               </div>
             )}
 
-            {/* Add prescription form */}
             <div className="grid grid-cols-5 gap-2">
-              <div className="col-span-2">
-                <Input
-                  value={newRxName}
-                  onChange={(e) => setNewRxName(e.target.value)}
-                  placeholder="薬剤名"
-                />
-              </div>
               <Input
+                placeholder="薬剤名"
+                value={newRxName}
+                onChange={(e) => setNewRxName(e.target.value)}
+                className="col-span-2"
+              />
+              <Input
+                placeholder="用量"
                 value={newRxDosage}
                 onChange={(e) => setNewRxDosage(e.target.value)}
-                placeholder="用量"
               />
               <Input
+                placeholder="用法"
                 value={newRxFrequency}
                 onChange={(e) => setNewRxFrequency(e.target.value)}
-                placeholder="用法"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <Input
+                  placeholder="日数"
                   value={newRxDuration}
                   onChange={(e) => setNewRxDuration(e.target.value)}
-                  placeholder="日数"
+                  className="flex-1"
                 />
                 <Button
                   type="button"
@@ -335,41 +357,17 @@ export function TemplateDialog({
                 </Button>
               </div>
             </div>
-
-            {/* Quick add common ENT medications */}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-gray-500">よく使う薬:</span>
-              {[
-                { name: "サワシリン", dosage: "250mg", frequency: "1日3回毎食後" },
-                { name: "クラリス", dosage: "200mg", frequency: "1日2回朝夕食後" },
-                { name: "アレグラ", dosage: "60mg", frequency: "1日2回朝夕食後" },
-                { name: "ナゾネックス", dosage: "", frequency: "1日1回各鼻腔1噴霧" },
-                { name: "タリビッド点耳", dosage: "", frequency: "1日2回" },
-              ].map((rx) => (
-                <Button
-                  key={rx.name}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setPrescriptions([...prescriptions, { ...rx, duration: "" }]);
-                  }}
-                >
-                  + {rx.name}
-                </Button>
-              ))}
-            </div>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            キャンセル
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "保存中..." : "保存"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              キャンセル
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

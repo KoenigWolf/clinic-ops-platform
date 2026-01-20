@@ -41,7 +41,6 @@ interface AudiogramChartProps {
 
 const FREQUENCIES = [125, 250, 500, 1000, 2000, 4000, 8000];
 const DB_LEVELS = [-10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120];
-const BONE_FREQUENCIES = [250, 500, 1000, 2000, 4000];
 
 export function AudiogramChart({ data, width = 500, height = 400 }: AudiogramChartProps) {
   const padding = { top: 40, right: 40, bottom: 40, left: 60 };
