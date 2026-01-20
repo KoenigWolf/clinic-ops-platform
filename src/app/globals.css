@@ -67,6 +67,11 @@
   --line-height-base: 1.6;
   --line-height-relaxed: 1.75;
 
+  --sidebar-width-collapsed: 4rem;
+  --sidebar-width-min: 12.5rem;
+  --sidebar-width-default: 16rem;
+  --sidebar-width-max: 20rem;
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

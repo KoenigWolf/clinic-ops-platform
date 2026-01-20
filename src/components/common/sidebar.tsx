@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -62,18 +62,36 @@ export const navigation = [
 ];
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
+const SIDEBAR_WIDTH_KEY = "sidebar-width";
+
+const COLLAPSED_WIDTH = 64;
+const MIN_WIDTH = 200;
+const DEFAULT_WIDTH = 256;
+const MAX_WIDTH = 320;
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [collapsed, setCollapsed] = useState(() => {
-    // Initialize from localStorage (client-side only)
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
-      return saved === "true";
+  const [isResizing, setIsResizing] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage初期化
+    setCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true");
+
+    const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    if (savedWidth) {
+      const parsed = parseInt(savedWidth, 10);
+      if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage初期化
+        setWidth(parsed);
+      }
     }
-    return false;
-  });
+
+    setMounted(true);
+  }, []);
 
   const toggleCollapsed = () => {
     const newValue = !collapsed;
@@ -81,19 +99,65 @@ export function Sidebar() {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(newValue));
   };
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+
+    const newWidth = e.clientX;
+    if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
+      setWidth(newWidth);
+    } else if (newWidth < MIN_WIDTH) {
+      setWidth(MIN_WIDTH);
+    } else if (newWidth > MAX_WIDTH) {
+      setWidth(MAX_WIDTH);
+    }
+  }, [isResizing]);
+
+  const handleMouseUp = useCallback(() => {
+    if (isResizing) {
+      setIsResizing(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
+    }
+  }, [isResizing, width]);
+
+  const handleDoubleClick = useCallback(() => {
+    setWidth(DEFAULT_WIDTH);
+    localStorage.setItem(SIDEBAR_WIDTH_KEY, String(DEFAULT_WIDTH));
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
   const userInitials = session?.user?.name
     ?.split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase() || "U";
 
+  const currentWidth = collapsed ? COLLAPSED_WIDTH : width;
+
   return (
     <TooltipProvider delayDuration={0}>
       <div
+        style={{ width: currentWidth }}
         className={cn(
-          "hidden md:flex h-screen flex-col text-white transition-all duration-300",
-          sidebar.bg,
-          collapsed ? "w-16" : "w-64"
+          "hidden md:flex h-screen flex-col text-white relative",
+          mounted && !isResizing && "transition-[width] duration-200",
+          sidebar.bg
         )}
       >
         {/* Logo */}
@@ -137,7 +201,7 @@ export function Sidebar() {
                   )}
                 >
                   <item.icon className={cn("h-5 w-5 shrink-0", isActive && "drop-shadow-sm")} />
-                  {!collapsed && item.name}
+                  {!collapsed && <span className="truncate">{item.name}</span>}
                 </Link>
               );
 
@@ -219,6 +283,17 @@ export function Sidebar() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Resize Handle */}
+        {!collapsed && (
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-teal-500/50 active:bg-teal-500/70 transition-colors group"
+            onMouseDown={handleMouseDown}
+            onDoubleClick={handleDoubleClick}
+          >
+            <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1 h-8 rounded-full bg-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );
