@@ -12,29 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Ear, FileText, Plus } from "lucide-react";
-import Link from "next/link";
+import { Ear } from "lucide-react";
+import { SOAPTab, ENTTab, VitalsTab, InfoTab } from "./tabs";
 
 const recordSchema = z.object({
   recordDate: z.string().optional(),
@@ -54,7 +36,7 @@ const recordSchema = z.object({
   height: z.number().optional(),
 });
 
-type RecordFormData = z.infer<typeof recordSchema>;
+export type RecordFormData = z.infer<typeof recordSchema>;
 
 interface RecordDialogProps {
   open: boolean;
@@ -78,10 +60,8 @@ export function RecordDialog({
     { enabled: !!recordId }
   );
 
-  // Fetch ENT templates
   const { data: templates } = trpc.ent.template.list.useQuery(undefined);
 
-  // Fetch ENT tests linked to this record
   const { data: linkedAudiometry } = trpc.ent.audiometry.list.useQuery(
     { patientId },
     { enabled: !!patientId && !!recordId }
@@ -191,36 +171,6 @@ export function RecordDialog({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  // Apply template to form
-  const applyTemplate = (templateId: string) => {
-    const template = templates?.find(t => t.id === templateId);
-    if (template) {
-      form.setValue("diagnosis", template.name);
-      if (template.subjectiveTemplate) {
-        form.setValue("subjective", template.subjectiveTemplate);
-      }
-      if (template.objectiveTemplate) {
-        form.setValue("objective", template.objectiveTemplate);
-      }
-      if (template.assessmentTemplate) {
-        form.setValue("assessment", template.assessmentTemplate);
-      }
-      if (template.planTemplate) {
-        form.setValue("plan", template.planTemplate);
-      }
-      toast.success(`テンプレート「${template.name}」を適用しました`);
-    }
-    setSelectedTemplate("");
-  };
-
-  // Filter tests linked to this specific record
-  const recordAudiometryTests = linkedAudiometry?.filter(
-    test => test.medicalRecordId === recordId
-  ) || [];
-  const recordEndoscopyTests = linkedEndoscopy?.filter(
-    exam => exam.medicalRecordId === recordId
-  ) || [];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -243,400 +193,30 @@ export function RecordDialog({
                 <TabsTrigger value="info">基本情報</TabsTrigger>
               </TabsList>
 
-              {/* SOAP Tab */}
-              <TabsContent value="soap" className="space-y-4 mt-4">
-                {/* Template Selector */}
-                {templates && templates.length > 0 && (
-                  <Card className="bg-blue-50 border-blue-200">
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800">
-                          テンプレートから入力:
-                        </span>
-                        <Select
-                          value={selectedTemplate}
-                          onValueChange={(value) => {
-                            setSelectedTemplate(value);
-                            applyTemplate(value);
-                          }}
-                        >
-                          <SelectTrigger className="w-[250px] bg-white">
-                            <SelectValue placeholder="テンプレートを選択..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {templates.map((template) => (
-                              <SelectItem key={template.id} value={template.id}>
-                                {template.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Link href="/ent/templates" className="text-blue-600 text-sm hover:underline">
-                          テンプレート管理
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="subjective"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-blue-600 font-semibold">
-                        S (Subjective) - 主観的情報
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="患者の訴え、症状の経過、現病歴など"
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="objective"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-green-600 font-semibold">
-                        O (Objective) - 客観的情報
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="身体所見、検査結果、バイタルサインなど"
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="assessment"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-orange-600 font-semibold">
-                        A (Assessment) - 評価
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="診断、病態の評価、鑑別診断など"
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="plan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-purple-600 font-semibold">
-                        P (Plan) - 計画
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="治療計画、処方、検査オーダー、次回予約など"
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <TabsContent value="soap">
+                <SOAPTab
+                  form={form}
+                  templates={templates}
+                  selectedTemplate={selectedTemplate}
+                  onTemplateChange={setSelectedTemplate}
                 />
               </TabsContent>
 
-              {/* ENT Tab */}
-              <TabsContent value="ent" className="space-y-4 mt-4">
-                <div className="text-center py-4">
-                  <p className="text-gray-500 mb-4">
-                    耳鼻科検査を記録に紐付けることができます
-                  </p>
-                  <Link href={`/ent?patientId=${patientId}`}>
-                    <Button variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      耳鼻科検査ページで検査を追加
-                    </Button>
-                  </Link>
-                </div>
-
-                {/* Linked Audiometry Tests */}
-                {recordAudiometryTests.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">紐付けられた聴力検査</h4>
-                    {recordAudiometryTests.map((test) => (
-                      <Card key={test.id} className="bg-gray-50">
-                        <CardContent className="py-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">
-                              {new Date(test.testDate).toLocaleDateString("ja-JP")}
-                              {" - "}
-                              {test.testType === "PURE_TONE" ? "純音聴力検査" : test.testType}
-                            </span>
-                            <Badge variant="secondary">聴力検査</Badge>
-                          </div>
-                          {test.interpretation && (
-                            <p className="text-sm text-gray-600 mt-1">{test.interpretation}</p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-
-                {/* Linked Endoscopy Exams */}
-                {recordEndoscopyTests.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">紐付けられた内視鏡検査</h4>
-                    {recordEndoscopyTests.map((exam) => (
-                      <Card key={exam.id} className="bg-gray-50">
-                        <CardContent className="py-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">
-                              {new Date(exam.examDate).toLocaleDateString("ja-JP")}
-                              {" - "}
-                              {exam.examType === "NASAL" ? "鼻腔内視鏡" :
-                               exam.examType === "PHARYNGEAL" ? "咽頭内視鏡" :
-                               exam.examType === "LARYNGEAL" ? "喉頭内視鏡" : "耳鏡検査"}
-                            </span>
-                            <Badge variant="secondary">内視鏡</Badge>
-                          </div>
-                          {exam.interpretation && (
-                            <p className="text-sm text-gray-600 mt-1">{exam.interpretation}</p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-
-                {recordAudiometryTests.length === 0 && recordEndoscopyTests.length === 0 && (
-                  <p className="text-gray-400 text-sm text-center">
-                    この診療記録に紐付けられた検査はありません
-                  </p>
-                )}
+              <TabsContent value="ent">
+                <ENTTab
+                  patientId={patientId}
+                  recordId={recordId}
+                  linkedAudiometry={linkedAudiometry}
+                  linkedEndoscopy={linkedEndoscopy}
+                />
               </TabsContent>
 
-              {/* Vitals Tab */}
-              <TabsContent value="vitals" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="bloodPressureSystolic"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>収縮期血圧 (mmHg)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="120"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="bloodPressureDiastolic"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>拡張期血圧 (mmHg)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="80"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="heartRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>心拍数 (bpm)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="72"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="temperature"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>体温 (°C)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="36.5"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="respiratoryRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>呼吸数 (/min)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="16"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="oxygenSaturation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SpO2 (%)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="98"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="weight"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>体重 (kg)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="60.0"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>身長 (cm)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="170.0"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <TabsContent value="vitals">
+                <VitalsTab form={form} />
               </TabsContent>
 
-              {/* Info Tab */}
-              <TabsContent value="info" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="recordDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>診療日</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="chiefComplaint"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>主訴</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="頭痛、発熱など" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="diagnosis"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>診断名</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="急性上気道炎" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <TabsContent value="info">
+                <InfoTab form={form} />
               </TabsContent>
             </Tabs>
 
