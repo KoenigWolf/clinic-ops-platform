@@ -44,7 +44,7 @@ export const dashboardRouter = router({
           status: true,
           isOnline: true,
           patient: {
-            select: { lastName: true, firstName: true },
+            select: { id: true, lastName: true, firstName: true },
           },
         },
         orderBy: { startTime: "asc" },

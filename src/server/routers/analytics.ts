@@ -167,7 +167,7 @@ export const analyticsRouter = router({
       ctx.prisma.appointment.findMany({
         where: { tenantId: ctx.tenantId, appointmentDate: { gte: todayStart, lt: tomorrow } },
         include: {
-          patient: { select: { firstName: true, lastName: true, patientNumber: true } },
+          patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true } },
           doctor: { select: { name: true } },
         },
         orderBy: { startTime: "asc" },
