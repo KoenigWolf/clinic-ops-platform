@@ -251,6 +251,15 @@ export const portalRouter = router({
       }),
     }))
     .mutation(async ({ ctx, input }) => {
+      // テナント検証
+      const record = await ctx.prisma.medicationRecord.findFirst({
+        where: { id: input.id },
+        include: { patient: true },
+      });
+      if (!record || record.patient.tenantId !== ctx.tenantId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       const { name, ...rest } = input.data;
       return ctx.prisma.medicationRecord.update({
         where: { id: input.id },
@@ -265,6 +274,15 @@ export const portalRouter = router({
   deleteMyMedication: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // テナント検証
+      const record = await ctx.prisma.medicationRecord.findFirst({
+        where: { id: input.id },
+        include: { patient: true },
+      });
+      if (!record || record.patient.tenantId !== ctx.tenantId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       return ctx.prisma.medicationRecord.delete({
         where: { id: input.id },
       });
@@ -305,6 +323,15 @@ export const portalRouter = router({
   markMyNotificationAsRead: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // テナント検証
+      const notification = await ctx.prisma.patientNotification.findFirst({
+        where: { id: input.id },
+        include: { patient: true },
+      });
+      if (!notification || notification.patient.tenantId !== ctx.tenantId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       return ctx.prisma.patientNotification.update({
         where: { id: input.id },
         data: { isRead: true, readAt: new Date() },
@@ -392,6 +419,15 @@ export const portalRouter = router({
     markAsRead: protectedProcedure
       .input(z.object({ messageId: z.string() }))
       .mutation(async ({ ctx, input }) => {
+        // テナント検証
+        const message = await ctx.prisma.patientMessage.findFirst({
+          where: { id: input.messageId },
+          include: { patient: true },
+        });
+        if (!message || message.patient.tenantId !== ctx.tenantId) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
         return ctx.prisma.patientMessage.update({
           where: { id: input.messageId },
           data: {
@@ -404,6 +440,12 @@ export const portalRouter = router({
     unreadCount: protectedProcedure
       .input(z.object({ patientId: z.string() }))
       .query(async ({ ctx, input }) => {
+        // テナント検証
+        const patient = await ctx.prisma.patient.findFirst({
+          where: { id: input.patientId, tenantId: ctx.tenantId },
+        });
+        if (!patient) return 0;
+
         return ctx.prisma.patientMessage.count({
           where: {
             patientId: input.patientId,
@@ -453,6 +495,15 @@ export const portalRouter = router({
     markAsRead: protectedProcedure
       .input(z.object({ notificationId: z.string() }))
       .mutation(async ({ ctx, input }) => {
+        // テナント検証
+        const notification = await ctx.prisma.patientNotification.findFirst({
+          where: { id: input.notificationId },
+          include: { patient: true },
+        });
+        if (!notification || notification.patient.tenantId !== ctx.tenantId) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
         return ctx.prisma.patientNotification.update({
           where: { id: input.notificationId },
           data: {
@@ -465,6 +516,12 @@ export const portalRouter = router({
     markAllAsRead: protectedProcedure
       .input(z.object({ patientId: z.string() }))
       .mutation(async ({ ctx, input }) => {
+        // テナント検証
+        const patient = await ctx.prisma.patient.findFirst({
+          where: { id: input.patientId, tenantId: ctx.tenantId },
+        });
+        if (!patient) throw new TRPCError({ code: "NOT_FOUND" });
+
         return ctx.prisma.patientNotification.updateMany({
           where: {
             patientId: input.patientId,
@@ -480,6 +537,12 @@ export const portalRouter = router({
     unreadCount: protectedProcedure
       .input(z.object({ patientId: z.string() }))
       .query(async ({ ctx, input }) => {
+        // テナント検証
+        const patient = await ctx.prisma.patient.findFirst({
+          where: { id: input.patientId, tenantId: ctx.tenantId },
+        });
+        if (!patient) return 0;
+
         return ctx.prisma.patientNotification.count({
           where: {
             patientId: input.patientId,

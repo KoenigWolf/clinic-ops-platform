@@ -295,6 +295,17 @@ export const questionnaireRouter = router({
           throw new TRPCError({ code: "NOT_FOUND" });
         }
 
+        // カルテのテナント検証
+        const medicalRecord = await ctx.prisma.medicalRecord.findFirst({
+          where: {
+            id: input.medicalRecordId,
+            patient: { tenantId: ctx.tenantId },
+          },
+        });
+        if (!medicalRecord) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
         // 問診の内容をカルテの主訴に追記
         if (response.subjective) {
           await ctx.prisma.medicalRecord.update({
