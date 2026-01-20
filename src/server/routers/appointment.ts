@@ -31,6 +31,31 @@ export const appointmentRouter = router({
     });
   }),
 
+  // List appointments by date range (for week view)
+  listByDateRange: protectedProcedure
+    .input(z.object({
+      startDate: z.date(),
+      endDate: z.date(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { startDate, endDate } = input;
+
+      return ctx.prisma.appointment.findMany({
+        where: {
+          tenantId: ctx.tenantId,
+          appointmentDate: {
+            gte: startDate,
+            lt: endDate,
+          },
+        },
+        orderBy: { startTime: "asc" },
+        include: {
+          patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true } },
+          doctor: { select: { id: true, name: true } },
+        },
+      });
+    }),
+
   // List appointments
   list: protectedProcedure
     .input(z.object({

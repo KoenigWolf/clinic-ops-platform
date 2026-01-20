@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,6 +57,7 @@ interface AppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate: Date;
+  defaultTime?: string;
   onSuccess: () => void;
 }
 
@@ -63,6 +65,7 @@ export function AppointmentDialog({
   open,
   onOpenChange,
   selectedDate,
+  defaultTime = "09:00",
   onSuccess,
 }: AppointmentDialogProps) {
   const { data: patients } = trpc.patient.list.useQuery({ limit: 100 });
@@ -70,19 +73,42 @@ export function AppointmentDialog({
   // Get doctors (users with DOCTOR role)
   const { data: doctors } = trpc.appointment.doctors.useQuery();
 
+  const getEndTime = (start: string) => {
+    const [h, m] = start.split(":").map(Number);
+    const endMinutes = h * 60 + m + 30;
+    const endH = Math.floor(endMinutes / 60);
+    const endM = endMinutes % 60;
+    return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+  };
+
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       patientId: "",
       doctorId: "",
       date: selectedDate.toISOString().split("T")[0],
-      startTime: "09:00",
-      endTime: "09:30",
+      startTime: defaultTime,
+      endTime: getEndTime(defaultTime),
       type: "FOLLOWUP",
       reason: "",
       isOnline: false,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        patientId: "",
+        doctorId: "",
+        date: selectedDate.toISOString().split("T")[0],
+        startTime: defaultTime,
+        endTime: getEndTime(defaultTime),
+        type: "FOLLOWUP",
+        reason: "",
+        isOnline: false,
+      });
+    }
+  }, [open, selectedDate, defaultTime, form]);
 
   const createMutation = trpc.appointment.create.useMutation({
     onSuccess: () => {
