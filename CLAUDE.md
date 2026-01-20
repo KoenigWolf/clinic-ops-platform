@@ -105,15 +105,38 @@ where: {}
 ```bash
 npm run dev          # 開発サーバー
 npm run build        # ビルド
+npm run check-all    # 全チェック（lint, typecheck, test, build）
 npx prisma generate  # Client生成
 npx prisma db push   # スキーマ反映
 npx prisma studio    # GUI
 npx prisma db seed   # シード
 ```
 
+## 開発ワークフロー
+
+**変更後は必ず `npm run check-all` を実行して、すべてのチェックがパスすることを確認する。**
+
+```bash
+npm run check-all
+```
+
+これにより以下が実行される:
+- ESLint
+- TypeScript型チェック
+- Vitestテスト
+- Next.jsビルド
+
 ## 環境変数
 
 DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, DAILY_API_KEY
+
+## ドキュメント作成ガイドライン
+
+ガイドやドキュメントを作成する際は以下に従う:
+
+- **コードは最小限に** - 説明に必要な最小限のコード例のみ記載。冗長なコードブロックは避ける
+- **AI向けに書く** - 人間よりもAIが読むことを前提に、曖昧さを排除し、明確で構造化された記述を心がける
+- **ASCII図は不要** - フローや構造はテキストやリストで表現。ASCII アートは使わない
 
 ## 関連ドキュメント
 
