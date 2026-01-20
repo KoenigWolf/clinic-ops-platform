@@ -2,47 +2,82 @@
 
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { Users, Calendar, Pill, Banknote } from "lucide-react";
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
+  const { data, isLoading } = trpc.dashboard.get.useQuery();
 
-  const { data: patients } = trpc.patient.list.useQuery({ limit: 5 });
-  const { data: appointments } = trpc.appointment.today.useQuery();
-  const { data: pendingPrescriptions } = trpc.prescription.pendingCount.useQuery();
-  const { data: monthlyRevenue } = trpc.billing.monthlyRevenue.useQuery();
+  // ローディング中
+  if (sessionStatus === "loading" || isLoading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 認証済み画面なのでsessionは存在するはず
+  // SessionProviderから取得しているため、ローディング後はnullにならない
+  const userName = session?.user?.name ?? "ユーザー";
+
+  // データ取得完了後の値（nullish coalescingではなく、実際の値を使用）
+  const totalPatients = data?.totalPatients ?? 0;
+  const todayAppointmentsCount = data?.todayAppointments?.length ?? 0;
+  const pendingPrescriptions = data?.pendingPrescriptions ?? 0;
+  const monthlyRevenue = data?.monthlyRevenue ?? 0;
 
   const stats = [
     {
       name: "総患者数",
-      value: patients?.total || 0,
+      value: totalPatients,
       icon: Users,
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
     {
       name: "本日の予約",
-      value: appointments?.length || 0,
+      value: todayAppointmentsCount,
       icon: Calendar,
       color: "text-green-600",
       bgColor: "bg-green-100",
     },
     {
       name: "未処理処方",
-      value: pendingPrescriptions || 0,
+      value: pendingPrescriptions,
       icon: Pill,
       color: "text-orange-600",
       bgColor: "bg-orange-100",
     },
     {
       name: "今月の売上",
-      value: `¥${(monthlyRevenue || 0).toLocaleString()}`,
+      value: `¥${monthlyRevenue.toLocaleString()}`,
       icon: Banknote,
       color: "text-purple-600",
       bgColor: "bg-purple-100",
     },
   ];
+
+  // 空配列は正常な状態（予約がない、患者がいない）
+  const appointments = data?.todayAppointments ?? [];
+  const patients = data?.recentPatients ?? [];
 
   return (
     <div className="space-y-8">
@@ -50,7 +85,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
         <p className="text-gray-500">
-          おかえりなさい、{session?.user?.name}さん
+          おかえりなさい、{userName}さん
         </p>
       </div>
 
@@ -79,7 +114,7 @@ export default function DashboardPage() {
           <CardTitle>本日の予約</CardTitle>
         </CardHeader>
         <CardContent>
-          {appointments && appointments.length > 0 ? (
+          {appointments.length > 0 ? (
             <div className="space-y-4">
               {appointments.map((apt) => (
                 <div
@@ -151,9 +186,9 @@ export default function DashboardPage() {
           <CardTitle>最近の患者</CardTitle>
         </CardHeader>
         <CardContent>
-          {patients && patients.patients.length > 0 ? (
+          {patients.length > 0 ? (
             <div className="space-y-4">
-              {patients.patients.map((patient) => (
+              {patients.map((patient) => (
                 <div
                   key={patient.id}
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
