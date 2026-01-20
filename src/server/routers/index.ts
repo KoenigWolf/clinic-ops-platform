@@ -10,6 +10,7 @@ import { questionnaireRouter } from "./questionnaire";
 import { documentRouter } from "./document";
 import { analyticsRouter } from "./analytics";
 import { portalRouter } from "./portal";
+import { dashboardRouter } from "./dashboard";
 
 export const appRouter = router({
   patient: patientRouter,
@@ -23,6 +24,7 @@ export const appRouter = router({
   document: documentRouter,
   analytics: analyticsRouter,
   portal: portalRouter,
+  dashboard: dashboardRouter,
 });
 
 export type AppRouter = typeof appRouter;
