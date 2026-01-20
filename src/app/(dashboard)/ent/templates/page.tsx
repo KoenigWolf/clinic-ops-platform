@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,16 +26,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import Link from "next/link";
+import { EmptyState, PageHeader } from "@/components/layout";
+import { labels } from "@/lib/labels";
 
-const CATEGORIES = [
-  { value: "ALL", label: "すべて" },
-  { value: "EAR", label: "耳疾患" },
-  { value: "NOSE", label: "鼻疾患" },
-  { value: "THROAT", label: "咽喉頭疾患" },
-  { value: "ALLERGY", label: "アレルギー" },
-  { value: "VERTIGO", label: "めまい" },
-  { value: "OTHER", label: "その他" },
-];
+const { pages: { entTemplates: pageLabels }, common, messages } = labels;
 
 const getCategoryColor = (category: string) => {
   switch (category) {
@@ -48,11 +42,6 @@ const getCategoryColor = (category: string) => {
   }
 };
 
-const getCategoryLabel = (category: string) => {
-  const cat = CATEGORIES.find(c => c.value === category);
-  return cat?.label || category;
-};
-
 export default function TemplatesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -60,20 +49,30 @@ export default function TemplatesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
+  const categories = useMemo(() => ([
+    { value: "ALL", label: pageLabels.categories.ALL },
+    { value: "EAR", label: pageLabels.categories.EAR },
+    { value: "NOSE", label: pageLabels.categories.NOSE },
+    { value: "THROAT", label: pageLabels.categories.THROAT },
+    { value: "ALLERGY", label: pageLabels.categories.ALLERGY },
+    { value: "VERTIGO", label: pageLabels.categories.VERTIGO },
+    { value: "OTHER", label: pageLabels.categories.OTHER },
+  ]), [pageLabels.categories]);
+
   const queryInput = selectedCategory === "ALL"
     ? undefined
     : { category: selectedCategory as "EAR" | "NOSE" | "THROAT" | "ALLERGY" | "VERTIGO" | "OTHER" };
 
-  const { data: templates, refetch } = trpc.ent.template.list.useQuery(queryInput);
+  const { data: templates, isLoading, isError, refetch } = trpc.ent.template.list.useQuery(queryInput);
 
   const deleteMutation = trpc.ent.template.delete.useMutation({
     onSuccess: () => {
-      toast.success("テンプレートを削除しました");
+      toast.success(messages.success.templateDeleted);
       refetch();
       setDeleteDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(error.message);
+      toast.error(error.message || messages.error.templateDeleteFailed);
     },
   });
 
@@ -86,36 +85,38 @@ export default function TemplatesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <Link href="/ent" className="hover:text-gray-700">耳鼻科検査</Link>
-            <span>/</span>
-            <span>診断テンプレート</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">診断テンプレート管理</h1>
-          <p className="text-gray-500">よく使う診断・所見・処方をテンプレート化</p>
-        </div>
-        <Button onClick={() => {
-          setSelectedTemplateId(null);
-          setDialogOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" />
-          新規テンプレート
-        </Button>
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+        <Link href="/ent" className="hover:text-gray-700">{pageLabels.breadcrumbParent}</Link>
+        <span>/</span>
+        <span>{pageLabels.breadcrumbCurrent}</span>
       </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Button onClick={() => {
+            setSelectedTemplateId(null);
+            setDialogOpen(true);
+          }}>
+            <Plus className="mr-2 h-4 w-4" />
+            {pageLabels.newTemplate}
+          </Button>
+        }
+      />
 
       {/* Category Filter */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">カテゴリで絞り込み:</label>
+            <label className="text-sm font-medium" htmlFor="ent-template-category">
+              {pageLabels.filterLabel}
+            </label>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger id="ent-template-category" className="w-[200px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.label}
                   </SelectItem>
@@ -127,12 +128,23 @@ export default function TemplatesPage() {
       </Card>
 
       {/* Templates List */}
-      {templates?.length === 0 ? (
+      {isError ? (
+        <EmptyState
+          message={common.loadFailed}
+          action={
+            <Button type="button" variant="outline" onClick={() => refetch()}>
+              {common.retry}
+            </Button>
+          }
+        />
+      ) : isLoading ? (
+        <div className="text-center py-8 text-gray-500">{common.loading}</div>
+      ) : templates?.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center text-gray-500">
               <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <p>テンプレートがありません</p>
+              <p>{pageLabels.empty}</p>
               <Button
                 variant="outline"
                 className="mt-4"
@@ -142,7 +154,7 @@ export default function TemplatesPage() {
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                最初のテンプレートを作成
+                {pageLabels.createFirst}
               </Button>
             </div>
           </CardContent>
@@ -160,7 +172,7 @@ export default function TemplatesPage() {
                     )}
                   </div>
                   <Badge className={getCategoryColor(template.category)}>
-                    {getCategoryLabel(template.category)}
+                    {pageLabels.categories[template.category as keyof typeof pageLabels.categories] ?? template.category}
                   </Badge>
                 </div>
               </CardHeader>
@@ -257,18 +269,18 @@ export default function TemplatesPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>テンプレートを削除しますか？</AlertDialogTitle>
+            <AlertDialogTitle>{pageLabels.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              この操作は取り消せません。テンプレートは完全に削除されます。
+              {pageLabels.deleteDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogCancel>{common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              削除
+              {pageLabels.deleteAction}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

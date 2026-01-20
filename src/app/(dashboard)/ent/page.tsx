@@ -26,15 +26,19 @@ import { TympanometryDialog } from "@/components/ent/tympanometry-dialog";
 import { VestibularDialog } from "@/components/ent/vestibular-dialog";
 import { EndoscopyDialog } from "@/components/ent/endoscopy-dialog";
 import { AllergyDialog } from "@/components/ent/allergy-dialog";
+import { EmptyState, PageHeader } from "@/components/layout";
+import { labels } from "@/lib/labels";
 
 type TabType = "audiometry" | "tympanometry" | "vestibular" | "endoscopy" | "allergy";
 
+const { pages: { ent: pageLabels }, common } = labels;
+
 const TAB_LABELS: Record<TabType, string> = {
-  audiometry: "聴力検査",
-  tympanometry: "ティンパノメトリー",
-  vestibular: "平衡機能検査",
-  endoscopy: "内視鏡検査",
-  allergy: "アレルギー検査",
+  audiometry: pageLabels.fullNames.audiometry,
+  tympanometry: pageLabels.fullNames.tympanometry,
+  vestibular: pageLabels.fullNames.vestibular,
+  endoscopy: pageLabels.fullNames.endoscopy,
+  allergy: pageLabels.fullNames.allergy,
 };
 
 function EntContent() {
@@ -49,7 +53,12 @@ function EntContent() {
   const [endoscopyDialogOpen, setEndoscopyDialogOpen] = useState(false);
   const [allergyDialogOpen, setAllergyDialogOpen] = useState(false);
 
-  const { data: patients } = trpc.patient.list.useQuery({ limit: 100 });
+  const {
+    data: patients,
+    isLoading: isPatientsLoading,
+    isError: isPatientsError,
+    refetch: refetchPatients,
+  } = trpc.patient.list.useQuery({ limit: 100 });
   const utils = trpc.useUtils();
 
   const openNewTest = () => {
@@ -128,46 +137,58 @@ function EntContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">耳鼻科検査</h1>
-          <p className="text-gray-500">聴力検査・内視鏡・平衡機能検査など</p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/ent/dashboard">
-            <Button variant="outline">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              ダッシュボード
-            </Button>
-          </Link>
-          <Link href="/ent/templates">
-            <Button variant="outline">
-              <FileText className="mr-2 h-4 w-4" />
-              診断テンプレート
-            </Button>
-          </Link>
-          {selectedPatientId && (
-            <Button onClick={openNewTest}>
-              <Plus className="mr-2 h-4 w-4" />
-              新規{TAB_LABELS[activeTab]}
-            </Button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <div className="flex gap-2">
+            <Link href="/ent/dashboard">
+              <Button variant="outline">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                {pageLabels.dashboard}
+              </Button>
+            </Link>
+            <Link href="/ent/templates">
+              <Button variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
+                {pageLabels.diagnosisTemplates}
+              </Button>
+            </Link>
+            {selectedPatientId && (
+              <Button onClick={openNewTest}>
+                <Plus className="mr-2 h-4 w-4" />
+                {pageLabels.newExam(TAB_LABELS[activeTab])}
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* Patient Selector */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">患者選択:</label>
+            <label className="text-sm font-medium" htmlFor="ent-patient-select">
+              {pageLabels.patientSelect}
+            </label>
             <Select
               value={selectedPatientId || ""}
               onValueChange={setSelectedPatientId}
             >
-              <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder="患者を選択してください" />
+              <SelectTrigger id="ent-patient-select" className="w-[300px]">
+                <SelectValue placeholder={pageLabels.patientPlaceholder} />
               </SelectTrigger>
               <SelectContent>
+                {isPatientsLoading && (
+                  <SelectItem value="__loading__" disabled>
+                    {common.loading}
+                  </SelectItem>
+                )}
+                {isPatientsError && (
+                  <SelectItem value="__error__" disabled>
+                    {common.loadFailed}
+                  </SelectItem>
+                )}
                 {patients?.patients.map((patient) => (
                   <SelectItem key={patient.id} value={patient.id}>
                     {patient.patientNumber} - {patient.lastName} {patient.firstName}
@@ -175,6 +196,11 @@ function EntContent() {
                 ))}
               </SelectContent>
             </Select>
+            {isPatientsError && (
+              <Button type="button" variant="outline" onClick={() => refetchPatients()}>
+                {common.retry}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -185,23 +211,23 @@ function EntContent() {
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="audiometry" className="flex items-center gap-2">
               <Ear className="h-4 w-4" />
-              聴力検査
+              {pageLabels.tabs.audiometry}
             </TabsTrigger>
             <TabsTrigger value="tympanometry" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
-              ティンパノ
+              {pageLabels.tabs.tympanometry}
             </TabsTrigger>
             <TabsTrigger value="vestibular" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
-              平衡機能
+              {pageLabels.tabs.vestibular}
             </TabsTrigger>
             <TabsTrigger value="endoscopy" className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
-              内視鏡
+              {pageLabels.tabs.endoscopy}
             </TabsTrigger>
             <TabsTrigger value="allergy" className="flex items-center gap-2">
               <FlaskConical className="h-4 w-4" />
-              アレルギー
+              {pageLabels.tabs.allergy}
             </TabsTrigger>
           </TabsList>
 
@@ -226,13 +252,7 @@ function EntContent() {
           </TabsContent>
         </Tabs>
       ) : (
-        <Card>
-          <CardContent className="py-8">
-            <div className="text-center text-gray-500">
-              患者を選択してください
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState message={pageLabels.patientPlaceholder} />
       )}
 
       {/* Dialogs */}
@@ -281,7 +301,7 @@ function EntContent() {
 
 export default function EntPage() {
   return (
-    <Suspense fallback={<div className="text-gray-500">読み込み中...</div>}>
+    <Suspense fallback={<div className="text-gray-500">{common.loading}</div>}>
       <EntContent />
     </Suspense>
   );

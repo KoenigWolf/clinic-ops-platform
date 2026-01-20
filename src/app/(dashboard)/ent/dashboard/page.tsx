@@ -17,11 +17,29 @@ import {
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
+import { EmptyState, PageHeader } from "@/components/layout";
+import { labels } from "@/lib/labels";
+
+const { pages: { entDashboard: pageLabels }, common } = labels;
 
 function DashboardContent() {
-  const { data: stats } = trpc.ent.stats.useQuery();
-  const { data: recentTests, isLoading: recentLoading } = trpc.ent.recentTests.useQuery({ limit: 8 });
-  const { data: hearingDistribution, isLoading: distLoading } = trpc.ent.hearingLevelDistribution.useQuery();
+  const {
+    data: stats,
+    isError: statsError,
+    refetch: refetchStats,
+  } = trpc.ent.stats.useQuery();
+  const {
+    data: recentTests,
+    isLoading: recentLoading,
+    isError: recentError,
+    refetch: refetchRecent,
+  } = trpc.ent.recentTests.useQuery({ limit: 8 });
+  const {
+    data: hearingDistribution,
+    isLoading: distLoading,
+    isError: distError,
+    refetch: refetchDistribution,
+  } = trpc.ent.hearingLevelDistribution.useQuery();
 
   const testTypeConfig = {
     audiometry: { label: "聴力検査", icon: Ear, color: "text-purple-600", bg: "bg-purple-50" },
@@ -47,61 +65,72 @@ function DashboardContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">耳鼻科ダッシュボード</h1>
-          <p className="text-gray-500">検査統計と最近の活動</p>
-        </div>
-        <Link href="/ent">
-          <Button>
-            検査一覧へ
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Link href="/ent">
+            <Button>
+              {pageLabels.viewTests}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        }
+      />
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">総検査数</p>
-                <p className="text-2xl font-bold">{stats?.totals.total ?? "-"}</p>
-              </div>
-              <BarChart3 className="h-8 w-8 text-gray-400" />
-            </div>
-            <p className="text-xs text-gray-400 mt-2">
-              直近30日: <span className="text-green-600 font-medium">+{stats?.recent.total ?? 0}</span>
-            </p>
-          </CardContent>
-        </Card>
-
-        {Object.entries(testTypeConfig).map(([key, config]) => {
-          const Icon = config.icon;
-          const total = stats?.totals[key as keyof typeof stats.totals] ?? 0;
-          const recent = stats?.recent[key as keyof typeof stats.recent] ?? 0;
-
-          return (
-            <Card key={key}>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">{config.label}</p>
-                    <p className="text-2xl font-bold">{total}</p>
-                  </div>
-                  <div className={`p-2 rounded-full ${config.bg}`}>
-                    <Icon className={`h-5 w-5 ${config.color}`} />
-                  </div>
+      {statsError ? (
+        <EmptyState
+          message={common.loadFailed}
+          action={
+            <Button type="button" variant="outline" onClick={() => refetchStats()}>
+              {common.retry}
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{pageLabels.stats.totalTests}</p>
+                  <p className="text-2xl font-bold">{stats?.totals.total ?? "-"}</p>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  直近30日: <span className="text-green-600 font-medium">+{recent}</span>
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                <BarChart3 className="h-8 w-8 text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                {pageLabels.stats.last30Days}: <span className="text-green-600 font-medium">+{stats?.recent.total ?? 0}</span>
+              </p>
+            </CardContent>
+          </Card>
+
+          {Object.entries(testTypeConfig).map(([key, config]) => {
+            const Icon = config.icon;
+            const total = stats?.totals[key as keyof typeof stats.totals] ?? 0;
+            const recent = stats?.recent[key as keyof typeof stats.recent] ?? 0;
+
+            return (
+              <Card key={key}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">{config.label}</p>
+                      <p className="text-2xl font-bold">{total}</p>
+                    </div>
+                    <div className={`p-2 rounded-full ${config.bg}`}>
+                      <Icon className={`h-5 w-5 ${config.color}`} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {pageLabels.stats.last30Days}: <span className="text-green-600 font-medium">+{recent}</span>
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Hearing Level Distribution */}
@@ -109,18 +138,27 @@ function DashboardContent() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Ear className="h-5 w-5" />
-              聴力レベル分布
+              {pageLabels.sections.hearingDistribution}
             </CardTitle>
-            <CardDescription>全聴力検査結果の分布（左右耳別）</CardDescription>
+            <CardDescription>{pageLabels.sections.hearingDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            {distLoading ? (
+            {distError ? (
+              <EmptyState
+                message={common.loadFailed}
+                action={
+                  <Button type="button" variant="outline" onClick={() => refetchDistribution()}>
+                    {common.retry}
+                  </Button>
+                }
+              />
+            ) : distLoading ? (
               <div className="h-48 flex items-center justify-center text-gray-400">
-                読み込み中...
+                {common.loading}
               </div>
             ) : totalHearingTests === 0 ? (
               <div className="h-48 flex items-center justify-center text-gray-400">
-                聴力検査データがありません
+                {pageLabels.empty.hearing}
               </div>
             ) : (
               <div className="space-y-3">
@@ -156,18 +194,27 @@ function DashboardContent() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              最近の検査
+              {pageLabels.sections.recentTests}
             </CardTitle>
-            <CardDescription>直近の検査記録</CardDescription>
+            <CardDescription>{pageLabels.sections.recentDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            {recentLoading ? (
+            {recentError ? (
+              <EmptyState
+                message={common.loadFailed}
+                action={
+                  <Button type="button" variant="outline" onClick={() => refetchRecent()}>
+                    {common.retry}
+                  </Button>
+                }
+              />
+            ) : recentLoading ? (
               <div className="h-48 flex items-center justify-center text-gray-400">
-                読み込み中...
+                {common.loading}
               </div>
             ) : !recentTests?.length ? (
               <div className="h-48 flex items-center justify-center text-gray-400">
-                検査データがありません
+                {pageLabels.empty.tests}
               </div>
             ) : (
               <div className="space-y-3">
@@ -215,32 +262,32 @@ function DashboardContent() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>クイックアクション</CardTitle>
+          <CardTitle>{pageLabels.sections.quickActions}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link href="/ent">
               <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
                 <Ear className="h-6 w-6" />
-                <span>検査を記録</span>
+                <span>{pageLabels.actions.recordTest}</span>
               </Button>
             </Link>
             <Link href="/ent/templates">
               <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
                 <Activity className="h-6 w-6" />
-                <span>テンプレート管理</span>
+                <span>{pageLabels.actions.templates}</span>
               </Button>
             </Link>
             <Link href="/patients">
               <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
                 <Users className="h-6 w-6" />
-                <span>患者一覧</span>
+                <span>{pageLabels.actions.patients}</span>
               </Button>
             </Link>
             <Link href="/records">
               <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
                 <TrendingUp className="h-6 w-6" />
-                <span>診療記録</span>
+                <span>{pageLabels.actions.records}</span>
               </Button>
             </Link>
           </div>
@@ -252,7 +299,7 @@ function DashboardContent() {
 
 export default function EntDashboardPage() {
   return (
-    <Suspense fallback={<div className="text-gray-500">読み込み中...</div>}>
+    <Suspense fallback={<div className="text-gray-500">{common.loading}</div>}>
       <DashboardContent />
     </Suspense>
   );

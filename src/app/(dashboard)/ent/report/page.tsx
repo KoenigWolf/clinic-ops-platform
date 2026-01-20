@@ -7,20 +7,34 @@ import { Button } from "@/components/ui/button";
 import { Printer, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AudiogramChart, getHearingLevel, calculateFourFrequencyAverage } from "@/components/ent/audiogram-chart";
+import { EmptyState } from "@/components/layout";
+import { labels } from "@/lib/labels";
+
+const { common } = labels;
 
 function ReportContent() {
   const searchParams = useSearchParams();
-  const patientId = searchParams.get("patientId");
-  const testId = searchParams.get("testId");
+  const patientId = searchParams.get("patientId") ?? "";
+  const testId = searchParams.get("testId") ?? "";
   const reportRef = useRef<HTMLDivElement>(null);
 
-  const { data: patient } = trpc.patient.get.useQuery(
-    { id: patientId! },
+  const {
+    data: patient,
+    isLoading: patientLoading,
+    isError: patientError,
+    refetch: refetchPatient,
+  } = trpc.patient.get.useQuery(
+    { id: patientId },
     { enabled: !!patientId }
   );
 
-  const { data: test } = trpc.ent.audiometry.get.useQuery(
-    { id: testId! },
+  const {
+    data: test,
+    isLoading: testLoading,
+    isError: testError,
+    refetch: refetchTest,
+  } = trpc.ent.audiometry.get.useQuery(
+    { id: testId },
     { enabled: !!testId }
   );
 
@@ -28,10 +42,30 @@ function ReportContent() {
     window.print();
   };
 
-  if (!test || !patient) {
+  if (!patientId || !testId) {
+    return <EmptyState message={common.loadFailed} />;
+  }
+
+  if (patientError || testError) {
+    return (
+      <EmptyState
+        message={common.loadFailed}
+        action={
+          <Button type="button" variant="outline" onClick={() => {
+            refetchPatient();
+            refetchTest();
+          }}>
+            {common.retry}
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (patientLoading || testLoading || !test || !patient) {
     return (
       <div className="p-8 text-center text-gray-500">
-        データを読み込み中...
+        {common.loading}
       </div>
     );
   }
@@ -307,7 +341,7 @@ function ReportContent() {
 
 export default function ReportPage() {
   return (
-    <Suspense fallback={<div className="text-gray-500">読み込み中...</div>}>
+    <Suspense fallback={<div className="text-gray-500">{common.loading}</div>}>
       <ReportContent />
     </Suspense>
   );
