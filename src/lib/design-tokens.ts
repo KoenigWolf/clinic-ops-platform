@@ -131,6 +131,31 @@ export const transitions = {
   all: "transition-all",
 } as const;
 
+export const sidebar = {
+  bg: "bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900",
+  border: "border-slate-700/50",
+  text: {
+    primary: "text-white",
+    secondary: "text-slate-300",
+    muted: "text-slate-400",
+    subtle: "text-slate-500",
+  },
+  logo: {
+    bg: "bg-gradient-to-br from-teal-500 to-cyan-600",
+    text: "text-white",
+  },
+  nav: {
+    active: "bg-gradient-to-r from-teal-600/90 to-cyan-600/90 text-white shadow-lg shadow-teal-500/25",
+    hover: "hover:bg-slate-700/60 hover:text-white",
+    inactive: "text-slate-400",
+  },
+  avatar: {
+    bg: "bg-gradient-to-br from-teal-500 to-cyan-600",
+    ring: "ring-2 ring-teal-500/20",
+  },
+  toggle: "text-slate-500 hover:text-slate-300 hover:bg-slate-700/60",
+} as const;
+
 export const componentStyles = {
   card: {
     base: `${colors.bg.card} ${radius.xl} ${shadows.sm}`,

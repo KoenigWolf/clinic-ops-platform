@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { sidebar } from "@/lib/design-tokens";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -84,22 +85,23 @@ export function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <div
         className={cn(
-          "flex h-screen flex-col bg-gray-900 text-white transition-all duration-300",
+          "flex h-screen flex-col text-white transition-all duration-300",
+          sidebar.bg,
           collapsed ? "w-16" : "w-64"
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-gray-800 px-3">
+        <div className={cn("flex h-16 items-center justify-between border-b px-3", sidebar.border)}>
           <Link href="/" className="flex items-center gap-2 overflow-hidden">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold shrink-0">
+            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center font-bold shrink-0 shadow-lg shadow-teal-500/25", sidebar.logo.bg, sidebar.logo.text)}>
               K
             </div>
-            {!collapsed && <span className="text-xl font-bold">Karute</span>}
+            {!collapsed && <span className="text-xl font-bold bg-gradient-to-r from-white to-teal-200 bg-clip-text text-transparent">Karute</span>}
           </Link>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800 shrink-0"
+            className={cn("h-8 w-8 shrink-0 transition-colors", sidebar.toggle)}
             onClick={toggleCollapsed}
           >
             {collapsed ? (
@@ -121,14 +123,14 @@ export function Sidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white",
+                      ? sidebar.nav.active
+                      : cn(sidebar.nav.inactive, sidebar.nav.hover),
                     collapsed && "justify-center px-2"
                   )}
                 >
-                  <item.icon className="h-5 w-5 shrink-0" />
+                  <item.icon className={cn("h-5 w-5 shrink-0", isActive && "drop-shadow-sm")} />
                   {!collapsed && item.name}
                 </Link>
               );
@@ -154,7 +156,7 @@ export function Sidebar() {
         </nav>
 
         {/* User Menu */}
-        <div className="border-t border-gray-800 p-2">
+        <div className={cn("border-t p-2", sidebar.border)}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               {collapsed ? (
@@ -162,10 +164,10 @@ export function Sidebar() {
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-center text-white hover:bg-gray-800 p-2"
+                      className="w-full justify-center text-white hover:bg-slate-800/60 p-2 transition-colors"
                     >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-blue-500 text-white text-sm">
+                      <Avatar className={cn("h-8 w-8", sidebar.avatar.ring)}>
+                        <AvatarFallback className={cn("text-white text-sm font-medium", sidebar.avatar.bg)}>
                           {userInitials}
                         </AvatarFallback>
                       </Avatar>
@@ -178,18 +180,18 @@ export function Sidebar() {
               ) : (
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-3 text-white hover:bg-gray-800 px-2"
+                  className="w-full justify-start gap-3 text-white hover:bg-slate-800/60 px-2 transition-colors"
                 >
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarFallback className="bg-blue-500 text-white text-sm">
+                  <Avatar className={cn("h-8 w-8 shrink-0", sidebar.avatar.ring)}>
+                    <AvatarFallback className={cn("text-white text-sm font-medium", sidebar.avatar.bg)}>
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-left overflow-hidden">
                     <p className="text-sm font-medium truncate">{session?.user?.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{session?.user?.email}</p>
+                    <p className={cn("text-xs truncate", sidebar.text.muted)}>{session?.user?.email}</p>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                  <ChevronDown className={cn("h-4 w-4 shrink-0", sidebar.text.muted)} />
                 </Button>
               )}
             </DropdownMenuTrigger>
