@@ -163,6 +163,7 @@ export const appointmentRouter = router({
       // Check for overlapping appointments
       const overlapping = await ctx.prisma.appointment.findFirst({
         where: {
+          tenantId: ctx.tenantId,
           doctorId: input.doctorId,
           status: { notIn: ["CANCELLED", "NO_SHOW"] },
           OR: [

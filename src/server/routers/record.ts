@@ -48,7 +48,7 @@ export const recordRouter = router({
 
       const [records, total] = await Promise.all([
         ctx.prisma.medicalRecord.findMany({
-          where: { patientId },
+          where: { patientId, patient: { tenantId: ctx.tenantId } },
           skip,
           take: limit,
           orderBy: { recordDate: "desc" },
@@ -57,7 +57,9 @@ export const recordRouter = router({
             prescriptions: true,
           },
         }),
-        ctx.prisma.medicalRecord.count({ where: { patientId } }),
+        ctx.prisma.medicalRecord.count({
+          where: { patientId, patient: { tenantId: ctx.tenantId } },
+        }),
       ]);
 
       return {
