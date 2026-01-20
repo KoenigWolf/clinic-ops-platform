@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,7 +169,13 @@ function RecordsContent() {
                         </button>
                       </CardTitle>
                       <p className="text-sm text-gray-500">
-                        {common.doctor}: {record.doctor.name}
+                        {common.doctor}:{" "}
+                        <Link
+                          href={`/staff/${record.doctor.id}`}
+                          className="hover:underline"
+                        >
+                          {record.doctor.name}
+                        </Link>
                       </p>
                     </div>
                     {record.diagnosis && (

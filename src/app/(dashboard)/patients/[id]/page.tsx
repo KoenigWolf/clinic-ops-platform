@@ -142,7 +142,11 @@ export default function PatientDetailPage() {
                 {data.medicalRecords.map((record) => (
                   <div key={record.id} className="flex items-center justify-between">
                     <span>{new Date(record.recordDate).toLocaleDateString("ja-JP")}</span>
-                    <Badge variant="outline">{record.doctor.name}</Badge>
+                    <Link href={`/staff/${record.doctor.id}`}>
+                      <Badge variant="outline" className="hover:bg-gray-100 cursor-pointer">
+                        {record.doctor.name}
+                      </Badge>
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -162,7 +166,11 @@ export default function PatientDetailPage() {
                 {data.appointments.map((appointment) => (
                   <div key={appointment.id} className="flex items-center justify-between">
                     <span>{new Date(appointment.appointmentDate).toLocaleDateString("ja-JP")}</span>
-                    <Badge variant="outline">{appointment.doctor.name}</Badge>
+                    <Link href={`/staff/${appointment.doctor.id}`}>
+                      <Badge variant="outline" className="hover:bg-gray-100 cursor-pointer">
+                        {appointment.doctor.name}
+                      </Badge>
+                    </Link>
                   </div>
                 ))}
               </div>

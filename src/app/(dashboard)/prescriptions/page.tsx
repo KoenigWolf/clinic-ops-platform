@@ -160,7 +160,14 @@ export default function PrescriptionsPage() {
                           ({rx.quantity}{rx.unit})
                         </span>
                       </TableCell>
-                      <TableCell>{rx.doctor.name}</TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/staff/${rx.doctor.id}`}
+                          className="hover:underline"
+                        >
+                          {rx.doctor.name}
+                        </Link>
+                      </TableCell>
                       <TableCell>
                         <GenericStatusBadge
                           label={prescriptionStatusConfig[rx.status]?.label ?? rx.status}

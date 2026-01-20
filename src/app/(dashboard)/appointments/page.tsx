@@ -147,7 +147,13 @@ export default function AppointmentsPage() {
                         <div className="flex items-center gap-2 mt-1">
                           <Clock className="h-4 w-4 text-gray-400" />
                           <p className="text-sm text-gray-600">
-                            担当: {apt.doctor.name}
+                            担当:{" "}
+                            <Link
+                              href={`/staff/${apt.doctor.id}`}
+                              className="hover:underline"
+                            >
+                              {apt.doctor.name}
+                            </Link>
                           </p>
                         </div>
                         {apt.reason && (
