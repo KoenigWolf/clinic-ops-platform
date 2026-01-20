@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { logPhiAccess, logPhiModification } from "@/lib/audit";
 
 const patientSchema = z.object({
   patientNumber: z.string().min(1),
@@ -100,6 +101,16 @@ export const patientRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      // Log PHI access for HIPAA compliance
+      await logPhiAccess({
+        entityType: "Patient",
+        entityId: patient.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
       return patient;
     }),
 
@@ -122,13 +133,27 @@ export const patientRouter = router({
         });
       }
 
-      return ctx.prisma.patient.create({
+      const patient = await ctx.prisma.patient.create({
         data: {
           ...input,
           email: input.email || null,
           tenantId: ctx.tenantId,
         },
       });
+
+      // Log PHI creation for HIPAA compliance
+      await logPhiModification({
+        action: "CREATE",
+        entityType: "Patient",
+        entityId: patient.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        newData: { patientNumber: input.patientNumber, name: `${input.lastName} ${input.firstName}` },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return patient;
     }),
 
   // Update patient
@@ -149,13 +174,28 @@ export const patientRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.patient.update({
+      const updatedPatient = await ctx.prisma.patient.update({
         where: { id: input.id },
         data: {
           ...input.data,
           email: input.data.email || null,
         },
       });
+
+      // Log PHI modification for HIPAA compliance
+      await logPhiModification({
+        action: "UPDATE",
+        entityType: "Patient",
+        entityId: patient.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        oldData: { patientNumber: patient.patientNumber },
+        newData: { updatedFields: Object.keys(input.data) },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return updatedPatient;
     }),
 
   // Delete (soft delete)
@@ -173,9 +213,23 @@ export const patientRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.patient.update({
+      const deletedPatient = await ctx.prisma.patient.update({
         where: { id: input.id },
         data: { isActive: false },
       });
+
+      // Log PHI deletion for HIPAA compliance
+      await logPhiModification({
+        action: "DELETE",
+        entityType: "Patient",
+        entityId: patient.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        oldData: { patientNumber: patient.patientNumber, name: `${patient.lastName} ${patient.firstName}` },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return deletedPatient;
     }),
 });
