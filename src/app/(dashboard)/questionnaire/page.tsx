@@ -26,26 +26,38 @@ import {
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
+import {
+  StatCard,
+  StatGrid,
+  ContentCard,
+  ContentCardItem,
+  SectionHeader,
+  EmptyState,
+} from "@/components/layout";
+import { colors, typography, componentStyles } from "@/lib/design-tokens";
+import { labels } from "@/lib/labels";
+
+const { pages: { questionnaire: pageLabels }, common } = labels;
 
 const CATEGORIES = [
-  { value: "ALL", label: "すべて" },
-  { value: "GENERAL", label: "一般" },
-  { value: "FIRST_VISIT", label: "初診" },
-  { value: "FOLLOW_UP", label: "再診" },
-  { value: "PEDIATRIC", label: "小児科" },
-  { value: "INTERNAL", label: "内科" },
-  { value: "ENT", label: "耳鼻科" },
-  { value: "DERMATOLOGY", label: "皮膚科" },
-  { value: "ORTHOPEDIC", label: "整形外科" },
-  { value: "MENTAL", label: "心療内科" },
-  { value: "OTHER", label: "その他" },
+  { value: "ALL", label: pageLabels.categories.all },
+  { value: "GENERAL", label: pageLabels.categories.general },
+  { value: "FIRST_VISIT", label: pageLabels.categories.initial },
+  { value: "FOLLOW_UP", label: pageLabels.categories.followup },
+  { value: "PEDIATRIC", label: pageLabels.categories.pediatrics },
+  { value: "INTERNAL", label: pageLabels.categories.internal },
+  { value: "ENT", label: pageLabels.categories.ent },
+  { value: "DERMATOLOGY", label: pageLabels.categories.dermatology },
+  { value: "ORTHOPEDIC", label: pageLabels.categories.orthopedics },
+  { value: "MENTAL", label: pageLabels.categories.psychiatry },
+  { value: "OTHER", label: pageLabels.categories.other },
 ];
 
-const STATUS_CONFIG = {
-  DRAFT: { label: "下書き", color: "bg-gray-100 text-gray-800" },
-  SUBMITTED: { label: "提出済み", color: "bg-blue-100 text-blue-800" },
-  REVIEWED: { label: "確認済み", color: "bg-green-100 text-green-800" },
-  APPLIED: { label: "カルテ適用済み", color: "bg-purple-100 text-purple-800" },
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  DRAFT: { label: pageLabels.status.draft, className: `${colors.bg.muted} ${colors.text.muted}` },
+  SUBMITTED: { label: pageLabels.status.submitted, className: `${colors.info.bgLight} ${colors.info.text}` },
+  REVIEWED: { label: pageLabels.status.confirmed, className: `${colors.success.bgLight} ${colors.success.text}` },
+  APPLIED: { label: pageLabels.status.applied, className: "bg-purple-50 text-purple-600" },
 };
 
 export default function QuestionnairePage() {
@@ -60,137 +72,109 @@ export default function QuestionnairePage() {
   const pendingResponses = data?.pendingResponses;
   const allResponses = data?.allResponses;
 
+  const todayResponses = allResponses?.filter((r) => {
+    const today = new Date();
+    const submitted = new Date(r.submittedAt);
+    return submitted.toDateString() === today.toDateString();
+  }).length || 0;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Web問診</h1>
-          <p className="text-gray-500">問診テンプレートの管理と回答の確認</p>
+          <h1 className={typography.pageTitle}>{pageLabels.title}</h1>
+          <p className={`${colors.text.muted} text-sm sm:text-base`}>{pageLabels.description}</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/questionnaire/templates">
-            <Button variant="outline">
-              <Settings className="mr-2 h-4 w-4" />
-              テンプレート管理
-            </Button>
-          </Link>
-        </div>
+        <Link href="/questionnaire/templates">
+          <Button variant="outline" className="w-full sm:w-auto">
+            <Settings className="mr-2 h-4 w-4" />
+            {pageLabels.templateManagement}
+          </Button>
+        </Link>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">未確認の問診</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {pendingResponses?.length || 0}
-                </p>
-              </div>
-              <Clock className="h-8 w-8 text-blue-200" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">今日の回答</p>
-                <p className="text-2xl font-bold">
-                  {allResponses?.filter((r) => {
-                    const today = new Date();
-                    const submitted = new Date(r.submittedAt);
-                    return submitted.toDateString() === today.toDateString();
-                  }).length || 0}
-                </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-200" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">テンプレート数</p>
-                <p className="text-2xl font-bold">{data?.templates?.length || 0}</p>
-              </div>
-              <FileText className="h-8 w-8 text-purple-200" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">総回答数</p>
-                <p className="text-2xl font-bold">{allResponses?.length || 0}</p>
-              </div>
-              <ClipboardList className="h-8 w-8 text-gray-200" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats */}
+      <StatGrid columns={4}>
+        <StatCard
+          label={pageLabels.stats.unconfirmed}
+          value={pendingResponses?.length || 0}
+          href="#responses"
+        />
+        <StatCard
+          label={pageLabels.stats.todayResponses}
+          value={todayResponses}
+        />
+        <StatCard
+          label={pageLabels.stats.templateCount}
+          value={data?.templates?.length || 0}
+          href="#templates"
+        />
+        <StatCard
+          label={pageLabels.stats.totalResponses}
+          value={allResponses?.length || 0}
+        />
+      </StatGrid>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="responses" className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4" />
-            問診回答
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="responses" className="flex-1 sm:flex-initial flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 hidden sm:block" />
+            {pageLabels.tabs.responses}
             {(pendingResponses?.length || 0) > 0 && (
-              <Badge variant="destructive" className="ml-1">
+              <Badge variant="destructive" className="ml-1 text-xs">
                 {pendingResponses?.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            テンプレート
+          <TabsTrigger value="templates" className="flex-1 sm:flex-initial flex items-center gap-2">
+            <FileText className="h-4 w-4 hidden sm:block" />
+            {pageLabels.tabs.templates}
           </TabsTrigger>
         </TabsList>
 
         {/* Responses Tab */}
-        <TabsContent value="responses" className="space-y-4">
+        <TabsContent value="responses" className="space-y-4 mt-4">
           {/* Pending Responses */}
           {(pendingResponses?.length || 0) > 0 && (
-            <Card className="border-blue-200 bg-blue-50/50">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  未確認の問診回答
+            <Card className={`border-2 ${colors.info.border} ${colors.info.bgLight}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <Clock className={`h-5 w-5 ${colors.info.text}`} />
+                  {pageLabels.sections.unconfirmed}
                 </CardTitle>
-                <CardDescription>
-                  確認してカルテに反映してください
+                <CardDescription className="text-sm">
+                  {pageLabels.confirmHint}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {pendingResponses?.map((response) => (
                     <div
                       key={response.id}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border"
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 ${colors.bg.card} rounded-lg border gap-3`}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                         <div>
                           <p className="font-medium">
                             {response.patient.lastName} {response.patient.firstName}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className={`text-sm ${colors.text.muted}`}>
                             {response.patient.patientNumber}
                           </p>
                         </div>
-                        <Badge variant="outline">{response.template.name}</Badge>
-                        {response.appointment && (
-                          <span className="text-sm text-gray-500">
-                            予約: {new Date(response.appointment.appointmentDate).toLocaleDateString("ja-JP")}
-                          </span>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline">{response.template.name}</Badge>
+                          {response.appointment && (
+                            <span className={`text-xs ${colors.text.subtle}`}>
+                              予約: {new Date(response.appointment.appointmentDate).toLocaleDateString("ja-JP")}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">
+                      <div className="flex items-center justify-between sm:justify-end gap-2">
+                        <span className={`text-xs ${colors.text.subtle}`}>
                           {formatDistanceToNow(new Date(response.submittedAt), {
                             addSuffix: true,
                             locale: ja,
@@ -198,8 +182,8 @@ export default function QuestionnairePage() {
                         </span>
                         <Link href={`/questionnaire/response/${response.id}`}>
                           <Button size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            確認
+                            <Eye className="h-4 w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">確認</span>
                           </Button>
                         </Link>
                       </div>
@@ -211,39 +195,38 @@ export default function QuestionnairePage() {
           )}
 
           {/* All Responses */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">問診回答一覧</CardTitle>
+          <Card className={componentStyles.card.base}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">{pageLabels.sections.responseList}</CardTitle>
             </CardHeader>
             <CardContent>
               {!allResponses?.length ? (
-                <div className="text-center py-8 text-gray-500">
-                  <ClipboardList className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                  <p>問診回答がありません</p>
-                </div>
+                <EmptyState message={pageLabels.empty} />
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {allResponses.map((response) => (
                     <div
                       key={response.id}
-                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:${colors.bg.hover} rounded-lg transition-colors gap-2`}
                     >
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <p className="font-medium">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">
                             {response.patient.lastName} {response.patient.firstName}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className={`text-xs ${colors.text.muted}`}>
                             {response.patient.patientNumber}
                           </p>
                         </div>
-                        <Badge variant="outline">{response.template.name}</Badge>
-                        <Badge className={STATUS_CONFIG[response.status].color}>
-                          {STATUS_CONFIG[response.status].label}
-                        </Badge>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="text-xs">{response.template.name}</Badge>
+                          <Badge className={STATUS_CONFIG[response.status].className}>
+                            {STATUS_CONFIG[response.status].label}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">
+                      <div className="flex items-center justify-between sm:justify-end gap-2">
+                        <span className={`text-xs ${colors.text.subtle}`}>
                           {new Date(response.submittedAt).toLocaleDateString("ja-JP")}
                         </span>
                         <Link href={`/questionnaire/response/${response.id}`}>
@@ -261,10 +244,10 @@ export default function QuestionnairePage() {
         </TabsContent>
 
         {/* Templates Tab */}
-        <TabsContent value="templates" className="space-y-4">
-          <div className="flex items-center justify-between">
+        <TabsContent value="templates" className="space-y-4 mt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="カテゴリ" />
               </SelectTrigger>
               <SelectContent>
@@ -275,20 +258,20 @@ export default function QuestionnairePage() {
                 ))}
               </SelectContent>
             </Select>
-            <Link href="/questionnaire/templates/new">
-              <Button>
+            <Link href="/questionnaire/templates/new" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
-                新規テンプレート
+                {pageLabels.newTemplate}
               </Button>
             </Link>
           </div>
 
           {!templates?.length ? (
-            <Card>
+            <Card className={componentStyles.card.base}>
               <CardContent className="py-8">
-                <div className="text-center text-gray-500">
-                  <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                  <p>テンプレートがありません</p>
+                <div className="text-center">
+                  <FileText className={`mx-auto h-12 w-12 ${colors.text.subtle} mb-4`} />
+                  <p className={colors.text.muted}>テンプレートがありません</p>
                   <Link href="/questionnaire/templates/new">
                     <Button variant="outline" className="mt-4">
                       <Plus className="mr-2 h-4 w-4" />
@@ -299,27 +282,32 @@ export default function QuestionnairePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {templates.map((template) => (
-                <Card key={template.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                <Card key={template.id} className={`${componentStyles.card.interactive}`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base truncate">{template.name}</CardTitle>
                         {template.description && (
-                          <CardDescription>{template.description}</CardDescription>
+                          <CardDescription className="text-xs line-clamp-2">{template.description}</CardDescription>
                         )}
                       </div>
                       {template.isDefault && (
-                        <Badge variant="secondary">デフォルト</Badge>
+                        <Badge variant="secondary" className="shrink-0 text-xs">{common.default}</Badge>
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline">
-                        {CATEGORIES.find((c) => c.value === template.category)?.label}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {CATEGORIES.find((c) => c.value === template.category)?.label}
+                        </Badge>
+                        <span className={`text-xs ${colors.text.muted}`}>
+                          {(template.questions as unknown[])?.length || 0}問
+                        </span>
+                      </div>
                       <div className="flex gap-1">
                         <Link href={`/questionnaire/templates/${template.id}`}>
                           <Button variant="ghost" size="sm">
@@ -333,9 +321,6 @@ export default function QuestionnairePage() {
                         </Link>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {(template.questions as unknown[])?.length || 0}問
-                    </p>
                   </CardContent>
                 </Card>
               ))}
