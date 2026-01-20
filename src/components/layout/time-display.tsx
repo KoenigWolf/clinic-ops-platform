@@ -1,7 +1,5 @@
 "use client";
 
-import { typography, componentStyles } from "@/lib/design-tokens";
-
 interface TimeDisplayProps {
   startTime: Date | string;
   endTime?: Date | string;
@@ -23,8 +21,8 @@ export function TimeDisplay({
 
   return (
     <div className={`text-center min-w-[52px] ${className}`}>
-      <p className={typography.time}>{formatTime(startTime)}</p>
-      {endTime && <p className={typography.timeSmall}>{formatTime(endTime)}</p>}
+      <p className="text-lg font-semibold text-gray-900 tabular-nums">{formatTime(startTime)}</p>
+      {endTime && <p className="text-xs text-gray-400">{formatTime(endTime)}</p>}
     </div>
   );
 }
@@ -52,12 +50,12 @@ export function DateDisplay({
         });
 
   return (
-    <span className={`${typography.labelSmall} tabular-nums ${className}`}>
+    <span className={`text-xs text-gray-400 tabular-nums ${className}`}>
       {formatted}
     </span>
   );
 }
 
 export function VerticalSeparator({ className = "" }: { className?: string }) {
-  return <div className={`${componentStyles.separator.vertical} ${className}`} />;
+  return <div className={`w-px h-10 bg-gray-200 ${className}`} />;
 }

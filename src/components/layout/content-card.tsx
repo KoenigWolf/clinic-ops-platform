@@ -1,7 +1,5 @@
 "use client";
 
-import { componentStyles } from "@/lib/design-tokens";
-
 interface ContentCardProps {
   children: React.ReactNode;
   divided?: boolean;
@@ -14,8 +12,8 @@ export function ContentCard({
   className = "",
 }: ContentCardProps) {
   const baseClass = divided
-    ? componentStyles.card.divided
-    : componentStyles.card.base;
+    ? "bg-white rounded-xl shadow-sm divide-y divide-gray-100"
+    : "bg-white rounded-xl shadow-sm";
 
   return <div className={`${baseClass} ${className}`}>{children}</div>;
 }
@@ -34,10 +32,10 @@ export function ContentCardItem({
   className = "",
 }: ContentCardItemProps) {
   const itemClass = compact
-    ? componentStyles.listItem.compact
+    ? "p-3 hover:bg-gray-50/50 transition-colors"
     : interactive
-      ? componentStyles.listItem.interactive
-      : componentStyles.listItem.base;
+      ? "p-4 hover:bg-gray-50/50 transition-colors"
+      : "p-4";
 
   return <div className={`${itemClass} ${className}`}>{children}</div>;
 }

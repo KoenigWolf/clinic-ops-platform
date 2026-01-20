@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  componentStyles,
-  appointmentStatusConfig,
-  colors,
-} from "@/lib/design-tokens";
+import { appointmentStatusConfig } from "@/lib/design-tokens";
 
 interface StatusBadgeProps {
   status: string;
@@ -14,14 +10,14 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, showDot = true }: StatusBadgeProps) {
   const config = appointmentStatusConfig[status] ?? {
     label: status,
-    dot: colors.status.inactive.dot,
-    text: colors.status.inactive.text,
+    dot: "bg-gray-300",
+    text: "text-gray-500",
   };
 
   return (
-    <span className={`${componentStyles.badge.base} ${config.text}`}>
+    <span className={`inline-flex items-center gap-1.5 text-sm ${config.text}`}>
       {showDot && (
-        <span className={`${componentStyles.statusDot.base} ${config.dot}`} />
+        <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
       )}
       {config.label}
     </span>
@@ -30,9 +26,7 @@ export function StatusBadge({ status, showDot = true }: StatusBadgeProps) {
 
 export function OnlineBadge({ className = "" }: { className?: string }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 text-sm ${colors.text.subtle} ${className}`}
-    >
+    <span className={`inline-flex items-center gap-1 text-sm text-gray-400 ${className}`}>
       <svg
         className="h-3.5 w-3.5"
         fill="none"
@@ -56,19 +50,17 @@ interface GenericStatusBadgeProps {
   variant: "success" | "warning" | "error" | "info" | "neutral";
 }
 
-export function GenericStatusBadge({ label, variant }: GenericStatusBadgeProps) {
-  const variantStyles = {
-    success: `${colors.success.bgLight} ${colors.success.text}`,
-    warning: `${colors.warning.bgLight} ${colors.warning.text}`,
-    error: `${colors.error.bgLight} ${colors.error.text}`,
-    info: `${colors.info.bgLight} ${colors.info.text}`,
-    neutral: `${colors.bg.muted} ${colors.text.muted}`,
-  };
+const variantStyles = {
+  success: "bg-emerald-50 text-emerald-600",
+  warning: "bg-amber-50 text-amber-600",
+  error: "bg-red-50 text-red-600",
+  info: "bg-blue-50 text-blue-600",
+  neutral: "bg-gray-50 text-gray-500",
+};
 
+export function GenericStatusBadge({ label, variant }: GenericStatusBadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${variantStyles[variant]}`}
-    >
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${variantStyles[variant]}`}>
       {label}
     </span>
   );

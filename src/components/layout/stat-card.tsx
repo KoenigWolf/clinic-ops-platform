@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { typography, componentStyles } from "@/lib/design-tokens";
 
 interface StatCardProps {
   label: string;
@@ -12,20 +11,20 @@ interface StatCardProps {
 export function StatCard({ label, value, href }: StatCardProps) {
   const content = (
     <>
-      <p className={`${typography.label} text-xs sm:text-sm`}>{label}</p>
+      <p className="text-xs sm:text-sm text-gray-500">{label}</p>
       <p className="text-xl sm:text-2xl font-semibold tracking-tight mt-1">{value}</p>
     </>
   );
 
   if (href) {
     return (
-      <Link href={href} className={`${componentStyles.card.interactive} p-3 sm:p-5`}>
+      <Link href={href} className="bg-white rounded-xl shadow-sm hover:shadow transition-shadow p-3 sm:p-5">
         {content}
       </Link>
     );
   }
 
-  return <div className={`${componentStyles.card.base} p-3 sm:p-5`}>{content}</div>;
+  return <div className="bg-white rounded-xl shadow-sm p-3 sm:p-5">{content}</div>;
 }
 
 interface StatGridProps {
@@ -40,5 +39,5 @@ export function StatGrid({ children, columns = 4 }: StatGridProps) {
     4: "grid-cols-2 sm:grid-cols-2 md:grid-cols-4",
   }[columns];
 
-  return <div className={`grid ${colsClass} gap-3 sm:gap-4 mb-6 sm:mb-8`}>{children}</div>;
+  return <div className={`grid ${colsClass} gap-3 sm:gap-4 mb-4`}>{children}</div>;
 }

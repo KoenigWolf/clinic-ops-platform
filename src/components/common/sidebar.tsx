@@ -85,7 +85,6 @@ export function Sidebar() {
     if (savedWidth) {
       const parsed = parseInt(savedWidth, 10);
       if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage初期化
         setWidth(parsed);
       }
     }

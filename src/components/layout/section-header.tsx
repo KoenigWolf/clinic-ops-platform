@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { typography } from "@/lib/design-tokens";
 
 interface SectionHeaderProps {
   title: string;
@@ -18,9 +17,9 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h2 className={typography.sectionHeader}>{title}</h2>
+      <h2 className="text-[13px] font-medium text-gray-500 uppercase tracking-wide">{title}</h2>
       {viewAllHref && (
-        <Link href={viewAllHref} className={`text-[13px] ${typography.link}`}>
+        <Link href={viewAllHref} className="text-[13px] text-gray-400 hover:text-gray-600 transition-colors">
           {viewAllLabel}
         </Link>
       )}
