@@ -42,7 +42,7 @@ export default function PatientsPage() {
   const rangeEnd = Math.min(page * PAGE_SIZE, totalCount);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-4">
       <PageHeader
         title={pageLabels.title}
         description={pageLabels.description}
@@ -56,7 +56,7 @@ export default function PatientsPage() {
 
       {/* Search */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />

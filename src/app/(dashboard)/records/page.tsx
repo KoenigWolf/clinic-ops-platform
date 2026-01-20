@@ -52,7 +52,7 @@ function RecordsContent() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <PageHeader
         title={pageLabels.title}
@@ -72,7 +72,7 @@ function RecordsContent() {
 
       {/* Patient Selector */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium" htmlFor="patient-select">
               {pageLabels.patientSelect}

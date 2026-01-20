@@ -63,7 +63,7 @@ function DashboardContent() {
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <PageHeader
         title={pageLabels.title}
@@ -91,7 +91,7 @@ function DashboardContent() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">{pageLabels.stats.totalTests}</p>
@@ -112,7 +112,7 @@ function DashboardContent() {
 
             return (
               <Card key={key}>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">{config.label}</p>

@@ -124,7 +124,7 @@ function VideoPageContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <PageHeader title={pageLabels.title} description={pageLabels.description} />
 

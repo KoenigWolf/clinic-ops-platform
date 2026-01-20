@@ -14,7 +14,7 @@ export default function SettingsPage() {
   const { data: session } = useSession();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

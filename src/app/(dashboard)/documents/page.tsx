@@ -173,7 +173,7 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title={pageLabels.title}
         description={pageLabels.description}
@@ -188,7 +188,7 @@ export default function DocumentsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.templateCount}</p>
@@ -199,7 +199,7 @@ export default function DocumentsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.issuedDocuments}</p>
@@ -210,7 +210,7 @@ export default function DocumentsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.referralLetters}</p>
@@ -223,7 +223,7 @@ export default function DocumentsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.certificates}</p>

@@ -80,7 +80,7 @@ export default function BillingPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title={pageLabels.title}
         description={pageLabels.description}
@@ -139,7 +139,7 @@ export default function BillingPage() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium" htmlFor="invoice-status-filter">
               {pageLabels.statusFilter}

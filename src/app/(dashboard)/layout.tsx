@@ -10,7 +10,7 @@ export default function DashboardLayout({
       <MobileHeader />
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 lg:p-5">
           {children}
         </div>
       </main>

@@ -40,7 +40,7 @@ export default function PatientDetailPage() {
   const fullName = `${data.lastName} ${data.firstName}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title={fullName}
         description={`${patientsLabels.table.patientNumber}: ${data.patientNumber}`}

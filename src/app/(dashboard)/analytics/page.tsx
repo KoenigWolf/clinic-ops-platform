@@ -89,13 +89,13 @@ export default function AnalyticsPage() {
   const todayAppointments = data?.todayAppointments;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.monthlyRevenue}</p>
@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.monthlyConsultations}</p>
@@ -131,7 +131,7 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.monthlyAppointments}</p>
@@ -148,7 +148,7 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{pageLabels.stats.monthlyNewPatients}</p>

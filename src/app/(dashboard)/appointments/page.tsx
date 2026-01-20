@@ -63,7 +63,7 @@ export default function AppointmentsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title={pageLabels.title}
         description={pageLabels.description}

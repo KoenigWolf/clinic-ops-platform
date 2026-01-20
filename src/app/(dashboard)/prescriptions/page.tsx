@@ -61,12 +61,12 @@ export default function PrescriptionsPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium">{pageLabels.statusFilter}</label>
             <Select

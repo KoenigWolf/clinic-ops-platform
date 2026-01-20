@@ -83,7 +83,7 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
         <Link href="/ent" className="hover:text-gray-700">{pageLabels.breadcrumbParent}</Link>
@@ -106,7 +106,7 @@ export default function TemplatesPage() {
 
       {/* Category Filter */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium" htmlFor="ent-template-category">
               {pageLabels.filterLabel}
