@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -17,28 +17,33 @@ function VideoPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  // Get initial session from URL parameters
+  const urlSessionId = searchParams.get("sessionId");
+  const urlRoomUrl = searchParams.get("roomUrl");
+  const urlToken = searchParams.get("token");
+
   const [activeSession, setActiveSession] = useState<{
     sessionId: string;
     roomUrl: string;
     token: string | null;
-  } | null>(null);
-
-  // Check for URL parameters (coming from appointments page)
-  useEffect(() => {
-    const sessionId = searchParams.get("sessionId");
-    const roomUrl = searchParams.get("roomUrl");
-    const token = searchParams.get("token");
-
-    if (sessionId && roomUrl) {
-      setActiveSession({
-        sessionId,
-        roomUrl,
-        token: token || null,
-      });
-      // Clear URL params
-      router.replace("/video");
+  } | null>(() => {
+    // Initialize from URL params if present
+    if (urlSessionId && urlRoomUrl) {
+      return {
+        sessionId: urlSessionId,
+        roomUrl: urlRoomUrl,
+        token: urlToken || null,
+      };
     }
-  }, [searchParams, router]);
+    return null;
+  });
+
+  // Clear URL params after initialization (only run once)
+  const [urlCleared, setUrlCleared] = useState(false);
+  if (urlSessionId && urlRoomUrl && !urlCleared) {
+    setUrlCleared(true);
+    router.replace("/video");
+  }
 
   // Get today's online appointments (refetch every 10 seconds)
   const { data: appointments } = trpc.appointment.list.useQuery({
