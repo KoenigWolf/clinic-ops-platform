@@ -263,6 +263,16 @@ export const invoiceStatusConfig: Record<
   string,
   { label: string; bg: string; text: string }
 > = {
+  DRAFT: {
+    label: "下書き",
+    bg: colors.bg.muted,
+    text: colors.text.muted,
+  },
+  SENT: {
+    label: "送付済",
+    bg: colors.info.bgLight,
+    text: colors.info.text,
+  },
   PENDING: {
     label: "未払い",
     bg: colors.warning.bgLight,
