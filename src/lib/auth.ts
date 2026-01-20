@@ -1,6 +1,7 @@
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { cache } from "react";
 import { prisma } from "./prisma";
 import type { UserRole } from "@prisma/client";
 
@@ -28,7 +29,7 @@ declare module "@auth/core/jwt" {
   }
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const authConfig: NextAuthConfig = {
   providers: [
     Credentials({
       name: "credentials",
@@ -95,4 +96,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
     maxAge: 24 * 60 * 60, // 24 hours
   },
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
+
+// 同一リクエスト内でセッションをキャッシュ (RSC/Server Components用)
+export const getSession = cache(async () => {
+  return await auth();
 });
