@@ -58,30 +58,63 @@
 | Form | react-hook-form + Zod |
 | Testing | Vitest + Testing Library |
 
-## ローカル開発
+## セットアップ
 
-### 1. 依存関係のインストール
+### 前提条件
+
+- Node.js 20以上
+- PostgreSQLデータベース（ローカル or クラウド）
+
+### 1. リポジトリのクローン
 
 ```bash
+git clone https://github.com/your-org/karute.git
+cd karute
 npm install
 ```
 
-### 2. 環境変数
+### 2. 環境変数の設定
 
-`.env` ファイルを作成:
+`.env`ファイルをプロジェクトルートに作成：
 
 ```env
-DATABASE_URL=postgresql://...
-NEXTAUTH_SECRET=your-secret-key
-NEXTAUTH_URL=http://localhost:3000
-DAILY_API_KEY=your-daily-api-key
+# Database（必須）
+DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
+
+# NextAuth.js（必須）
+AUTH_SECRET="ランダムな32文字以上の文字列"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Daily.co ビデオ通話（オンライン診療に必要）
+DAILY_API_KEY="your-daily-api-key"
+DAILY_DOMAIN="your-domain.daily.co"
+
+# S3 ストレージ（任意：ファイルアップロード用）
+S3_BUCKET=""
+S3_REGION=""
+S3_ACCESS_KEY=""
+S3_SECRET_KEY=""
 ```
+
+#### 環境変数の取得方法
+
+| 変数 | 取得先 |
+|------|--------|
+| DATABASE_URL | [Neon](https://neon.tech)、[Supabase](https://supabase.com)、[Railway](https://railway.app) などで無料PostgreSQLを作成 |
+| AUTH_SECRET | `openssl rand -base64 32` で生成 |
+| DAILY_API_KEY | [Daily.co](https://www.daily.co/) でアカウント作成後、Dashboard → Developers → API Keys |
 
 ### 3. データベースセットアップ
 
 ```bash
-npx prisma db push      # スキーマ反映
-npx prisma generate     # Client生成
+# Prisma Clientを生成
+npx prisma generate
+
+# スキーマをDBに反映
+npx prisma db push
+
+# デモデータを投入（任意）
+npm run db:seed
 ```
 
 ### 4. 開発サーバー起動
@@ -92,10 +125,99 @@ npm run dev
 
 http://localhost:3000 でアクセス
 
-### 5. 品質チェック
+### デモアカウント
+
+シード実行後、以下のアカウントでログイン可能：
+
+| ロール | メールアドレス | パスワード |
+|--------|---------------|-----------|
+| 管理者 | admin@example.com | password |
+| 医師 | doctor@example.com | password |
+| 看護師 | nurse@example.com | password |
+
+### 開発コマンド
 
 ```bash
-npm run check-all   # lint + typecheck + test + build
+npm run dev          # 開発サーバー起動
+npm run build        # プロダクションビルド
+npm run check-all    # 全チェック（lint + typecheck + test + build）
+npm run db:studio    # Prisma Studio（DB GUI）
+npm run db:seed      # デモデータ投入
+```
+
+---
+
+## Vercelデプロイ
+
+### 1. Vercelプロジェクト作成
+
+1. [Vercel](https://vercel.com) にログイン
+2. 「New Project」→ GitHubリポジトリを選択
+3. Framework Preset: **Next.js**（自動検出）
+
+### 2. 環境変数の設定
+
+Vercel Dashboard → Settings → Environment Variables に以下を追加：
+
+| 変数名 | 値 | 環境 |
+|--------|-----|------|
+| DATABASE_URL | PostgreSQL接続URL | Production, Preview |
+| AUTH_SECRET | `openssl rand -base64 32` で生成した値 | Production, Preview |
+| NEXTAUTH_URL | `https://your-domain.vercel.app` | Production |
+| DAILY_API_KEY | Daily.co APIキー | Production, Preview |
+| DAILY_DOMAIN | Daily.coドメイン | Production, Preview |
+
+> **注意**: `NEXTAUTH_URL`はVercelのProduction環境では自動設定されるため省略可能。Preview環境では設定が必要。
+
+### 3. データベース接続
+
+推奨: **Neon** (Vercel統合あり)
+
+1. Vercel Dashboard → Storage → Create Database → Neon
+2. 自動で`DATABASE_URL`が設定される
+
+### 4. デプロイ
+
+```bash
+git push origin main
+```
+
+Vercelが自動でビルド・デプロイを実行。
+
+### 本番環境の初期設定
+
+デプロイ後、Vercel Functions経由でDBをセットアップ：
+
+```bash
+# ローカルからVercelの本番DBに接続してシード実行
+npx vercel env pull .env.production
+npx prisma db push
+npm run db:seed
+```
+
+---
+
+## ローカル開発Tips
+
+### データベースGUI
+
+```bash
+npm run db:studio
+```
+
+http://localhost:5555 でPrisma Studioが起動
+
+### テスト実行
+
+```bash
+npm run test        # watchモード
+npm run test:run    # 1回実行
+```
+
+### 品質チェック（コミット前に必ず実行）
+
+```bash
+npm run check-all
 ```
 
 ## ディレクトリ構成
