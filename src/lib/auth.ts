@@ -5,7 +5,7 @@ import { cache } from "react";
 import { prisma } from "./prisma";
 import type { UserRole } from "@prisma/client";
 import { logAuthEvent } from "./audit";
-import { validatePassword } from "./security";
+import { sanitizeEmail, SESSION_CONFIG } from "./security";
 
 declare module "next-auth" {
   interface User {
@@ -13,7 +13,7 @@ declare module "next-auth" {
     tenantId: string;
   }
   interface Session {
-    user: {
+    user?: {
       id: string;
       email: string;
       name: string;
@@ -26,9 +26,10 @@ declare module "next-auth" {
 
 declare module "@auth/core/jwt" {
   interface JWT {
-    role: UserRole;
-    tenantId: string;
-    iat: number; // Issued at timestamp
+    id?: string;
+    role?: UserRole;
+    tenantId?: string;
+    iat?: number; // Issued at timestamp
     lastActivity?: number; // Last activity timestamp for idle timeout
   }
 }
@@ -37,18 +38,14 @@ declare module "@auth/core/jwt" {
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
-// In-memory login attempt tracking (use Redis in production)
-const loginAttempts = new Map<string, { count: number; lockedUntil?: number }>();
+type LoginAttempt = {
+  count: number;
+  firstAttemptAt: number;
+  lockedUntil?: number;
+};
 
-// Clean up expired lockouts periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [email, data] of loginAttempts.entries()) {
-    if (data.lockedUntil && data.lockedUntil < now) {
-      loginAttempts.delete(email);
-    }
-  }
-}, 60000);
+// In-memory login attempt tracking (use Redis in production)
+const loginAttempts = new Map<string, LoginAttempt>();
 
 /**
  * Check if account is locked due to too many failed attempts
@@ -63,11 +60,20 @@ function isAccountLocked(email: string): boolean {
   return true;
 }
 
+function getLoginAttempt(email: string): LoginAttempt {
+  const now = Date.now();
+  const attempts = loginAttempts.get(email);
+  if (!attempts || now - attempts.firstAttemptAt > LOCKOUT_DURATION_MS) {
+    return { count: 0, firstAttemptAt: now };
+  }
+  return attempts;
+}
+
 /**
  * Record a failed login attempt
  */
 function recordFailedAttempt(email: string): void {
-  const attempts = loginAttempts.get(email) || { count: 0 };
+  const attempts = getLoginAttempt(email);
   attempts.count++;
   if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
     attempts.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
@@ -91,11 +97,15 @@ const authConfig: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        const emailInput =
+          typeof credentials?.email === "string" ? credentials.email : "";
+        const password =
+          typeof credentials?.password === "string" ? credentials.password : "";
+        const email = sanitizeEmail(emailInput);
+
+        if (!email || !password) {
           return null;
         }
-
-        const email = (credentials.email as string).toLowerCase().trim();
 
         // Check for account lockout
         if (isAccountLocked(email)) {
@@ -165,31 +175,29 @@ const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     async jwt({ token, user, trigger }) {
+      const now = Math.floor(Date.now() / 1000);
+
+      // Check for idle timeout (30 minutes)
+      const IDLE_TIMEOUT = SESSION_CONFIG.idleTimeout; // seconds
+      if (token.lastActivity && now - token.lastActivity > IDLE_TIMEOUT) {
+        // Session expired due to inactivity
+        delete token.id;
+        delete token.role;
+        delete token.tenantId;
+        delete token.lastActivity;
+        return token;
+      }
+
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.tenantId = user.tenantId;
-        token.iat = Math.floor(Date.now() / 1000);
-        token.lastActivity = Math.floor(Date.now() / 1000);
+        token.iat = now;
       }
 
       // Update last activity on every request
-      if (trigger === "update") {
-        token.lastActivity = Math.floor(Date.now() / 1000);
-      }
-
-      // Check for idle timeout (30 minutes)
-      const IDLE_TIMEOUT = 30 * 60; // 30 minutes in seconds
-      if (token.lastActivity) {
-        const now = Math.floor(Date.now() / 1000);
-        if (now - token.lastActivity > IDLE_TIMEOUT) {
-          // Session expired due to inactivity
-          // Clear sensitive data but keep token structure
-          token.id = undefined;
-          token.role = undefined as unknown as UserRole;
-          token.tenantId = undefined as unknown as string;
-          return token;
-        }
+      if (token.id && (trigger === "update" || trigger === undefined)) {
+        token.lastActivity = now;
       }
 
       return token;
@@ -215,7 +223,7 @@ const authConfig: NextAuthConfig = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours absolute maximum
+    maxAge: SESSION_CONFIG.maxAge, // 24 hours absolute maximum
     updateAge: 5 * 60, // Update session every 5 minutes
   },
   // Security: Use secure cookies in production
@@ -264,4 +272,4 @@ export const getSession = cache(async () => {
 });
 
 // Export password validation for registration
-export { validatePassword };
+export { validatePassword } from "./security";
