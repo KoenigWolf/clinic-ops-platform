@@ -75,6 +75,24 @@ export const labels = {
       empty: "患者データがありません",
     },
 
+    patientDetail: {
+      title: "患者詳細",
+      sections: {
+        profile: "基本情報",
+        contact: "連絡先",
+        insurance: "保険情報",
+        medical: "医療情報",
+        recentRecords: "最近の診療記録",
+        recentAppointments: "最近の予約",
+        recentPrescriptions: "最近の処方",
+      },
+      empty: {
+        records: "診療記録がありません",
+        appointments: "予約がありません",
+        prescriptions: "処方がありません",
+      },
+    },
+
     appointments: {
       title: "予約管理",
       description: "診療予約の管理・スケジュール確認",
