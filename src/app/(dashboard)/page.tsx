@@ -26,9 +26,12 @@ const formatCurrency = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`
 
 export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession();
-  const { data, isLoading, isError, refetch } = trpc.dashboard.get.useQuery();
+  const isAuthenticated = sessionStatus === "authenticated" && !!session?.user;
+  const { data, isLoading, isError, refetch } = trpc.dashboard.get.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
-  if (sessionStatus === "loading" || isLoading) {
+  if (sessionStatus === "loading" || (isAuthenticated && isLoading)) {
     return (
       <div className="mx-auto w-full max-w-7xl">
         <Skeleton className="h-8 w-48 mb-8" />
@@ -42,6 +45,10 @@ export default function DashboardPage() {
         </div>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   if (isError) {
