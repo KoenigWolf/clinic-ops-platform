@@ -93,6 +93,25 @@ export const labels = {
       },
     },
 
+    staffDetail: {
+      title: "スタッフ詳細",
+      sections: {
+        profile: "プロフィール",
+        stats: "実績",
+      },
+      labels: {
+        email: "メールアドレス",
+        specialization: "専門",
+        licenseNumber: "医師免許番号",
+        joinedAt: "登録日",
+      },
+      stats: {
+        appointments: "予約",
+        records: "診療記録",
+        prescriptions: "処方",
+      },
+    },
+
     appointments: {
       title: "予約管理",
       description: "診療予約の管理・スケジュール確認",
