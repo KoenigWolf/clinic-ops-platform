@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/common/sidebar";
+import { Sidebar, MobileHeader } from "@/components/common/sidebar";
 
 export default function DashboardLayout({
   children,
@@ -6,10 +6,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100">
+      <MobileHeader />
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>
