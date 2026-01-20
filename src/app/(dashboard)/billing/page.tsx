@@ -189,102 +189,141 @@ export default function BillingPage() {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{pageLabels.table.invoiceNumber}</TableHead>
-                    <TableHead>{pageLabels.table.date}</TableHead>
-                    <TableHead>{pageLabels.table.patient}</TableHead>
-                    <TableHead>{pageLabels.table.amount}</TableHead>
-                    <TableHead>{pageLabels.table.dueDate}</TableHead>
-                    <TableHead>{common.status}</TableHead>
-                    <TableHead className="text-right">{common.action}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell className="font-mono">
-                        {invoice.invoiceNumber}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(invoice.invoiceDate), "yyyy/MM/dd")}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <Link
-                            href={`/patients/${invoice.patient.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {invoice.patient.lastName} {invoice.patient.firstName}
-                          </Link>
-                          <p className="text-sm text-gray-500">
-                            {invoice.patient.patientNumber}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        {currencyFormatter.format(invoice.total)}
-                        <span className="text-sm text-gray-500 font-normal block">
-                          {common.taxIncluded}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {invoice.dueDate
-                          ? format(new Date(invoice.dueDate), "yyyy/MM/dd")
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <GenericStatusBadge
-                          label={invoiceStatusConfig[invoice.status]?.label ?? invoice.status}
-                          variant={
-                            invoice.status === "PAID"
-                              ? "success"
-                              : invoice.status === "OVERDUE"
-                                ? "error"
-                                : invoice.status === "SENT"
-                                  ? "info"
-                                  : "neutral"
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {invoice.status === "DRAFT" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={updateStatusMutation.isPending}
-                              onClick={() =>
-                                updateStatusMutation.mutate({
-                                  id: invoice.id,
-                                  status: "SENT",
-                                })
-                              }
-                            >
-                              {pageLabels.actions.send}
-                            </Button>
-                          )}
-                          {(invoice.status === "SENT" || invoice.status === "OVERDUE") && (
-                            <Button
-                              size="sm"
-                              disabled={recordPaymentMutation.isPending}
-                              onClick={() =>
-                                recordPaymentMutation.mutate({
-                                  id: invoice.id,
-                                  paymentMethod: "現金",
-                                })
-                              }
-                            >
-                              {pageLabels.actions.confirmPayment}
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="hidden sm:table-cell">{pageLabels.table.invoiceNumber}</TableHead>
+                      <TableHead className="hidden md:table-cell">{pageLabels.table.date}</TableHead>
+                      <TableHead>{pageLabels.table.patient}</TableHead>
+                      <TableHead>{pageLabels.table.amount}</TableHead>
+                      <TableHead className="hidden lg:table-cell">{pageLabels.table.dueDate}</TableHead>
+                      <TableHead>{common.status}</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">{common.action}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {data?.invoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-mono hidden sm:table-cell">
+                          {invoice.invoiceNumber}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {format(new Date(invoice.invoiceDate), "yyyy/MM/dd")}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <Link
+                              href={`/patients/${invoice.patient.id}`}
+                              className="font-medium hover:underline"
+                            >
+                              {invoice.patient.lastName} {invoice.patient.firstName}
+                            </Link>
+                            <p className="text-sm text-gray-500">
+                              {invoice.patient.patientNumber}
+                            </p>
+                            <p className="text-xs text-gray-400 sm:hidden">
+                              {invoice.invoiceNumber}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          {currencyFormatter.format(invoice.total)}
+                          <span className="text-xs text-gray-500 font-normal block md:hidden">
+                            {format(new Date(invoice.invoiceDate), "MM/dd")}
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {invoice.dueDate
+                            ? format(new Date(invoice.dueDate), "yyyy/MM/dd")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <GenericStatusBadge
+                            label={invoiceStatusConfig[invoice.status]?.label ?? invoice.status}
+                            variant={
+                              invoice.status === "PAID"
+                                ? "success"
+                                : invoice.status === "OVERDUE"
+                                  ? "error"
+                                  : invoice.status === "SENT"
+                                    ? "info"
+                                    : "neutral"
+                            }
+                          />
+                          {/* Mobile actions */}
+                          <div className="mt-2 sm:hidden">
+                            {invoice.status === "DRAFT" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                disabled={updateStatusMutation.isPending}
+                                onClick={() =>
+                                  updateStatusMutation.mutate({
+                                    id: invoice.id,
+                                    status: "SENT",
+                                  })
+                                }
+                              >
+                                {pageLabels.actions.send}
+                              </Button>
+                            )}
+                            {(invoice.status === "SENT" || invoice.status === "OVERDUE") && (
+                              <Button
+                                size="sm"
+                                className="w-full"
+                                disabled={recordPaymentMutation.isPending}
+                                onClick={() =>
+                                  recordPaymentMutation.mutate({
+                                    id: invoice.id,
+                                    paymentMethod: "現金",
+                                  })
+                                }
+                              >
+                                {pageLabels.actions.confirmPayment}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">
+                          <div className="flex justify-end gap-2">
+                            {invoice.status === "DRAFT" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={updateStatusMutation.isPending}
+                                onClick={() =>
+                                  updateStatusMutation.mutate({
+                                    id: invoice.id,
+                                    status: "SENT",
+                                  })
+                                }
+                              >
+                                {pageLabels.actions.send}
+                              </Button>
+                            )}
+                            {(invoice.status === "SENT" || invoice.status === "OVERDUE") && (
+                              <Button
+                                size="sm"
+                                disabled={recordPaymentMutation.isPending}
+                                onClick={() =>
+                                  recordPaymentMutation.mutate({
+                                    id: invoice.id,
+                                    paymentMethod: "現金",
+                                  })
+                                }
+                              >
+                                {pageLabels.actions.confirmPayment}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
               {/* Pagination */}
               {data && data.pages > 1 && (

@@ -113,106 +113,150 @@ export default function PrescriptionsPage() {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{pageLabels.table.date}</TableHead>
-                    <TableHead>{pageLabels.table.patient}</TableHead>
-                    <TableHead>{pageLabels.table.medication}</TableHead>
-                    <TableHead>{pageLabels.table.dosage}</TableHead>
-                    <TableHead>{pageLabels.table.days}</TableHead>
-                    <TableHead>{pageLabels.table.doctor}</TableHead>
-                    <TableHead>{common.status}</TableHead>
-                    <TableHead className="text-right">{common.action}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.prescriptions.map((rx) => (
-                    <TableRow key={rx.id}>
-                      <TableCell>
-                        {format(new Date(rx.prescriptionDate), "yyyy/MM/dd")}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <Link
-                            href={`/patients/${rx.patient.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {rx.patient.lastName} {rx.patient.firstName}
-                          </Link>
-                          <p className="text-sm text-gray-500">
-                            {rx.patient.patientNumber}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {rx.medicationName}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p>{rx.dosage}</p>
-                          <p className="text-sm text-gray-500">{rx.frequency}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {rx.duration}日分
-                        <span className="text-sm text-gray-500 ml-1">
-                          ({rx.quantity}{rx.unit})
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/staff/${rx.doctor.id}`}
-                          className="hover:underline"
-                        >
-                          {rx.doctor.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <GenericStatusBadge
-                          label={prescriptionStatusConfig[rx.status]?.label ?? rx.status}
-                          variant={
-                            rx.status === "DISPENSED"
-                              ? "success"
-                              : rx.status === "PENDING"
-                                ? "warning"
-                                : "neutral"
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {rx.status === "PENDING" && (
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => dispenseMutation.mutate({ id: rx.id })}
-                              disabled={dispenseMutation.isPending}
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              {pageLabels.actions.dispensed}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-600"
-                              onClick={() => cancelMutation.mutate({ id: rx.id })}
-                              disabled={cancelMutation.isPending}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                        {rx.status === "DISPENSED" && rx.dispensedAt && (
-                          <span className="text-sm text-gray-500">
-                            {format(new Date(rx.dispensedAt), "MM/dd HH:mm")}
-                          </span>
-                        )}
-                      </TableCell>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="hidden sm:table-cell">{pageLabels.table.date}</TableHead>
+                      <TableHead>{pageLabels.table.patient}</TableHead>
+                      <TableHead>{pageLabels.table.medication}</TableHead>
+                      <TableHead className="hidden md:table-cell">{pageLabels.table.dosage}</TableHead>
+                      <TableHead className="hidden lg:table-cell">{pageLabels.table.days}</TableHead>
+                      <TableHead className="hidden md:table-cell">{pageLabels.table.doctor}</TableHead>
+                      <TableHead>{common.status}</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">{common.action}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {data?.prescriptions.map((rx) => (
+                      <TableRow key={rx.id}>
+                        <TableCell className="hidden sm:table-cell">
+                          {format(new Date(rx.prescriptionDate), "yyyy/MM/dd")}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <Link
+                              href={`/patients/${rx.patient.id}`}
+                              className="font-medium hover:underline"
+                            >
+                              {rx.patient.lastName} {rx.patient.firstName}
+                            </Link>
+                            <p className="text-sm text-gray-500">
+                              {rx.patient.patientNumber}
+                            </p>
+                            <p className="text-xs text-gray-400 sm:hidden">
+                              {format(new Date(rx.prescriptionDate), "MM/dd")}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">
+                            {rx.medicationName}
+                            <p className="text-xs text-gray-500 md:hidden">
+                              {rx.dosage} / {rx.frequency}
+                            </p>
+                            <p className="text-xs text-gray-400 lg:hidden md:hidden">
+                              {rx.duration}日分
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div>
+                            <p>{rx.dosage}</p>
+                            <p className="text-sm text-gray-500">{rx.frequency}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {rx.duration}日分
+                          <span className="text-sm text-gray-500 ml-1">
+                            ({rx.quantity}{rx.unit})
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Link
+                            href={`/staff/${rx.doctor.id}`}
+                            className="hover:underline"
+                          >
+                            {rx.doctor.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <GenericStatusBadge
+                            label={prescriptionStatusConfig[rx.status]?.label ?? rx.status}
+                            variant={
+                              rx.status === "DISPENSED"
+                                ? "success"
+                                : rx.status === "PENDING"
+                                  ? "warning"
+                                  : "neutral"
+                            }
+                          />
+                          {/* Mobile actions */}
+                          <div className="mt-2 sm:hidden">
+                            {rx.status === "PENDING" && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => dispenseMutation.mutate({ id: rx.id })}
+                                  disabled={dispenseMutation.isPending}
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  {pageLabels.actions.dispensed}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-red-600"
+                                  onClick={() => cancelMutation.mutate({ id: rx.id })}
+                                  disabled={cancelMutation.isPending}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                            {rx.status === "DISPENSED" && rx.dispensedAt && (
+                              <span className="text-xs text-gray-500">
+                                {format(new Date(rx.dispensedAt), "MM/dd HH:mm")}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">
+                          {rx.status === "PENDING" && (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => dispenseMutation.mutate({ id: rx.id })}
+                                disabled={dispenseMutation.isPending}
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                {pageLabels.actions.dispensed}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600"
+                                onClick={() => cancelMutation.mutate({ id: rx.id })}
+                                disabled={cancelMutation.isPending}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                          {rx.status === "DISPENSED" && rx.dispensedAt && (
+                            <span className="text-sm text-gray-500">
+                              {format(new Date(rx.dispensedAt), "MM/dd HH:mm")}
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
               {/* Pagination */}
               {data && data.pages > 1 && (
