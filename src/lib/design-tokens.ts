@@ -64,14 +64,6 @@ export const appointmentStatusConfig: Record<
   },
 };
 
-export const appointmentTypeConfig: Record<string, { label: string }> = {
-  INITIAL: { label: "初診" },
-  FOLLOWUP: { label: "再診" },
-  CONSULTATION: { label: "相談" },
-  CHECKUP: { label: "健診" },
-  EMERGENCY: { label: "緊急" },
-};
-
 export const prescriptionStatusConfig: Record<
   string,
   { label: string; bg: string; text: string }
