@@ -20,6 +20,7 @@ import {
   VerticalSeparator,
 } from "@/components/layout";
 import { typography, spacing } from "@/lib/design-tokens";
+import { labels } from "@/lib/labels";
 
 export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -49,16 +50,17 @@ export default function DashboardPage() {
   const appointments = data?.todayAppointments ?? [];
   const patients = data?.recentPatients ?? [];
 
+  const { stats: statLabels, sections, empty } = labels.pages.dashboard;
   const stats = [
-    { label: "患者数", value: totalPatients, href: "/patients" },
-    { label: "本日の予約", value: todayAppointmentsCount, href: "/appointments" },
-    { label: "未処理処方", value: pendingPrescriptions, href: "/prescriptions" },
-    { label: "今月の売上", value: `¥${monthlyRevenue.toLocaleString()}`, href: "/billing" },
+    { label: statLabels.patients, value: totalPatients, href: "/patients" },
+    { label: statLabels.todayAppointments, value: todayAppointmentsCount, href: "/appointments" },
+    { label: statLabels.pendingPrescriptions, value: pendingPrescriptions, href: "/prescriptions" },
+    { label: statLabels.monthlyRevenue, value: `¥${monthlyRevenue.toLocaleString()}`, href: "/billing" },
   ];
 
   return (
     <div className={spacing.page.maxWidth}>
-      <PageHeader title={`${userName}さん、おはようございます`} />
+      <PageHeader title={labels.pages.dashboard.greeting(userName)} />
 
       <StatGrid columns={4}>
         {stats.map((stat) => (
@@ -74,7 +76,7 @@ export default function DashboardPage() {
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Today's Appointments */}
         <div className="lg:col-span-3">
-          <SectionHeader title="本日の予約" viewAllHref="/appointments" />
+          <SectionHeader title={sections.todayAppointments} viewAllHref="/appointments" />
 
           {appointments.length > 0 ? (
             <ContentCard divided>
@@ -102,13 +104,13 @@ export default function DashboardPage() {
               ))}
             </ContentCard>
           ) : (
-            <EmptyState message="本日の予約はありません" />
+            <EmptyState message={empty.appointments} />
           )}
         </div>
 
         {/* Recent Patients */}
         <div className="lg:col-span-2">
-          <SectionHeader title="最近の患者" viewAllHref="/patients" />
+          <SectionHeader title={sections.recentPatients} viewAllHref="/patients" />
 
           {patients.length > 0 ? (
             <ContentCard divided>
@@ -129,7 +131,7 @@ export default function DashboardPage() {
               ))}
             </ContentCard>
           ) : (
-            <EmptyState message="患者データがありません" />
+            <EmptyState message={empty.patients} />
           )}
         </div>
       </div>

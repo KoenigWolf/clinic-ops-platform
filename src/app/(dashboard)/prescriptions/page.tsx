@@ -23,18 +23,10 @@ import {
 import { Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { labels } from "@/lib/labels";
+import { prescriptionStatusConfig } from "@/lib/design-tokens";
 
-const statusLabels = {
-  PENDING: "未処理",
-  DISPENSED: "調剤済",
-  CANCELLED: "キャンセル",
-};
-
-const statusColors = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  DISPENSED: "bg-green-100 text-green-700",
-  CANCELLED: "bg-red-100 text-red-700",
-};
+const { pages: { prescriptions: pageLabels }, common, messages } = labels;
 
 export default function PrescriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -48,21 +40,21 @@ export default function PrescriptionsPage() {
 
   const dispenseMutation = trpc.prescription.dispense.useMutation({
     onSuccess: () => {
-      toast.success("調剤済みに更新しました");
+      toast.success(messages.success.dispensed);
       refetch();
     },
     onError: (error) => {
-      toast.error(error.message || "更新に失敗しました");
+      toast.error(error.message || messages.error.recordUpdateFailed);
     },
   });
 
   const cancelMutation = trpc.prescription.cancel.useMutation({
     onSuccess: () => {
-      toast.success("キャンセルしました");
+      toast.success(messages.success.cancelled);
       refetch();
     },
     onError: (error) => {
-      toast.error(error.message || "キャンセルに失敗しました");
+      toast.error(error.message || messages.error.recordUpdateFailed);
     },
   });
 
@@ -70,15 +62,15 @@ export default function PrescriptionsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">処方管理</h1>
-        <p className="text-gray-500">処方箋の管理・調剤状況の確認</p>
+        <h1 className="text-2xl font-bold text-gray-900">{pageLabels.title}</h1>
+        <p className="text-gray-500">{pageLabels.description}</p>
       </div>
 
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">ステータス:</label>
+            <label className="text-sm font-medium">{pageLabels.statusFilter}</label>
             <Select
               value={statusFilter}
               onValueChange={(value) => {
@@ -90,10 +82,10 @@ export default function PrescriptionsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">すべて</SelectItem>
-                <SelectItem value="PENDING">未処理</SelectItem>
-                <SelectItem value="DISPENSED">調剤済</SelectItem>
-                <SelectItem value="CANCELLED">キャンセル</SelectItem>
+                <SelectItem value="ALL">{pageLabels.filter.all}</SelectItem>
+                <SelectItem value="PENDING">{pageLabels.filter.pending}</SelectItem>
+                <SelectItem value="DISPENSED">{pageLabels.filter.dispensed}</SelectItem>
+                <SelectItem value="CANCELLED">{pageLabels.filter.cancelled}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -103,26 +95,26 @@ export default function PrescriptionsPage() {
       {/* Prescriptions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>処方一覧 ({data?.total || 0}件)</CardTitle>
+          <CardTitle>{pageLabels.listTitle(data?.total || 0)}</CardTitle>
         </CardHeader>
         <CardContent>
           {data?.prescriptions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              処方データがありません
+              {pageLabels.empty}
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>処方日</TableHead>
-                    <TableHead>患者</TableHead>
-                    <TableHead>薬剤名</TableHead>
-                    <TableHead>用法・用量</TableHead>
-                    <TableHead>日数</TableHead>
-                    <TableHead>担当医</TableHead>
-                    <TableHead>ステータス</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
+                    <TableHead>{pageLabels.table.date}</TableHead>
+                    <TableHead>{pageLabels.table.patient}</TableHead>
+                    <TableHead>{pageLabels.table.medication}</TableHead>
+                    <TableHead>{pageLabels.table.dosage}</TableHead>
+                    <TableHead>{pageLabels.table.days}</TableHead>
+                    <TableHead>{pageLabels.table.doctor}</TableHead>
+                    <TableHead>{common.status}</TableHead>
+                    <TableHead className="text-right">{common.action}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -158,8 +150,8 @@ export default function PrescriptionsPage() {
                       </TableCell>
                       <TableCell>{rx.doctor.name}</TableCell>
                       <TableCell>
-                        <Badge className={statusColors[rx.status]}>
-                          {statusLabels[rx.status]}
+                        <Badge className={`${prescriptionStatusConfig[rx.status]?.bg} ${prescriptionStatusConfig[rx.status]?.text}`}>
+                          {prescriptionStatusConfig[rx.status]?.label}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -172,7 +164,7 @@ export default function PrescriptionsPage() {
                               disabled={dispenseMutation.isPending}
                             >
                               <Check className="h-4 w-4 mr-1" />
-                              調剤済
+                              {pageLabels.actions.dispensed}
                             </Button>
                             <Button
                               size="sm"
@@ -209,7 +201,7 @@ export default function PrescriptionsPage() {
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
-                      前へ
+                      {common.prev}
                     </Button>
                     <Button
                       variant="outline"
@@ -217,7 +209,7 @@ export default function PrescriptionsPage() {
                       onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
                       disabled={page === data.pages}
                     >
-                      次へ
+                      {common.next}
                     </Button>
                   </div>
                 </div>

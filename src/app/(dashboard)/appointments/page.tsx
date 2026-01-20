@@ -17,6 +17,9 @@ import {
   colors,
   typography,
 } from "@/lib/design-tokens";
+import { labels } from "@/lib/labels";
+
+const { pages: { appointments: pageLabels }, messages } = labels;
 
 const statusStyles: Record<string, string> = {
   SCHEDULED: `${colors.status.inactive.bg} ${colors.status.inactive.text}`,
@@ -53,7 +56,7 @@ export default function AppointmentsPage() {
       await startSessionMutation.mutateAsync({ sessionId: session.id });
       router.push(`/video?sessionId=${session.id}&roomUrl=${encodeURIComponent(roomUrl)}&token=${encodeURIComponent(token || "")}`);
     } catch {
-      toast.error("オンライン診療の開始に失敗しました");
+      toast.error(messages.error.onlineConsultationFailed);
     }
   };
 
@@ -61,19 +64,19 @@ export default function AppointmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className={typography.pageTitle}>予約管理</h1>
-          <p className={colors.text.muted}>診療予約の管理・スケジュール確認</p>
+          <h1 className={typography.pageTitle}>{pageLabels.title}</h1>
+          <p className={colors.text.muted}>{pageLabels.description}</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          新規予約
+          {pageLabels.newAppointment}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>カレンダー</CardTitle>
+            <CardTitle>{pageLabels.calendar}</CardTitle>
           </CardHeader>
           <CardContent>
             <Calendar
@@ -95,7 +98,7 @@ export default function AppointmentsPage() {
           <CardContent>
             {appointments?.appointments.length === 0 ? (
               <div className={`text-center py-8 ${colors.text.muted}`}>
-                この日の予約はありません
+                {pageLabels.empty}
               </div>
             ) : (
               <div className="space-y-4">
@@ -160,7 +163,7 @@ export default function AppointmentsPage() {
                             })
                           }
                         >
-                          受付
+                          {pageLabels.actions.checkIn}
                         </Button>
                       )}
                       {apt.status === "WAITING" && (
@@ -171,7 +174,7 @@ export default function AppointmentsPage() {
                             disabled={createSessionMutation.isPending}
                           >
                             <Phone className="h-4 w-4 mr-1" />
-                            {createSessionMutation.isPending ? "準備中..." : "オンライン診療開始"}
+                            {createSessionMutation.isPending ? pageLabels.actions.preparing : pageLabels.actions.startOnline}
                           </Button>
                         ) : (
                           <Button
@@ -183,7 +186,7 @@ export default function AppointmentsPage() {
                               })
                             }
                           >
-                            開始
+                            {pageLabels.actions.start}
                           </Button>
                         )
                       )}
@@ -198,7 +201,7 @@ export default function AppointmentsPage() {
                             })
                           }
                         >
-                          完了
+                          {pageLabels.actions.complete}
                         </Button>
                       )}
                     </div>

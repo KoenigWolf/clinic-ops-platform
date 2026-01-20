@@ -17,6 +17,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Eye, FileText } from "lucide-react";
 import { PatientDialog } from "@/components/patients/patient-dialog";
+import { labels } from "@/lib/labels";
+
+const { pages: { patients: pageLabels }, common } = labels;
 
 export default function PatientsPage() {
   const [search, setSearch] = useState("");
@@ -29,23 +32,17 @@ export default function PatientsPage() {
     limit: 20,
   });
 
-  const genderLabel = {
-    MALE: "男性",
-    FEMALE: "女性",
-    OTHER: "その他",
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">患者管理</h1>
-          <p className="text-gray-500">患者情報の登録・管理</p>
+          <h1 className="text-2xl font-bold text-gray-900">{pageLabels.title}</h1>
+          <p className="text-gray-500">{pageLabels.description}</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          新規患者登録
+          {pageLabels.newPatient}
         </Button>
       </div>
 
@@ -56,7 +53,7 @@ export default function PatientsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="患者名、患者番号、電話番号で検索..."
+                placeholder={pageLabels.searchPlaceholder}
                 className="pl-10"
                 value={search}
                 onChange={(e) => {
@@ -72,27 +69,27 @@ export default function PatientsPage() {
       {/* Patients Table */}
       <Card>
         <CardHeader>
-          <CardTitle>患者一覧 ({data?.total || 0}件)</CardTitle>
+          <CardTitle>{pageLabels.listTitle(data?.total || 0)}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-gray-500">読み込み中...</div>
+            <div className="text-center py-8 text-gray-500">{common.loading}</div>
           ) : data?.patients.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              患者データがありません
+              {pageLabels.empty}
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>患者番号</TableHead>
-                    <TableHead>氏名</TableHead>
-                    <TableHead>性別</TableHead>
-                    <TableHead>生年月日</TableHead>
-                    <TableHead>電話番号</TableHead>
-                    <TableHead>保険番号</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
+                    <TableHead>{pageLabels.table.patientNumber}</TableHead>
+                    <TableHead>{pageLabels.table.name}</TableHead>
+                    <TableHead>{pageLabels.table.gender}</TableHead>
+                    <TableHead>{pageLabels.table.birthDate}</TableHead>
+                    <TableHead>{pageLabels.table.phone}</TableHead>
+                    <TableHead>{pageLabels.table.insuranceNumber}</TableHead>
+                    <TableHead className="text-right">{common.action}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -111,7 +108,7 @@ export default function PatientsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {genderLabel[patient.gender]}
+                          {pageLabels.gender[patient.gender]}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -151,7 +148,7 @@ export default function PatientsPage() {
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
-                      前へ
+                      {common.prev}
                     </Button>
                     <Button
                       variant="outline"
@@ -159,7 +156,7 @@ export default function PatientsPage() {
                       onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
                       disabled={page === data.pages}
                     >
-                      次へ
+                      {common.next}
                     </Button>
                   </div>
                 </div>
