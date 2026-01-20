@@ -1,140 +1,14 @@
 import { z } from "zod";
 import { router, doctorProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
-
-// ==================== スキーマ定義 ====================
-
-// 聴力検査スキーマ
-const audiometrySchema = z.object({
-  patientId: z.string(),
-  medicalRecordId: z.string().optional(),
-  testDate: z.date().optional(),
-  testType: z.enum(["PURE_TONE", "SPEECH", "IMPEDANCE", "OAE", "ABR"]).default("PURE_TONE"),
-  // 右耳気導
-  rightAir125: z.number().nullable().optional(),
-  rightAir250: z.number().nullable().optional(),
-  rightAir500: z.number().nullable().optional(),
-  rightAir1000: z.number().nullable().optional(),
-  rightAir2000: z.number().nullable().optional(),
-  rightAir4000: z.number().nullable().optional(),
-  rightAir8000: z.number().nullable().optional(),
-  // 左耳気導
-  leftAir125: z.number().nullable().optional(),
-  leftAir250: z.number().nullable().optional(),
-  leftAir500: z.number().nullable().optional(),
-  leftAir1000: z.number().nullable().optional(),
-  leftAir2000: z.number().nullable().optional(),
-  leftAir4000: z.number().nullable().optional(),
-  leftAir8000: z.number().nullable().optional(),
-  // 右耳骨導
-  rightBone250: z.number().nullable().optional(),
-  rightBone500: z.number().nullable().optional(),
-  rightBone1000: z.number().nullable().optional(),
-  rightBone2000: z.number().nullable().optional(),
-  rightBone4000: z.number().nullable().optional(),
-  // 左耳骨導
-  leftBone250: z.number().nullable().optional(),
-  leftBone500: z.number().nullable().optional(),
-  leftBone1000: z.number().nullable().optional(),
-  leftBone2000: z.number().nullable().optional(),
-  leftBone4000: z.number().nullable().optional(),
-  // 語音弁別能
-  rightSpeechDiscrimination: z.number().nullable().optional(),
-  leftSpeechDiscrimination: z.number().nullable().optional(),
-  interpretation: z.string().optional(),
-});
-
-// ティンパノメトリースキーマ
-const tympanometrySchema = z.object({
-  patientId: z.string(),
-  medicalRecordId: z.string().optional(),
-  testDate: z.date().optional(),
-  rightType: z.enum(["A", "As", "Ad", "B", "C"]).nullable().optional(),
-  rightPeakPressure: z.number().nullable().optional(),
-  rightCompliance: z.number().nullable().optional(),
-  rightEarCanalVolume: z.number().nullable().optional(),
-  leftType: z.enum(["A", "As", "Ad", "B", "C"]).nullable().optional(),
-  leftPeakPressure: z.number().nullable().optional(),
-  leftCompliance: z.number().nullable().optional(),
-  leftEarCanalVolume: z.number().nullable().optional(),
-  interpretation: z.string().optional(),
-});
-
-// 平衡機能検査スキーマ
-const vestibularSchema = z.object({
-  patientId: z.string(),
-  medicalRecordId: z.string().optional(),
-  testDate: z.date().optional(),
-  testType: z.enum(["CALORIC", "POSTUROGRAPHY", "ENG", "VNG", "VHIT", "VEMP", "ROTATION"]).default("CALORIC"),
-  chiefComplaint: z.string().optional(),
-  vertigoType: z.string().optional(),
-  nystagmusFindings: z.string().optional(),
-  rombergTest: z.string().optional(),
-  mannTest: z.string().optional(),
-  caloricResponse: z.string().optional(),
-  headImpulseTest: z.string().optional(),
-  dixHallpikeResult: z.string().optional(),
-  interpretation: z.string().optional(),
-});
-
-// 内視鏡検査スキーマ
-const endoscopySchema = z.object({
-  patientId: z.string(),
-  medicalRecordId: z.string().optional(),
-  examDate: z.date().optional(),
-  examType: z.enum(["NASAL", "PHARYNGEAL", "LARYNGEAL", "OTOSCOPY"]).default("NASAL"),
-  nasalFindings: z.string().optional(),
-  nasalSeptum: z.string().optional(),
-  inferiorTurbinate: z.string().optional(),
-  middleMeatus: z.string().optional(),
-  pharyngealFindings: z.string().optional(),
-  tonsils: z.string().optional(),
-  laryngealFindings: z.string().optional(),
-  vocalCords: z.string().optional(),
-  epiglottis: z.string().optional(),
-  otoscopyRight: z.string().optional(),
-  otoscopyLeft: z.string().optional(),
-  imageUrls: z.array(z.string()).optional(),
-  interpretation: z.string().optional(),
-});
-
-// アレルギー検査結果スキーマ（アレルゲン名 -> クラス値）
-const allergyResultSchema = z.record(
-  z.string(),
-  z.string().regex(/^[0-6]$/, "クラスは0-6の値")
-);
-
-// アレルギー検査スキーマ
-const allergyTestSchema = z.object({
-  patientId: z.string(),
-  medicalRecordId: z.string().optional(),
-  testDate: z.date().optional(),
-  testType: z.enum(["RAST", "SKIN_PRICK", "MAST", "CAP"]).default("RAST"),
-  results: allergyResultSchema.optional(),
-  totalIgE: z.number().nullable().optional(),
-  interpretation: z.string().optional(),
-});
-
-// 処方スキーマ
-const prescriptionItemSchema = z.object({
-  name: z.string(),
-  dosage: z.string(),
-  frequency: z.string(),
-  duration: z.string(),
-});
-
-// 診断テンプレートスキーマ
-const diagnosisTemplateSchema = z.object({
-  name: z.string(),
-  category: z.enum(["EAR", "NOSE", "THROAT", "ALLERGY", "VERTIGO", "OTHER"]),
-  icdCode: z.string().optional(),
-  subjectiveTemplate: z.string().optional(),
-  objectiveTemplate: z.string().optional(),
-  assessmentTemplate: z.string().optional(),
-  planTemplate: z.string().optional(),
-  commonPrescriptions: z.array(prescriptionItemSchema).optional(),
-  isActive: z.boolean().default(true),
-});
+import {
+  audiometrySchema,
+  tympanometrySchema,
+  vestibularSchema,
+  endoscopySchema,
+  allergyTestSchema,
+  diagnosisTemplateSchema,
+} from "./ent.schemas";
 
 export const entRouter = router({
   // ==================== 統計・ダッシュボード ====================
