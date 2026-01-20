@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, doctorProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { logPhiModification } from "@/lib/audit";
 
 const prescriptionSchema = z.object({
   patientId: z.string(),
@@ -78,12 +79,25 @@ export const prescriptionRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.prescription.create({
+      const prescription = await ctx.prisma.prescription.create({
         data: {
           ...input,
           doctorId: ctx.session.user.id,
         },
       });
+
+      await logPhiModification({
+        action: "CREATE",
+        entityType: "Prescription",
+        entityId: prescription.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        newData: { patientId: input.patientId, medicationName: input.medicationName },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return prescription;
     }),
 
   // Create multiple prescriptions at once
@@ -110,7 +124,24 @@ export const prescriptionRouter = router({
         doctorId: ctx.session.user.id,
       }));
 
-      return ctx.prisma.prescription.createMany({ data });
+      const result = await ctx.prisma.prescription.createMany({ data });
+
+      await logPhiModification({
+        action: "CREATE",
+        entityType: "Prescription",
+        entityId: `batch-${input.patientId}`,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        newData: {
+          patientId: input.patientId,
+          count: input.prescriptions.length,
+          medications: input.prescriptions.map((p) => p.medicationName),
+        },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return result;
     }),
 
   // Mark as dispensed
@@ -126,13 +157,27 @@ export const prescriptionRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.prescription.update({
+      const updated = await ctx.prisma.prescription.update({
         where: { id: input.id },
         data: {
           status: "DISPENSED",
           dispensedAt: new Date(),
         },
       });
+
+      await logPhiModification({
+        action: "UPDATE",
+        entityType: "Prescription",
+        entityId: prescription.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        oldData: { status: prescription.status },
+        newData: { status: "DISPENSED" },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return updated;
     }),
 
   // Cancel prescription
@@ -148,9 +193,23 @@ export const prescriptionRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.prescription.update({
+      const cancelled = await ctx.prisma.prescription.update({
         where: { id: input.id },
         data: { status: "CANCELLED" },
       });
+
+      await logPhiModification({
+        action: "UPDATE",
+        entityType: "Prescription",
+        entityId: prescription.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        oldData: { status: prescription.status },
+        newData: { status: "CANCELLED" },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return cancelled;
     }),
 });

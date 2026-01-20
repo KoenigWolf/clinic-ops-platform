@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, doctorProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { logPhiAccess, logPhiModification } from "@/lib/audit";
 
 const vitalSignsSchema = z.object({
   bloodPressureSystolic: z.number().optional(),
@@ -91,6 +92,15 @@ export const recordRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      await logPhiAccess({
+        entityType: "MedicalRecord",
+        entityId: record.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
       return record;
     }),
 
@@ -107,13 +117,26 @@ export const recordRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.medicalRecord.create({
+      const record = await ctx.prisma.medicalRecord.create({
         data: {
           ...input,
           vitalSigns: input.vitalSigns || undefined,
           doctorId: ctx.session.user.id,
         },
       });
+
+      await logPhiModification({
+        action: "CREATE",
+        entityType: "MedicalRecord",
+        entityId: record.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        newData: { patientId: input.patientId, diagnosis: input.diagnosis },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return record;
     }),
 
   // Update record (doctors only)
@@ -134,13 +157,26 @@ export const recordRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.medicalRecord.update({
+      const updatedRecord = await ctx.prisma.medicalRecord.update({
         where: { id: input.id },
         data: {
           ...input.data,
           vitalSigns: input.data.vitalSigns || undefined,
         },
       });
+
+      await logPhiModification({
+        action: "UPDATE",
+        entityType: "MedicalRecord",
+        entityId: record.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        newData: { updatedFields: Object.keys(input.data) },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return updatedRecord;
     }),
 
   // Delete record (doctors only)
@@ -158,8 +194,21 @@ export const recordRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.medicalRecord.delete({
+      const deletedRecord = await ctx.prisma.medicalRecord.delete({
         where: { id: input.id },
       });
+
+      await logPhiModification({
+        action: "DELETE",
+        entityType: "MedicalRecord",
+        entityId: record.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        oldData: { patientId: record.patientId, diagnosis: record.diagnosis },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return deletedRecord;
     }),
 });

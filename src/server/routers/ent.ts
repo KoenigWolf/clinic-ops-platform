@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, doctorProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { logPhiAccess, logPhiModification } from "@/lib/audit";
 import {
   audiometrySchema,
   tympanometrySchema,
@@ -231,6 +232,16 @@ export const entRouter = router({
         if (!test || test.patient.tenantId !== ctx.tenantId) {
           throw new TRPCError({ code: "NOT_FOUND" });
         }
+
+        await logPhiAccess({
+          entityType: "AudiometryTest",
+          entityId: test.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
         return test;
       }),
 
@@ -242,9 +253,22 @@ export const entRouter = router({
         });
         if (!patient) throw new TRPCError({ code: "NOT_FOUND" });
 
-        return ctx.prisma.audiometryTest.create({
+        const test = await ctx.prisma.audiometryTest.create({
           data: input,
         });
+
+        await logPhiModification({
+          action: "CREATE",
+          entityType: "AudiometryTest",
+          entityId: test.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          newData: { patientId: input.patientId, testDate: input.testDate },
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
+        return test;
       }),
 
     update: doctorProcedure
@@ -257,10 +281,24 @@ export const entRouter = router({
         if (!test || test.patient.tenantId !== ctx.tenantId) {
           throw new TRPCError({ code: "NOT_FOUND" });
         }
-        return ctx.prisma.audiometryTest.update({
+
+        const updated = await ctx.prisma.audiometryTest.update({
           where: { id: input.id },
           data: input.data,
         });
+
+        await logPhiModification({
+          action: "UPDATE",
+          entityType: "AudiometryTest",
+          entityId: test.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          newData: { updatedFields: Object.keys(input.data) },
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
+        return updated;
       }),
 
     delete: doctorProcedure
@@ -273,7 +311,21 @@ export const entRouter = router({
         if (!test || test.patient.tenantId !== ctx.tenantId) {
           throw new TRPCError({ code: "NOT_FOUND" });
         }
-        return ctx.prisma.audiometryTest.delete({ where: { id: input.id } });
+
+        const deleted = await ctx.prisma.audiometryTest.delete({ where: { id: input.id } });
+
+        await logPhiModification({
+          action: "DELETE",
+          entityType: "AudiometryTest",
+          entityId: test.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          oldData: { patientId: test.patientId, testDate: test.testDate },
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
+        return deleted;
       }),
   }),
 

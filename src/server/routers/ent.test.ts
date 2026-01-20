@@ -58,9 +58,15 @@ vi.mock("@/lib/auth", () => ({
   getSession: vi.fn(),
 }));
 
+vi.mock("@/lib/audit", () => ({
+  logPhiAccess: vi.fn(),
+  logPhiModification: vi.fn(),
+}));
+
 describe("entRouter", () => {
   const mockTenantId = "test-tenant-id";
   const mockPatientId = "test-patient-id";
+  const mockRequestMeta = { ipAddress: "127.0.0.1", userAgent: "test" };
   const mockDoctorSession = {
     user: {
       id: "test-doctor-id",
@@ -113,6 +119,7 @@ describe("entRouter", () => {
         prisma: mockPrisma,
         session: mockStaffSession,
         tenantId: mockTenantId,
+        requestMeta: mockRequestMeta,
       } as never);
 
       const result = await caller.stats();
@@ -142,6 +149,7 @@ describe("entRouter", () => {
         prisma: mockPrisma,
         session: mockStaffSession,
         tenantId: mockTenantId,
+        requestMeta: mockRequestMeta,
       } as never);
 
       await caller.stats();
@@ -171,6 +179,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.audiometry.list({ patientId: mockPatientId });
@@ -190,6 +199,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         await expect(caller.audiometry.list({ patientId: mockPatientId }))
@@ -214,6 +224,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.audiometry.create({
@@ -235,6 +246,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         await expect(caller.audiometry.create({
@@ -264,6 +276,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.audiometry.update({
@@ -286,6 +299,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         await expect(caller.audiometry.update({
@@ -309,6 +323,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         await caller.audiometry.delete({ id: "test1" });
@@ -334,6 +349,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.tympanometry.list({ patientId: mockPatientId });
@@ -359,6 +375,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.tympanometry.create({
@@ -387,6 +404,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.vestibular.list({ patientId: mockPatientId });
@@ -410,6 +428,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.endoscopy.list({ patientId: mockPatientId });
@@ -435,6 +454,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.endoscopy.create({
@@ -462,6 +482,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.allergy.list({ patientId: mockPatientId });
@@ -487,6 +508,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.allergy.create({
@@ -516,6 +538,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.template.list();
@@ -530,6 +553,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockStaffSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         await caller.template.list({ category: "EAR" });
@@ -563,6 +587,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         const result = await caller.template.create({
@@ -592,6 +617,7 @@ describe("entRouter", () => {
           prisma: mockPrisma,
           session: mockDoctorSession,
           tenantId: mockTenantId,
+          requestMeta: mockRequestMeta,
         } as never);
 
         await caller.template.delete({ id: "t1" });
@@ -619,6 +645,7 @@ describe("entRouter", () => {
         prisma: mockPrisma,
         session: mockStaffSession,
         tenantId: mockTenantId,
+        requestMeta: mockRequestMeta,
       } as never);
 
       const result = await caller.hearingLevelDistribution();
