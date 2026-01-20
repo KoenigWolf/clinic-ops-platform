@@ -26,7 +26,6 @@ export const dashboardRouter = router({
         take: 5,
         select: {
           id: true,
-          patientNumber: true,
           lastName: true,
           firstName: true,
           updatedAt: true,
@@ -38,7 +37,12 @@ export const dashboardRouter = router({
           tenantId: ctx.tenantId,
           appointmentDate: todayRange,
         },
-        include: {
+        select: {
+          id: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          isOnline: true,
           patient: {
             select: { lastName: true, firstName: true },
           },
