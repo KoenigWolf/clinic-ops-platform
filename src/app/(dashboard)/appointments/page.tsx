@@ -13,7 +13,6 @@ import { EmptyState, OnlineBadge, PageHeader, StatusBadge } from "@/components/l
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
-import { colors, typography } from "@/lib/design-tokens";
 import { labels } from "@/lib/labels";
 
 const { pages: { appointments: pageLabels }, messages } = labels;
@@ -75,7 +74,7 @@ export default function AppointmentsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>{pageLabels.calendar}</CardTitle>
@@ -108,11 +107,11 @@ export default function AppointmentsPage() {
                 }
               />
             ) : isLoading ? (
-              <div className={`text-center py-8 ${colors.text.muted}`}>
+              <div className="text-center py-8 text-gray-500">
                 {labels.common.loading}
               </div>
             ) : appointments?.appointments.length === 0 ? (
-              <div className={`text-center py-8 ${colors.text.muted}`}>
+              <div className="text-center py-8 text-gray-500">
                 {pageLabels.empty}
               </div>
             ) : (
@@ -120,39 +119,39 @@ export default function AppointmentsPage() {
                 {appointments?.appointments.map((apt) => (
                   <div
                     key={apt.id}
-                    className={`flex items-center justify-between p-4 border rounded-lg hover:${colors.bg.hover}`}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50/50"
                   >
                     <div className="flex items-center gap-4">
                       <div className="text-center min-w-[80px]">
-                        <p className={typography.time}>
+                        <p className="text-lg font-semibold text-gray-900 tabular-nums">
                           {format(new Date(apt.startTime), "HH:mm")}
                         </p>
-                        <p className={typography.timeSmall}>
+                        <p className="text-xs text-gray-400">
                           ~ {format(new Date(apt.endTime), "HH:mm")}
                         </p>
                       </div>
 
                       <div className="border-l pl-4">
                         <div className="flex items-center gap-2">
-                          <User className={`h-4 w-4 ${colors.text.subtle}`} />
+                          <User className="h-4 w-4 text-gray-400" />
                           <Link
                             href={`/patients/${apt.patient.id}`}
                             className="font-medium hover:underline"
                           >
                             {apt.patient.lastName} {apt.patient.firstName}
                           </Link>
-                          <span className={typography.bodySmall}>
+                          <span className="text-xs text-gray-500">
                             ({apt.patient.patientNumber})
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <Clock className={`h-4 w-4 ${colors.text.subtle}`} />
-                          <p className={typography.body}>
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <p className="text-sm text-gray-600">
                             担当: {apt.doctor.name}
                           </p>
                         </div>
                         {apt.reason && (
-                          <p className={`${typography.bodySmall} mt-1`}>
+                          <p className="text-xs text-gray-500 mt-1">
                             {apt.reason}
                           </p>
                         )}

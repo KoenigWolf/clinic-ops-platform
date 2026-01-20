@@ -31,7 +31,6 @@ import {
   EmptyState,
   PageHeader,
 } from "@/components/layout";
-import { colors, componentStyles } from "@/lib/design-tokens";
 import { labels } from "@/lib/labels";
 
 const { pages: { questionnaire: pageLabels }, common } = labels;
@@ -51,9 +50,9 @@ const CATEGORIES = [
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  DRAFT: { label: pageLabels.status.draft, className: `${colors.bg.muted} ${colors.text.muted}` },
-  SUBMITTED: { label: pageLabels.status.submitted, className: `${colors.info.bgLight} ${colors.info.text}` },
-  REVIEWED: { label: pageLabels.status.confirmed, className: `${colors.success.bgLight} ${colors.success.text}` },
+  DRAFT: { label: pageLabels.status.draft, className: "bg-gray-50 text-gray-500" },
+  SUBMITTED: { label: pageLabels.status.submitted, className: "bg-blue-50 text-blue-600" },
+  REVIEWED: { label: pageLabels.status.confirmed, className: "bg-emerald-50 text-emerald-600" },
   APPLIED: { label: pageLabels.status.applied, className: "bg-purple-50 text-purple-600" },
 };
 
@@ -103,7 +102,7 @@ export default function QuestionnairePage() {
           }
         />
       ) : isLoading ? (
-        <div className={`text-center py-8 ${colors.text.muted}`}>{common.loading}</div>
+        <div className="text-center py-8 text-gray-500">{common.loading}</div>
       ) : (
         <>
           {/* Stats */}
@@ -150,10 +149,10 @@ export default function QuestionnairePage() {
             <TabsContent value="responses" className="space-y-4 mt-4">
               {/* Pending Responses */}
               {(pendingResponses?.length || 0) > 0 && (
-                <Card className={`border-2 ${colors.info.border} ${colors.info.bgLight}`}>
+                <Card className="border-2 border-blue-200 bg-blue-50">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                      <Clock className={`h-5 w-5 ${colors.info.text}`} />
+                      <Clock className="h-5 w-5 text-blue-600" />
                       {pageLabels.sections.unconfirmed}
                     </CardTitle>
                     <CardDescription className="text-sm">
@@ -165,7 +164,7 @@ export default function QuestionnairePage() {
                       {pendingResponses?.map((response) => (
                         <div
                           key={response.id}
-                          className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 ${colors.bg.card} rounded-lg border gap-3`}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white rounded-lg border gap-3"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                             <div>
@@ -175,21 +174,21 @@ export default function QuestionnairePage() {
                               >
                                 {response.patient.lastName} {response.patient.firstName}
                               </Link>
-                              <p className={`text-sm ${colors.text.muted}`}>
+                              <p className="text-sm text-gray-500">
                                 {response.patient.patientNumber}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
                               <Badge variant="outline">{response.template.name}</Badge>
                               {response.appointment && (
-                                <span className={`text-xs ${colors.text.subtle}`}>
+                                <span className="text-xs text-gray-400">
                                   予約: {new Date(response.appointment.appointmentDate).toLocaleDateString("ja-JP")}
                                 </span>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center justify-between sm:justify-end gap-2">
-                            <span className={`text-xs ${colors.text.subtle}`}>
+                            <span className="text-xs text-gray-400">
                               {formatDistanceToNow(new Date(response.submittedAt), {
                                 addSuffix: true,
                                 locale: ja,
@@ -210,7 +209,7 @@ export default function QuestionnairePage() {
               )}
 
               {/* All Responses */}
-              <Card className={componentStyles.card.base}>
+              <Card className="bg-white rounded-xl shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base sm:text-lg">{pageLabels.sections.responseList}</CardTitle>
                 </CardHeader>
@@ -222,7 +221,7 @@ export default function QuestionnairePage() {
                       {allResponses.map((response) => (
                         <div
                           key={response.id}
-                          className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:${colors.bg.hover} rounded-lg transition-colors gap-2`}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-gray-50/50 rounded-lg transition-colors gap-2"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                             <div className="min-w-0">
@@ -232,19 +231,19 @@ export default function QuestionnairePage() {
                               >
                                 {response.patient.lastName} {response.patient.firstName}
                               </Link>
-                              <p className={`text-xs ${colors.text.muted}`}>
+                              <p className="text-xs text-gray-500">
                                 {response.patient.patientNumber}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
                               <Badge variant="outline" className="text-xs">{response.template.name}</Badge>
-                              <Badge className={STATUS_CONFIG[response.status]?.className ?? `${colors.bg.muted} ${colors.text.muted}`}>
+                              <Badge className={STATUS_CONFIG[response.status]?.className ?? "bg-gray-50 text-gray-500"}>
                                 {STATUS_CONFIG[response.status]?.label ?? response.status}
                               </Badge>
                             </div>
                           </div>
                           <div className="flex items-center justify-between sm:justify-end gap-2">
-                            <span className={`text-xs ${colors.text.subtle}`}>
+                            <span className="text-xs text-gray-400">
                               {new Date(response.submittedAt).toLocaleDateString("ja-JP")}
                             </span>
                             <Link href={`/questionnaire/response/${response.id}`}>
@@ -285,11 +284,11 @@ export default function QuestionnairePage() {
               </div>
 
               {!templates?.length ? (
-                <Card className={componentStyles.card.base}>
+                <Card className="bg-white rounded-xl shadow-sm">
                   <CardContent className="py-8">
                     <div className="text-center">
-                      <FileText className={`mx-auto h-12 w-12 ${colors.text.subtle} mb-4`} />
-                      <p className={colors.text.muted}>{pageLabels.templatesEmpty}</p>
+                      <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <p className="text-gray-500">{pageLabels.templatesEmpty}</p>
                       <Link href="/questionnaire/templates/new">
                         <Button variant="outline" className="mt-4">
                           <Plus className="mr-2 h-4 w-4" />
@@ -302,7 +301,7 @@ export default function QuestionnairePage() {
               ) : (
                 <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {templates.map((template) => (
-                    <Card key={template.id} className={`${componentStyles.card.interactive}`}>
+                    <Card key={template.id} className="bg-white rounded-xl shadow-sm hover:shadow transition-shadow">
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
@@ -322,7 +321,7 @@ export default function QuestionnairePage() {
                             <Badge variant="outline" className="text-xs">
                               {CATEGORIES.find((c) => c.value === template.category)?.label}
                             </Badge>
-                            <span className={`text-xs ${colors.text.muted}`}>
+                            <span className="text-xs text-gray-500">
                               {(template.questions as unknown[])?.length || 0}問
                             </span>
                           </div>

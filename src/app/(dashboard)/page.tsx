@@ -20,7 +20,6 @@ import {
   DateDisplay,
   VerticalSeparator,
 } from "@/components/layout";
-import { typography } from "@/lib/design-tokens";
 import { labels } from "@/lib/labels";
 
 const formatCurrency = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
@@ -111,7 +110,7 @@ export default function DashboardPage() {
                       <div>
                         <Link
                           href={`/patients/${apt.patient.id}`}
-                          className={`${typography.cardTitle} hover:underline`}
+                          className="text-sm font-medium text-gray-900 hover:underline"
                         >
                           {apt.patient.lastName} {apt.patient.firstName}
                         </Link>
@@ -144,7 +143,7 @@ export default function DashboardPage() {
                 >
                   <Avatar name={patient.lastName} size="md" />
                   <div className="flex-1 min-w-0">
-                    <p className={`${typography.cardTitle} truncate`}>
+                    <p className="text-sm font-medium text-gray-900 truncate">
                       {patient.lastName} {patient.firstName}
                     </p>
                   </div>
