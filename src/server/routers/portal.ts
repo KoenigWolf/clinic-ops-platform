@@ -5,20 +5,6 @@ import { TRPCError } from "@trpc/server";
 export const portalRouter = router({
   // ==================== 患者ポータル (自己参照) ====================
 
-  // 自分の患者情報を取得
-  myPatient: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.session.user.email) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: "メールアドレスが不明です" });
-    }
-    const patient = await ctx.prisma.patient.findFirst({
-      where: {
-        email: ctx.session.user.email,
-        tenantId: ctx.tenantId,
-      },
-    });
-    return patient;
-  }),
-
   // 自分のダッシュボード情報
   myDashboard: protectedProcedure.query(async ({ ctx }) => {
     if (!ctx.session.user.email) {
