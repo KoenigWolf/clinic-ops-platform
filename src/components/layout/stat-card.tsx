@@ -12,20 +12,20 @@ interface StatCardProps {
 export function StatCard({ label, value, href }: StatCardProps) {
   const content = (
     <>
-      <p className={typography.label}>{label}</p>
-      <p className={`${typography.statValue} mt-1`}>{value}</p>
+      <p className={`${typography.label} text-xs sm:text-sm`}>{label}</p>
+      <p className="text-xl sm:text-2xl font-semibold tracking-tight mt-1">{value}</p>
     </>
   );
 
   if (href) {
     return (
-      <Link href={href} className={`${componentStyles.card.interactive} p-5`}>
+      <Link href={href} className={`${componentStyles.card.interactive} p-3 sm:p-5`}>
         {content}
       </Link>
     );
   }
 
-  return <div className={`${componentStyles.card.base} p-5`}>{content}</div>;
+  return <div className={`${componentStyles.card.base} p-3 sm:p-5`}>{content}</div>;
 }
 
 interface StatGridProps {
@@ -36,9 +36,9 @@ interface StatGridProps {
 export function StatGrid({ children, columns = 4 }: StatGridProps) {
   const colsClass = {
     2: "grid-cols-2",
-    3: "grid-cols-2 lg:grid-cols-3",
-    4: "grid-cols-2 lg:grid-cols-4",
+    3: "grid-cols-2 md:grid-cols-3",
+    4: "grid-cols-2 sm:grid-cols-2 md:grid-cols-4",
   }[columns];
 
-  return <div className={`grid ${colsClass} gap-4 mb-8`}>{children}</div>;
+  return <div className={`grid ${colsClass} gap-3 sm:gap-4 mb-6 sm:mb-8`}>{children}</div>;
 }
