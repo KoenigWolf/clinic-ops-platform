@@ -1,15 +1,11 @@
 import { router, protectedProcedure } from "../trpc";
+import { getDateRange, getMonthRange } from "@/lib/date-utils";
 
 export const dashboardRouter = router({
   // ホーム画面用データを1回で取得
   get: protectedProcedure.query(async ({ ctx }) => {
-    const today = new Date();
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const todayRange = getDateRange(new Date());
+    const monthRange = getMonthRange();
 
     // すべてのクエリを並列実行
     const [
@@ -40,7 +36,7 @@ export const dashboardRouter = router({
       ctx.prisma.appointment.findMany({
         where: {
           tenantId: ctx.tenantId,
-          appointmentDate: { gte: startOfDay, lte: endOfDay },
+          appointmentDate: todayRange,
         },
         include: {
           patient: {
@@ -61,7 +57,7 @@ export const dashboardRouter = router({
         where: {
           tenantId: ctx.tenantId,
           status: "PAID",
-          createdAt: { gte: startOfMonth },
+          createdAt: monthRange,
         },
         _sum: { total: true },
       }),
