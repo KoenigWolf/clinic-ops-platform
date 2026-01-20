@@ -27,11 +27,19 @@ const templateSchema = z.object({
   sortOrder: z.number().default(0),
 });
 
+// 回答値スキーマ（質問タイプに応じた値）
+const answerValueSchema = z.union([
+  z.string(),                    // TEXT, TEXTAREA, SELECT, RADIO, DATE
+  z.number(),                    // NUMBER, SCALE
+  z.array(z.string()),           // CHECKBOX
+  z.boolean(),                   // Yes/No type
+]);
+
 const responseSchema = z.object({
   templateId: z.string(),
   patientId: z.string(),
   appointmentId: z.string().optional(),
-  answers: z.record(z.string(), z.any()),
+  answers: z.record(z.string(), answerValueSchema),
 });
 
 export const questionnaireRouter = router({

@@ -98,15 +98,29 @@ const endoscopySchema = z.object({
   interpretation: z.string().optional(),
 });
 
+// アレルギー検査結果スキーマ（アレルゲン名 -> クラス値）
+const allergyResultSchema = z.record(
+  z.string(),
+  z.string().regex(/^[0-6]$/, "クラスは0-6の値")
+);
+
 // アレルギー検査スキーマ
 const allergyTestSchema = z.object({
   patientId: z.string(),
   medicalRecordId: z.string().optional(),
   testDate: z.date().optional(),
   testType: z.enum(["RAST", "SKIN_PRICK", "MAST", "CAP"]).default("RAST"),
-  results: z.record(z.string(), z.any()).optional(),
+  results: allergyResultSchema.optional(),
   totalIgE: z.number().nullable().optional(),
   interpretation: z.string().optional(),
+});
+
+// 処方スキーマ
+const prescriptionItemSchema = z.object({
+  name: z.string(),
+  dosage: z.string(),
+  frequency: z.string(),
+  duration: z.string(),
 });
 
 // 診断テンプレートスキーマ
@@ -118,7 +132,7 @@ const diagnosisTemplateSchema = z.object({
   objectiveTemplate: z.string().optional(),
   assessmentTemplate: z.string().optional(),
   planTemplate: z.string().optional(),
-  commonPrescriptions: z.array(z.any()).optional(),
+  commonPrescriptions: z.array(prescriptionItemSchema).optional(),
   isActive: z.boolean().default(true),
 });
 
