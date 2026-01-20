@@ -127,11 +127,18 @@ export const videoRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      // Verify access
-      const isDoctor = session.appointment.doctorId === ctx.session?.user.id;
-      const isPatient = ctx.session?.user.role === "PATIENT";
+      // Verify tenant access
+      if (session.appointment.tenantId !== ctx.tenantId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
-      if (!isDoctor && !isPatient) {
+      // Verify user access
+      const isDoctor = session.appointment.doctorId === ctx.session?.user.id;
+      const isAppointmentPatient =
+        ctx.session?.user.role === "PATIENT" &&
+        session.appointment.patient.email === ctx.session?.user.email;
+
+      if (!isDoctor && !isAppointmentPatient) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
@@ -148,12 +155,14 @@ export const videoRouter = router({
   startSession: doctorProcedure
     .input(z.object({ sessionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const session = await ctx.prisma.videoSession.findUnique({
-        where: { id: input.sessionId },
-        include: { appointment: true },
+      const session = await ctx.prisma.videoSession.findFirst({
+        where: {
+          id: input.sessionId,
+          appointment: { tenantId: ctx.tenantId },
+        },
       });
 
-      if (!session || session.appointment.tenantId !== ctx.tenantId) {
+      if (!session) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
@@ -175,12 +184,14 @@ export const videoRouter = router({
   endSession: doctorProcedure
     .input(z.object({ sessionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const session = await ctx.prisma.videoSession.findUnique({
-        where: { id: input.sessionId },
-        include: { appointment: true },
+      const session = await ctx.prisma.videoSession.findFirst({
+        where: {
+          id: input.sessionId,
+          appointment: { tenantId: ctx.tenantId },
+        },
       });
 
-      if (!session || session.appointment.tenantId !== ctx.tenantId) {
+      if (!session) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 

@@ -72,7 +72,10 @@ export const recordRouter = router({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const record = await ctx.prisma.medicalRecord.findFirst({
-        where: { id: input.id },
+        where: {
+          id: input.id,
+          patient: { tenantId: ctx.tenantId },
+        },
         include: {
           patient: true,
           doctor: true,
@@ -84,15 +87,6 @@ export const recordRouter = router({
 
       if (!record) {
         throw new TRPCError({ code: "NOT_FOUND" });
-      }
-
-      // Verify tenant
-      const patient = await ctx.prisma.patient.findFirst({
-        where: { id: record.patientId, tenantId: ctx.tenantId },
-      });
-
-      if (!patient) {
-        throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return record;
@@ -128,11 +122,13 @@ export const recordRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const record = await ctx.prisma.medicalRecord.findFirst({
-        where: { id: input.id },
-        include: { patient: true },
+        where: {
+          id: input.id,
+          patient: { tenantId: ctx.tenantId },
+        },
       });
 
-      if (!record || record.patient.tenantId !== ctx.tenantId) {
+      if (!record) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
@@ -150,11 +146,13 @@ export const recordRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const record = await ctx.prisma.medicalRecord.findFirst({
-        where: { id: input.id },
-        include: { patient: true },
+        where: {
+          id: input.id,
+          patient: { tenantId: ctx.tenantId },
+        },
       });
 
-      if (!record || record.patient.tenantId !== ctx.tenantId) {
+      if (!record) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
