@@ -17,16 +17,7 @@ import {
 } from "lucide-react";
 
 export default function AnalyticsPage() {
-  const { data: overview, isLoading: overviewLoading } = trpc.analytics.overview.useQuery();
-  const { data: dailyRecords } = trpc.analytics.dailyRecords.useQuery({ days: 30 });
-  const { data: monthlyRevenue } = trpc.analytics.monthlyRevenue.useQuery();
-  const { data: appointmentsByType } = trpc.analytics.appointmentsByType.useQuery();
-  const { data: appointmentsByStatus } = trpc.analytics.appointmentsByStatus.useQuery();
-  const { data: recordsByDoctor } = trpc.analytics.recordsByDoctor.useQuery({ days: 30 });
-  const { data: appointmentsByHour } = trpc.analytics.appointmentsByHour.useQuery({ days: 30 });
-  const { data: patientTypeRatio } = trpc.analytics.patientTypeRatio.useQuery({ days: 30 });
-  const { data: unpaidInvoices } = trpc.analytics.unpaidInvoices.useQuery();
-  const { data: todayAppointments } = trpc.analytics.todayAppointments.useQuery();
+  const { data, isLoading } = trpc.analytics.dashboard.useQuery();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("ja-JP", {
@@ -71,13 +62,22 @@ export default function AnalyticsPage() {
     NO_SHOW: "無断キャンセル",
   };
 
-  if (overviewLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
         読み込み中...
       </div>
     );
   }
+
+  const overview = data?.overview;
+  const dailyRecords = data?.dailyRecords;
+  const monthlyRevenue = data?.monthlyRevenue;
+  const appointmentsByHour = data?.appointmentsByHour;
+  const recordsByDoctor = data?.recordsByDoctor;
+  const patientTypeRatio = data?.patientTypeRatio;
+  const unpaidInvoices = data?.unpaidInvoices;
+  const todayAppointments = data?.todayAppointments;
 
   return (
     <div className="space-y-6">
