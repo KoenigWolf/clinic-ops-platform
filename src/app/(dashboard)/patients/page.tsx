@@ -118,13 +118,15 @@ export default function PatientsPage() {
                           {patient.patientNumber}
                         </TableCell>
                         <TableCell className="font-medium">
-                          <span className="sm:hidden text-xs text-gray-500 block">{patient.patientNumber}</span>
-                          {patient.lastName} {patient.firstName}
-                          {patient.lastNameKana && (
-                            <span className="block text-xs text-gray-400">
-                              {patient.lastNameKana} {patient.firstNameKana}
-                            </span>
-                          )}
+                          <Link href={`/patients/${patient.id}`} className="hover:underline">
+                            <span className="sm:hidden text-xs text-gray-500 block">{patient.patientNumber}</span>
+                            {patient.lastName} {patient.firstName}
+                            {patient.lastNameKana && (
+                              <span className="block text-xs text-gray-400">
+                                {patient.lastNameKana} {patient.firstNameKana}
+                              </span>
+                            )}
+                          </Link>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <Badge variant="outline">
