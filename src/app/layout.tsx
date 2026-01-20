@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { getSession } from "@/lib/auth";
+import { fontVariables } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "Karute - 電子カルテ・オンライン診療システム",
@@ -18,8 +19,8 @@ export default async function RootLayout({
   const session = await getSession();
 
   return (
-    <html lang="ja">
-      <body className="antialiased">
+    <html lang="ja" className={fontVariables}>
+      <body className="font-sans antialiased">
         <Providers session={session}>{children}</Providers>
       </body>
     </html>
