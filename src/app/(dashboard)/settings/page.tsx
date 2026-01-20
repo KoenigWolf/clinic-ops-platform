@@ -5,25 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Building, Shield, Bell } from "lucide-react";
+import { PageHeader } from "@/components/layout";
+import { labels } from "@/lib/labels";
 
-const roleLabels = {
-  ADMIN: "管理者",
-  DOCTOR: "医師",
-  NURSE: "看護師",
-  STAFF: "スタッフ",
-  PATIENT: "患者",
-};
+const { pages: { settings: pageLabels } } = labels;
 
 export default function SettingsPage() {
   const { data: session } = useSession();
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">設定</h1>
-        <p className="text-gray-500">アカウント設定とシステム設定</p>
-      </div>
+      <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile */}
@@ -31,24 +23,24 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              プロフィール
+              {pageLabels.sections.profile.title}
             </CardTitle>
-            <CardDescription>アカウント情報</CardDescription>
+            <CardDescription>{pageLabels.sections.profile.description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm text-gray-500">氏名</label>
+              <label className="text-sm text-gray-500">{pageLabels.labels.name}</label>
               <p className="font-medium">{session?.user?.name || "-"}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-500">メールアドレス</label>
+              <label className="text-sm text-gray-500">{pageLabels.labels.email}</label>
               <p className="font-medium">{session?.user?.email || "-"}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-500">役割</label>
+              <label className="text-sm text-gray-500">{pageLabels.labels.role}</label>
               <div className="mt-1">
                 <Badge>
-                  {roleLabels[session?.user?.role as keyof typeof roleLabels] || "-"}
+                  {pageLabels.roles[session?.user?.role as keyof typeof pageLabels.roles] || "-"}
                 </Badge>
               </div>
             </div>
@@ -60,18 +52,18 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              組織情報
+              {pageLabels.sections.organization.title}
             </CardTitle>
-            <CardDescription>所属クリニック情報</CardDescription>
+            <CardDescription>{pageLabels.sections.organization.description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm text-gray-500">テナントID</label>
+              <label className="text-sm text-gray-500">{pageLabels.labels.tenantId}</label>
               <p className="font-mono text-sm">{session?.user?.tenantId || "-"}</p>
             </div>
             <Separator />
             <p className="text-sm text-gray-500">
-              組織情報の変更は管理者にお問い合わせください。
+              {pageLabels.hints.orgChangeHint}
             </p>
           </CardContent>
         </Card>
@@ -81,25 +73,25 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              セキュリティ
+              {pageLabels.sections.security.title}
             </CardTitle>
-            <CardDescription>セキュリティ設定</CardDescription>
+            <CardDescription>{pageLabels.sections.security.description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">パスワード</p>
-                <p className="text-sm text-gray-500">最終更新: 未設定</p>
+                <p className="font-medium">{pageLabels.labels.password}</p>
+                <p className="text-sm text-gray-500">{pageLabels.hints.lastUpdated}</p>
               </div>
-              <Badge variant="outline">変更</Badge>
+              <Badge variant="outline">{pageLabels.actions.change}</Badge>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">二段階認証</p>
-                <p className="text-sm text-gray-500">追加のセキュリティ層</p>
+                <p className="font-medium">{pageLabels.labels.twoFactor}</p>
+                <p className="text-sm text-gray-500">{pageLabels.hints.twoFactorHint}</p>
               </div>
-              <Badge variant="secondary">無効</Badge>
+              <Badge variant="secondary">{pageLabels.status.disabled}</Badge>
             </div>
           </CardContent>
         </Card>
@@ -109,25 +101,25 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              通知設定
+              {pageLabels.sections.notifications.title}
             </CardTitle>
-            <CardDescription>通知の受信設定</CardDescription>
+            <CardDescription>{pageLabels.sections.notifications.description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">予約リマインダー</p>
-                <p className="text-sm text-gray-500">予約前に通知</p>
+                <p className="font-medium">{pageLabels.labels.appointmentReminder}</p>
+                <p className="text-sm text-gray-500">{pageLabels.hints.reminderHint}</p>
               </div>
-              <Badge>有効</Badge>
+              <Badge>{pageLabels.status.enabled}</Badge>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">メール通知</p>
-                <p className="text-sm text-gray-500">重要な更新をメールで受信</p>
+                <p className="font-medium">{pageLabels.labels.emailNotification}</p>
+                <p className="text-sm text-gray-500">{pageLabels.hints.emailHint}</p>
               </div>
-              <Badge>有効</Badge>
+              <Badge>{pageLabels.status.enabled}</Badge>
             </div>
           </CardContent>
         </Card>
@@ -136,25 +128,25 @@ export default function SettingsPage() {
       {/* System Info */}
       <Card>
         <CardHeader>
-          <CardTitle>システム情報</CardTitle>
+          <CardTitle>{pageLabels.sections.system.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">バージョン</p>
-              <p className="font-medium">1.0.0</p>
+              <p className="text-gray-500">{pageLabels.system.version}</p>
+              <p className="font-medium">{pageLabels.system.values.version}</p>
             </div>
             <div>
-              <p className="text-gray-500">環境</p>
-              <p className="font-medium">Production</p>
+              <p className="text-gray-500">{pageLabels.system.environment}</p>
+              <p className="font-medium">{pageLabels.system.values.environment}</p>
             </div>
             <div>
-              <p className="text-gray-500">ビデオAPI</p>
-              <p className="font-medium">Daily.co</p>
+              <p className="text-gray-500">{pageLabels.system.videoApi}</p>
+              <p className="font-medium">{pageLabels.system.values.videoApi}</p>
             </div>
             <div>
-              <p className="text-gray-500">データベース</p>
-              <p className="font-medium">PostgreSQL</p>
+              <p className="text-gray-500">{pageLabels.system.database}</p>
+              <p className="font-medium">{pageLabels.system.values.database}</p>
             </div>
           </div>
         </CardContent>

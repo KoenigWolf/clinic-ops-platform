@@ -6,31 +6,16 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Video, Clock, User, Phone } from "lucide-react";
+import { Plus, Clock, User, Phone } from "lucide-react";
 import { AppointmentDialog } from "@/components/appointments/appointment-dialog";
-import { EmptyState } from "@/components/layout/empty-state";
+import { EmptyState, OnlineBadge, PageHeader, StatusBadge } from "@/components/layout";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
-import {
-  appointmentStatusConfig,
-  colors,
-  typography,
-} from "@/lib/design-tokens";
+import { colors, typography } from "@/lib/design-tokens";
 import { labels } from "@/lib/labels";
 
 const { pages: { appointments: pageLabels }, messages } = labels;
-
-const statusStyles: Record<string, string> = {
-  SCHEDULED: `${colors.status.inactive.bg} ${colors.status.inactive.text}`,
-  CONFIRMED: `${colors.status.inactive.bg} ${colors.text.muted}`,
-  WAITING: `${colors.status.pending.bg} ${colors.status.pending.text}`,
-  IN_PROGRESS: `${colors.status.active.bg} ${colors.status.active.text}`,
-  COMPLETED: `${colors.status.inactive.bg} ${colors.status.inactive.text}`,
-  CANCELLED: `${colors.status.inactive.bg} ${colors.status.inactive.text}`,
-  NO_SHOW: `${colors.warning.bgLight} ${colors.warning.text}`,
-};
 
 export default function AppointmentsPage() {
   const router = useRouter();
@@ -78,16 +63,16 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className={typography.pageTitle}>{pageLabels.title}</h1>
-          <p className={colors.text.muted}>{pageLabels.description}</p>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {pageLabels.newAppointment}
-        </Button>
-      </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            {pageLabels.newAppointment}
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
@@ -171,15 +156,8 @@ export default function AppointmentsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {apt.isOnline && (
-                        <Badge variant="outline" className="gap-1">
-                          <Video className="h-3 w-3" />
-                          オンライン
-                        </Badge>
-                      )}
-                      <Badge className={statusStyles[apt.status]}>
-                        {appointmentStatusConfig[apt.status]?.label ?? apt.status}
-                      </Badge>
+                      {apt.isOnline && <OnlineBadge />}
+                      <StatusBadge status={apt.status} />
 
                       {apt.status === "SCHEDULED" && (
                         <Button

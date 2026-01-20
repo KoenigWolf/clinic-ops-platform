@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -25,17 +24,19 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { labels } from "@/lib/labels";
 import { prescriptionStatusConfig } from "@/lib/design-tokens";
+import { EmptyState, GenericStatusBadge, PageHeader } from "@/components/layout";
 
 const { pages: { prescriptions: pageLabels }, common, messages } = labels;
+const PAGE_SIZE = 20;
 
 export default function PrescriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
 
-  const { data, refetch } = trpc.prescription.list.useQuery({
+  const { data, isLoading, isError, refetch } = trpc.prescription.list.useQuery({
     status: statusFilter !== "ALL" ? statusFilter as "PENDING" | "DISPENSED" | "CANCELLED" : undefined,
     page,
-    limit: 20,
+    limit: PAGE_SIZE,
   });
 
   const dispenseMutation = trpc.prescription.dispense.useMutation({
@@ -60,11 +61,7 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{pageLabels.title}</h1>
-        <p className="text-gray-500">{pageLabels.description}</p>
-      </div>
+      <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* Filters */}
       <Card>
@@ -98,7 +95,18 @@ export default function PrescriptionsPage() {
           <CardTitle>{pageLabels.listTitle(data?.total || 0)}</CardTitle>
         </CardHeader>
         <CardContent>
-          {data?.prescriptions.length === 0 ? (
+          {isError ? (
+            <EmptyState
+              message={common.loadFailed}
+              action={
+                <Button type="button" variant="outline" onClick={() => refetch()}>
+                  {common.retry}
+                </Button>
+              }
+            />
+          ) : isLoading ? (
+            <div className="text-center py-8 text-gray-500">{common.loading}</div>
+          ) : data?.prescriptions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {pageLabels.empty}
             </div>
@@ -150,9 +158,16 @@ export default function PrescriptionsPage() {
                       </TableCell>
                       <TableCell>{rx.doctor.name}</TableCell>
                       <TableCell>
-                        <Badge className={`${prescriptionStatusConfig[rx.status]?.bg} ${prescriptionStatusConfig[rx.status]?.text}`}>
-                          {prescriptionStatusConfig[rx.status]?.label}
-                        </Badge>
+                        <GenericStatusBadge
+                          label={prescriptionStatusConfig[rx.status]?.label ?? rx.status}
+                          variant={
+                            rx.status === "DISPENSED"
+                              ? "success"
+                              : rx.status === "PENDING"
+                                ? "warning"
+                                : "neutral"
+                          }
+                        />
                       </TableCell>
                       <TableCell className="text-right">
                         {rx.status === "PENDING" && (
@@ -192,7 +207,7 @@ export default function PrescriptionsPage() {
               {data && data.pages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-gray-500">
-                    {data.total}件中 {(page - 1) * 20 + 1}-{Math.min(page * 20, data.total)}件
+                    {data.total}件中 {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, data.total)}件
                   </p>
                   <div className="flex gap-2">
                     <Button

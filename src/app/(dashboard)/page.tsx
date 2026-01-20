@@ -20,14 +20,10 @@ import {
   DateDisplay,
   VerticalSeparator,
 } from "@/components/layout";
-import { typography, spacing } from "@/lib/design-tokens";
+import { typography } from "@/lib/design-tokens";
 import { labels } from "@/lib/labels";
 
-const currencyFormatter = new Intl.NumberFormat("ja-JP", {
-  style: "currency",
-  currency: "JPY",
-  maximumFractionDigits: 0,
-});
+const formatCurrency = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
 
 export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -35,7 +31,7 @@ export default function DashboardPage() {
 
   if (sessionStatus === "loading" || isLoading) {
     return (
-      <div className={spacing.page.maxWidth}>
+      <div className="mx-auto w-full max-w-7xl">
         <Skeleton className="h-8 w-48 mb-8" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
           {[...Array(4)].map((_, i) => (
@@ -51,7 +47,7 @@ export default function DashboardPage() {
 
   if (isError) {
     return (
-      <div className={spacing.page.maxWidth}>
+      <div className="mx-auto w-full max-w-7xl">
         <PageHeader title={labels.pages.dashboard.title} />
         <EmptyState
           message={labels.common.loadFailed}
@@ -78,11 +74,11 @@ export default function DashboardPage() {
     { label: statLabels.patients, value: totalPatients, href: "/patients" },
     { label: statLabels.todayAppointments, value: todayAppointmentsCount, href: "/appointments" },
     { label: statLabels.pendingPrescriptions, value: pendingPrescriptions, href: "/prescriptions" },
-    { label: statLabels.monthlyRevenue, value: currencyFormatter.format(monthlyRevenue), href: "/billing" },
+    { label: statLabels.monthlyRevenue, value: formatCurrency(monthlyRevenue), href: "/billing" },
   ];
 
   return (
-    <div className={spacing.page.maxWidth}>
+    <div className="mx-auto w-full max-w-7xl">
       <PageHeader title={labels.pages.dashboard.greeting(userName)} />
 
       <StatGrid columns={4}>

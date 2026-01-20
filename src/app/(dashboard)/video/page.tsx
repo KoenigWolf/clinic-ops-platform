@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Video, Phone, User, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
 import { VideoRoom } from "@/components/video/video-room";
-import { EmptyState, PageHeader } from "@/components/layout";
+import { EmptyState, PageHeader, StatusBadge } from "@/components/layout";
 import { labels } from "@/lib/labels";
 
 const { pages: { video: pageLabels }, common, messages } = labels;
@@ -43,13 +42,13 @@ function VideoPageContent() {
   });
 
   // Clear URL params after initialization (only run once)
-  const [urlCleared, setUrlCleared] = useState(false);
+  const urlClearedRef = useRef(false);
   useEffect(() => {
-    if (urlSessionId && urlRoomUrl && !urlCleared) {
-      setUrlCleared(true);
+    if (urlSessionId && urlRoomUrl && !urlClearedRef.current) {
+      urlClearedRef.current = true;
       router.replace("/video");
     }
-  }, [router, urlRoomUrl, urlSessionId, urlCleared]);
+  }, [router, urlRoomUrl, urlSessionId]);
 
   // Get today's online appointments (refetch every 10 seconds)
   const { data: appointments, isLoading, isError, refetch } = trpc.appointment.list.useQuery({
@@ -181,20 +180,7 @@ function VideoPageContent() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge
-                      className={
-                        apt.status === "WAITING"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : apt.status === "IN_PROGRESS"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
-                      }
-                    >
-                      {apt.status === "WAITING" && "待機中"}
-                      {apt.status === "IN_PROGRESS" && "診療中"}
-                      {apt.status === "SCHEDULED" && "予約済"}
-                      {apt.status === "CONFIRMED" && "確認済"}
-                    </Badge>
+                    <StatusBadge status={apt.status} />
 
                     <Button
                       onClick={() => handleStartSession(apt.id)}

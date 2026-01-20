@@ -35,22 +35,10 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState, PageHeader } from "@/components/layout";
+import { labels } from "@/lib/labels";
 
-const CATEGORIES = [
-  { value: "ALL", label: "すべて" },
-  { value: "REFERRAL", label: "紹介状" },
-  { value: "CERTIFICATE", label: "診断書" },
-  { value: "MEDICAL_CERT", label: "医療証明書" },
-  { value: "PRESCRIPTION", label: "処方箋" },
-  { value: "CONSENT", label: "同意書" },
-  { value: "SICK_LEAVE", label: "休職証明書" },
-  { value: "INSURANCE", label: "保険関係書類" },
-  { value: "OTHER", label: "その他" },
-];
-
-const getCategoryLabel = (category: string) => {
-  return CATEGORIES.find((c) => c.value === category)?.label || category;
-};
+const { pages: { documents: pageLabels }, common, messages } = labels;
 
 const getCategoryColor = (category: string) => {
   switch (category) {
@@ -75,48 +63,70 @@ export default function DocumentsPage() {
     description: string;
   } | null>(null);
 
+  const categories = [
+    { value: "ALL", label: pageLabels.categories.all },
+    { value: "REFERRAL", label: pageLabels.categories.referral },
+    { value: "CERTIFICATE", label: pageLabels.categories.certificate },
+    { value: "MEDICAL_CERT", label: pageLabels.categories.medicalCertificate },
+    { value: "PRESCRIPTION", label: pageLabels.categories.prescription },
+    { value: "CONSENT", label: pageLabels.categories.consent },
+    { value: "SICK_LEAVE", label: pageLabels.categories.leaveOfAbsence },
+    { value: "INSURANCE", label: pageLabels.categories.insurance },
+    { value: "OTHER", label: pageLabels.categories.other },
+  ];
+
   const categoryFilter = selectedCategory === "ALL" ? undefined : selectedCategory as never;
 
-  const { data: templates, refetch: refetchTemplates } = trpc.document.template.list.useQuery({
+  const {
+    data: templates,
+    isLoading: templatesLoading,
+    isError: templatesError,
+    refetch: refetchTemplates,
+  } = trpc.document.template.list.useQuery({
     category: categoryFilter,
   });
 
-  const { data: documents } = trpc.document.list.useQuery({
+  const {
+    data: documents,
+    isLoading: documentsLoading,
+    isError: documentsError,
+    refetch: refetchDocuments,
+  } = trpc.document.list.useQuery({
     category: categoryFilter,
     limit: 50,
   });
 
   const createMutation = trpc.document.template.create.useMutation({
     onSuccess: () => {
-      toast.success("テンプレートを作成しました");
+      toast.success(messages.success.templateCreated);
       refetchTemplates();
       setDialogOpen(false);
       setEditingTemplate(null);
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(error.message || messages.error.recordSaveFailed),
   });
 
   const updateMutation = trpc.document.template.update.useMutation({
     onSuccess: () => {
-      toast.success("テンプレートを更新しました");
+      toast.success(messages.success.templateUpdated);
       refetchTemplates();
       setDialogOpen(false);
       setEditingTemplate(null);
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(error.message || messages.error.recordUpdateFailed),
   });
 
   const deleteMutation = trpc.document.template.delete.useMutation({
     onSuccess: () => {
-      toast.success("テンプレートを削除しました");
+      toast.success(messages.success.templateDeleted);
       refetchTemplates();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(error.message || messages.error.templateDeleteFailed),
   });
 
   const handleSaveTemplate = () => {
     if (!editingTemplate?.name || !editingTemplate?.content) {
-      toast.error("テンプレート名と内容は必須です");
+      toast.error(messages.error.requiredFields);
       return;
     }
 
@@ -163,13 +173,16 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">文書管理</h1>
-          <p className="text-gray-500">紹介状・診断書・各種証明書のテンプレートと作成</p>
-        </div>
-      </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Button onClick={openNewTemplate}>
+            <Plus className="mr-2 h-4 w-4" />
+            {pageLabels.newTemplate}
+          </Button>
+        }
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -177,7 +190,7 @@ export default function DocumentsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">テンプレート数</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.templateCount}</p>
                 <p className="text-2xl font-bold">{templates?.length || 0}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-200" />
@@ -188,7 +201,7 @@ export default function DocumentsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">発行済み文書</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.issuedDocuments}</p>
                 <p className="text-2xl font-bold">{documents?.length || 0}</p>
               </div>
               <FileSignature className="h-8 w-8 text-green-200" />
@@ -199,7 +212,7 @@ export default function DocumentsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">紹介状</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.referralLetters}</p>
                 <p className="text-2xl font-bold">
                   {documents?.filter((d) => d.category === "REFERRAL").length || 0}
                 </p>
@@ -212,7 +225,7 @@ export default function DocumentsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">診断書</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.certificates}</p>
                 <p className="text-2xl font-bold">
                   {documents?.filter((d) => d.category === "CERTIFICATE").length || 0}
                 </p>
@@ -228,11 +241,11 @@ export default function DocumentsPage() {
         <TabsList>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            テンプレート
+            {pageLabels.tabs.templates}
           </TabsTrigger>
           <TabsTrigger value="documents" className="flex items-center gap-2">
             <FileSignature className="h-4 w-4" />
-            発行済み文書
+            {pageLabels.tabs.issued}
           </TabsTrigger>
         </TabsList>
 
@@ -241,10 +254,10 @@ export default function DocumentsPage() {
           <div className="flex items-center justify-between">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="カテゴリ" />
+                <SelectValue placeholder={common.select} />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.label}
                   </SelectItem>
@@ -253,23 +266,32 @@ export default function DocumentsPage() {
             </Select>
             <Button onClick={openNewTemplate}>
               <Plus className="mr-2 h-4 w-4" />
-              新規テンプレート
+              {pageLabels.newTemplate}
             </Button>
           </div>
 
-          {!templates?.length ? (
-            <Card>
-              <CardContent className="py-12">
-                <div className="text-center text-gray-500">
-                  <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                  <p>テンプレートがありません</p>
-                  <Button variant="outline" className="mt-4" onClick={openNewTemplate}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    最初のテンプレートを作成
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          {templatesError ? (
+            <EmptyState
+              message={common.loadFailed}
+              action={
+                <Button type="button" variant="outline" onClick={() => refetchTemplates()}>
+                  {common.retry}
+                </Button>
+              }
+            />
+          ) : templatesLoading ? (
+            <div className="text-center py-8 text-gray-500">{common.loading}</div>
+          ) : !templates?.length ? (
+            <EmptyState
+              icon={FileText}
+              message={pageLabels.empty.templates}
+              action={
+                <Button variant="outline" onClick={openNewTemplate}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {pageLabels.createFirst}
+                </Button>
+              }
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {templates.map((template) => (
@@ -283,7 +305,7 @@ export default function DocumentsPage() {
                         )}
                       </div>
                       <Badge className={getCategoryColor(template.category)}>
-                        {getCategoryLabel(template.category)}
+                        {pageLabels.categories[template.category as keyof typeof pageLabels.categories] ?? template.category}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -320,10 +342,10 @@ export default function DocumentsPage() {
           <div className="flex items-center justify-between">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="カテゴリ" />
+                <SelectValue placeholder={common.select} />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.label}
                   </SelectItem>
@@ -332,15 +354,19 @@ export default function DocumentsPage() {
             </Select>
           </div>
 
-          {!documents?.length ? (
-            <Card>
-              <CardContent className="py-12">
-                <div className="text-center text-gray-500">
-                  <FileSignature className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                  <p>発行済み文書がありません</p>
-                </div>
-              </CardContent>
-            </Card>
+          {documentsError ? (
+            <EmptyState
+              message={common.loadFailed}
+              action={
+                <Button type="button" variant="outline" onClick={() => refetchDocuments()}>
+                  {common.retry}
+                </Button>
+              }
+            />
+          ) : documentsLoading ? (
+            <div className="text-center py-8 text-gray-500">{common.loading}</div>
+          ) : !documents?.length ? (
+            <EmptyState icon={FileSignature} message={pageLabels.empty.issued} />
           ) : (
             <Card>
               <CardContent className="p-0">
@@ -358,7 +384,7 @@ export default function DocumentsPage() {
                           </p>
                         </div>
                         <Badge className={getCategoryColor(doc.category)}>
-                          {getCategoryLabel(doc.category)}
+                          {pageLabels.categories[doc.category as keyof typeof pageLabels.categories] ?? doc.category}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4">
@@ -388,17 +414,17 @@ export default function DocumentsPage() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingTemplate?.id ? "テンプレートの編集" : "新規テンプレート"}
+              {editingTemplate?.id ? pageLabels.dialog.editTitle : pageLabels.dialog.newTitle}
             </DialogTitle>
             <DialogDescription>
-              プレースホルダーを使用できます: {"{{患者名}}"}, {"{{患者番号}}"}, {"{{生年月日}}"}, {"{{発行日}}"}, {"{{年齢}}"}
+              {pageLabels.dialog.placeholderHint}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>テンプレート名 *</Label>
+                <Label>{pageLabels.dialog.form.name} *</Label>
                 <Input
                   value={editingTemplate?.name || ""}
                   onChange={(e) =>
@@ -406,11 +432,11 @@ export default function DocumentsPage() {
                       prev ? { ...prev, name: e.target.value } : null
                     )
                   }
-                  placeholder="例: 紹介状（一般）"
+                  placeholder={pageLabels.categories.referral}
                 />
               </div>
               <div className="space-y-2">
-                <Label>カテゴリ *</Label>
+                <Label>{pageLabels.dialog.form.category} *</Label>
                 <Select
                   value={editingTemplate?.category || "REFERRAL"}
                   onValueChange={(value) =>
@@ -423,7 +449,7 @@ export default function DocumentsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.filter((c) => c.value !== "ALL").map((cat) => (
+                    {categories.filter((c) => c.value !== "ALL").map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         {cat.label}
                       </SelectItem>
@@ -434,7 +460,7 @@ export default function DocumentsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>説明</Label>
+              <Label>{pageLabels.dialog.form.description}</Label>
               <Input
                 value={editingTemplate?.description || ""}
                 onChange={(e) =>
@@ -442,12 +468,12 @@ export default function DocumentsPage() {
                     prev ? { ...prev, description: e.target.value } : null
                   )
                 }
-                placeholder="テンプレートの説明（任意）"
+                placeholder={pageLabels.dialog.form.description}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>テンプレート内容 *</Label>
+              <Label>{pageLabels.dialog.form.content} *</Label>
               <Textarea
                 value={editingTemplate?.content || ""}
                 onChange={(e) =>

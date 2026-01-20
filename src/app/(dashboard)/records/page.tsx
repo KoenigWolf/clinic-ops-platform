@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, FileText } from "lucide-react";
 import { RecordDialog } from "@/components/records/record-dialog";
-import { EmptyState } from "@/components/layout";
+import { EmptyState, PageHeader } from "@/components/layout";
 import { labels } from "@/lib/labels";
 
 const { pages: { records: pageLabels }, common } = labels;
@@ -54,21 +54,21 @@ function RecordsContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pageLabels.title}</h1>
-          <p className="text-gray-500">{pageLabels.description}</p>
-        </div>
-        {selectedPatientId && (
-          <Button onClick={() => {
-            setSelectedRecord(null);
-            setIsDialogOpen(true);
-          }}>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={selectedPatientId ? (
+          <Button
+            onClick={() => {
+              setSelectedRecord(null);
+              setIsDialogOpen(true);
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" />
             {pageLabels.newRecord}
           </Button>
-        )}
-      </div>
+        ) : null}
+      />
 
       {/* Patient Selector */}
       <Card>

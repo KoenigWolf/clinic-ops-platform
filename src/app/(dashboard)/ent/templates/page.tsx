@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +49,7 @@ export default function TemplatesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
-  const categories = useMemo(() => ([
+  const categories = [
     { value: "ALL", label: pageLabels.categories.ALL },
     { value: "EAR", label: pageLabels.categories.EAR },
     { value: "NOSE", label: pageLabels.categories.NOSE },
@@ -57,7 +57,7 @@ export default function TemplatesPage() {
     { value: "ALLERGY", label: pageLabels.categories.ALLERGY },
     { value: "VERTIGO", label: pageLabels.categories.VERTIGO },
     { value: "OTHER", label: pageLabels.categories.OTHER },
-  ]), [pageLabels.categories]);
+  ];
 
   const queryInput = selectedCategory === "ALL"
     ? undefined

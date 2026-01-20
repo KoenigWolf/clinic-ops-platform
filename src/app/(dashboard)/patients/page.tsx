@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Eye, FileText } from "lucide-react";
 import { PatientDialog } from "@/components/patients/patient-dialog";
-import { EmptyState, ResponsiveTable } from "@/components/layout";
+import { EmptyState, PageHeader, ResponsiveTable } from "@/components/layout";
 import { labels } from "@/lib/labels";
 
 const { pages: { patients: pageLabels }, common } = labels;
@@ -43,17 +43,16 @@ export default function PatientsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{pageLabels.title}</h1>
-          <p className="text-sm sm:text-base text-gray-500">{pageLabels.description}</p>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          {pageLabels.newPatient}
-        </Button>
-      </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            {pageLabels.newPatient}
+          </Button>
+        }
+      />
 
       {/* Search */}
       <Card>

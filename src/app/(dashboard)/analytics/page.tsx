@@ -3,6 +3,8 @@
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState, PageHeader, StatusBadge } from "@/components/layout";
 import {
   Users,
   FileText,
@@ -15,9 +17,12 @@ import {
   UserPlus,
   UserCheck,
 } from "lucide-react";
+import { labels } from "@/lib/labels";
+
+const { pages: { analytics: pageLabels }, common } = labels;
 
 export default function AnalyticsPage() {
-  const { data, isLoading } = trpc.analytics.dashboard.useQuery();
+  const { data, isLoading, isError, refetch } = trpc.analytics.dashboard.useQuery();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("ja-JP", {
@@ -52,21 +57,24 @@ export default function AnalyticsPage() {
     OTHER: "その他",
   };
 
-  const statusLabels: Record<string, string> = {
-    SCHEDULED: "予約済み",
-    CONFIRMED: "確認済み",
-    CHECKED_IN: "来院済み",
-    IN_PROGRESS: "診療中",
-    COMPLETED: "完了",
-    CANCELLED: "キャンセル",
-    NO_SHOW: "無断キャンセル",
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
-        読み込み中...
+        {common.loading}
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <EmptyState
+        message={common.loadFailed}
+        action={
+          <Button type="button" variant="outline" onClick={() => refetch()}>
+            {common.retry}
+          </Button>
+        }
+      />
     );
   }
 
@@ -81,11 +89,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">経営分析ダッシュボード</h1>
-        <p className="text-gray-500">クリニックの経営状況を可視化</p>
-      </div>
+      <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -93,7 +97,7 @@ export default function AnalyticsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">今月の売上</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.monthlyRevenue}</p>
                 <p className="text-2xl font-bold">
                   {formatCurrency(overview?.revenue.thisMonth || 0)}
                 </p>
@@ -103,7 +107,7 @@ export default function AnalyticsPage() {
             <div className={`flex items-center gap-1 mt-2 text-sm ${getChangeColor(overview?.revenue.change || null)}`}>
               {getChangeIcon(overview?.revenue.change || null)}
               <span>{overview?.revenue.change ? `${overview.revenue.change}%` : "-"}</span>
-              <span className="text-gray-400">前月比</span>
+              <span className="text-gray-400">{pageLabels.comparison}</span>
             </div>
           </CardContent>
         </Card>
@@ -112,7 +116,7 @@ export default function AnalyticsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">今月の診療件数</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.monthlyConsultations}</p>
                 <p className="text-2xl font-bold">{overview?.records.thisMonth || 0}件</p>
               </div>
               <FileText className="h-8 w-8 text-blue-200" />
@@ -120,7 +124,7 @@ export default function AnalyticsPage() {
             <div className={`flex items-center gap-1 mt-2 text-sm ${getChangeColor(overview?.records.change || null)}`}>
               {getChangeIcon(overview?.records.change || null)}
               <span>{overview?.records.change ? `${overview.records.change}%` : "-"}</span>
-              <span className="text-gray-400">前月比</span>
+              <span className="text-gray-400">{pageLabels.comparison}</span>
             </div>
           </CardContent>
         </Card>
@@ -129,7 +133,7 @@ export default function AnalyticsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">今月の予約件数</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.monthlyAppointments}</p>
                 <p className="text-2xl font-bold">{overview?.appointments.thisMonth || 0}件</p>
               </div>
               <Calendar className="h-8 w-8 text-purple-200" />
@@ -137,7 +141,7 @@ export default function AnalyticsPage() {
             <div className={`flex items-center gap-1 mt-2 text-sm ${getChangeColor(overview?.appointments.change || null)}`}>
               {getChangeIcon(overview?.appointments.change || null)}
               <span>{overview?.appointments.change ? `${overview.appointments.change}%` : "-"}</span>
-              <span className="text-gray-400">前月比</span>
+              <span className="text-gray-400">{pageLabels.comparison}</span>
             </div>
           </CardContent>
         </Card>
@@ -146,7 +150,7 @@ export default function AnalyticsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">今月の新患数</p>
+                <p className="text-sm text-gray-500">{pageLabels.stats.monthlyNewPatients}</p>
                 <p className="text-2xl font-bold">{overview?.patients.thisMonth || 0}名</p>
               </div>
               <Users className="h-8 w-8 text-orange-200" />
@@ -154,7 +158,7 @@ export default function AnalyticsPage() {
             <div className={`flex items-center gap-1 mt-2 text-sm ${getChangeColor(overview?.patients.change || null)}`}>
               {getChangeIcon(overview?.patients.change || null)}
               <span>{overview?.patients.change ? `${overview.patients.change}%` : "-"}</span>
-              <span className="text-gray-400">前月比</span>
+              <span className="text-gray-400">{pageLabels.comparison}</span>
             </div>
           </CardContent>
         </Card>
@@ -165,7 +169,7 @@ export default function AnalyticsPage() {
         {/* Daily Records Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">日別診療件数 (過去30日)</CardTitle>
+            <CardTitle className="text-lg">{pageLabels.charts.dailyConsultations}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-48 flex items-end gap-1">
@@ -192,7 +196,7 @@ export default function AnalyticsPage() {
         {/* Monthly Revenue Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">月別売上推移 (過去12ヶ月)</CardTitle>
+            <CardTitle className="text-lg">{pageLabels.charts.monthlyRevenue}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-48 flex items-end gap-2">
@@ -358,7 +362,7 @@ export default function AnalyticsPage() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              本日の予約
+              {pageLabels.sections.todayAppointments}
             </CardTitle>
             <CardDescription>
               {new Date().toLocaleDateString("ja-JP", {
@@ -371,7 +375,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             {!todayAppointments?.length ? (
-              <p className="text-gray-400 text-center py-4">本日の予約はありません</p>
+              <p className="text-gray-400 text-center py-4">{pageLabels.empty.appointments}</p>
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {todayAppointments.map((apt) => (
@@ -392,17 +396,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{appointmentTypeLabels[apt.type] || apt.type}</Badge>
-                      <Badge
-                        className={
-                          apt.status === "COMPLETED"
-                            ? "bg-green-100 text-green-800"
-                            : apt.status === "CANCELLED"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-blue-100 text-blue-800"
-                        }
-                      >
-                        {statusLabels[apt.status] || apt.status}
-                      </Badge>
+                      <StatusBadge status={apt.status} />
                     </div>
                   </div>
                 ))}

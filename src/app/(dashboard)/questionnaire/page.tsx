@@ -17,7 +17,6 @@ import {
   Plus,
   ClipboardList,
   FileText,
-  CheckCircle,
   Clock,
   Eye,
   Edit,
@@ -30,8 +29,9 @@ import {
   StatCard,
   StatGrid,
   EmptyState,
+  PageHeader,
 } from "@/components/layout";
-import { colors, typography, componentStyles } from "@/lib/design-tokens";
+import { colors, componentStyles } from "@/lib/design-tokens";
 import { labels } from "@/lib/labels";
 
 const { pages: { questionnaire: pageLabels }, common } = labels;
@@ -80,18 +80,18 @@ export default function QuestionnairePage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className={typography.pageTitle}>{pageLabels.title}</h1>
-          <p className={`${colors.text.muted} text-sm sm:text-base`}>{pageLabels.description}</p>
-        </div>
-        <Link href="/questionnaire/templates">
-          <Button variant="outline" className="w-full sm:w-auto">
-            <Settings className="mr-2 h-4 w-4" />
-            {pageLabels.templateManagement}
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Link href="/questionnaire/templates">
+            <Button variant="outline" className="w-full sm:w-auto">
+              <Settings className="mr-2 h-4 w-4" />
+              {pageLabels.templateManagement}
+            </Button>
+          </Link>
+        }
+      />
 
       {isError ? (
         <EmptyState

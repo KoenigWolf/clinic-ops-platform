@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -26,7 +25,7 @@ import { toast } from "sonner";
 import { InvoiceDialog } from "@/components/billing/invoice-dialog";
 import { labels } from "@/lib/labels";
 import { invoiceStatusConfig } from "@/lib/design-tokens";
-import { EmptyState } from "@/components/layout";
+import { EmptyState, GenericStatusBadge, PageHeader } from "@/components/layout";
 
 const { pages: { billing: pageLabels }, common, messages } = labels;
 const PAGE_SIZE = 20;
@@ -70,28 +69,27 @@ export default function BillingPage() {
   const totalCount = data?.total ?? 0;
   const rangeStart = (page - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(page * PAGE_SIZE, totalCount);
-  const statusOptions = useMemo(() => ([
+  const statusOptions = [
     { value: "ALL", label: pageLabels.filter.all },
     { value: "DRAFT", label: pageLabels.filter.draft },
     { value: "SENT", label: pageLabels.filter.sent },
     { value: "PAID", label: pageLabels.filter.paid },
     { value: "OVERDUE", label: pageLabels.filter.overdue },
     { value: "CANCELLED", label: pageLabels.filter.cancelled },
-  ]), [pageLabels.filter]);
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pageLabels.title}</h1>
-          <p className="text-gray-500">{pageLabels.description}</p>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {pageLabels.newInvoice}
-        </Button>
-      </div>
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            {pageLabels.newInvoice}
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -233,9 +231,18 @@ export default function BillingPage() {
                           : "-"}
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${invoiceStatusConfig[invoice.status]?.bg} ${invoiceStatusConfig[invoice.status]?.text}`}>
-                          {invoiceStatusConfig[invoice.status]?.label ?? invoice.status}
-                        </Badge>
+                        <GenericStatusBadge
+                          label={invoiceStatusConfig[invoice.status]?.label ?? invoice.status}
+                          variant={
+                            invoice.status === "PAID"
+                              ? "success"
+                              : invoice.status === "OVERDUE"
+                                ? "error"
+                                : invoice.status === "SENT"
+                                  ? "info"
+                                  : "neutral"
+                          }
+                        />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
