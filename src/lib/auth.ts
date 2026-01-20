@@ -204,14 +204,14 @@ const authConfig: NextAuthConfig = {
     },
     async session({ session, token }) {
       // Check if token is valid (not expired)
-      if (!token.id || !token.tenantId) {
+      if (!token.id || !token.tenantId || !token.role) {
         // Return empty session to force re-login
         return { ...session, user: undefined };
       }
 
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role;
+        session.user.role = token.role as UserRole;
         session.user.tenantId = token.tenantId;
       }
       return session;

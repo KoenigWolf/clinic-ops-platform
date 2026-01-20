@@ -42,9 +42,10 @@ type RequestMeta = {
 };
 
 // 認証済みコンテキストの型 (前提: session, tenantIdは必ず存在)
+type AuthenticatedSession = Session & { user: NonNullable<Session["user"]> };
 type AuthenticatedContext = {
   prisma: typeof prisma;
-  session: Session;
+  session: AuthenticatedSession;
   tenantId: string;
   requestMeta: RequestMeta;
 };
@@ -68,7 +69,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      session: ctx.session,
+      session: ctx.session as AuthenticatedSession,
       tenantId,
       requestMeta: ctx.requestMeta,
     } satisfies AuthenticatedContext,
