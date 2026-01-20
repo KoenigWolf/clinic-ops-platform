@@ -241,52 +241,6 @@ export function getCsrfCookieSettings(token: string): string {
   ].join("; ");
 }
 
-/**
- * Timing-safe string comparison to prevent timing attacks
- * Works in Edge Runtime without Node.js crypto
- */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
-}
-
-/**
- * Validate CSRF token from request
- */
-export function validateCsrfToken(request: NextRequest): boolean {
-  // Skip for safe methods (GET, HEAD, OPTIONS)
-  const safeMethods = ["GET", "HEAD", "OPTIONS"];
-  if (safeMethods.includes(request.method)) {
-    return true;
-  }
-
-  // Skip for API routes that use different auth (tRPC has its own protection)
-  if (request.nextUrl.pathname.startsWith("/api/trpc")) {
-    return true;
-  }
-
-  // Get token from header
-  const headerToken = request.headers.get(CSRF_HEADER_NAME);
-
-  // Get token from cookie
-  const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
-
-  // Both must exist and match
-  if (!headerToken || !cookieToken) {
-    return false;
-  }
-
-  // Use timing-safe comparison to prevent timing attacks
-  return timingSafeEqual(headerToken, cookieToken);
-}
-
 // ==================== Input Sanitization ====================
 
 /**
@@ -314,17 +268,6 @@ export function sanitizeEmail(email: string): string | null {
   // RFC 5322 compliant email regex (simplified)
   const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
   return emailRegex.test(trimmed) ? trimmed : null;
-}
-
-/**
- * Sanitize phone number (Japanese format)
- */
-export function sanitizePhone(phone: string): string | null {
-  // Remove all non-digit characters except hyphens
-  const cleaned = phone.replace(/[^\d\-]/g, "");
-  // Japanese phone number pattern
-  const phoneRegex = /^0\d{1,4}-?\d{1,4}-?\d{4}$/;
-  return phoneRegex.test(cleaned) ? cleaned : null;
 }
 
 // ==================== Password Security ====================
@@ -461,63 +404,4 @@ export const PHI_ENTITIES = new Set([
  */
 export function isPhiEntity(entityType: string): boolean {
   return PHI_ENTITIES.has(entityType);
-}
-
-// ==================== Error Handling ====================
-
-/**
- * Sanitize error messages for client response
- * Prevents information leakage
- */
-export function sanitizeErrorMessage(error: unknown): string {
-  // In development, show more details
-  if (process.env.NODE_ENV === "development") {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    return String(error);
-  }
-
-  // In production, return generic messages
-  return "エラーが発生しました";
-}
-
-/**
- * Safe error logging that doesn't expose sensitive data
- */
-export function logSecurityEvent(
-  event: string,
-  details: Record<string, unknown>
-): void {
-  // Filter out sensitive fields
-  const sensitiveFields = [
-    "password",
-    "passwordHash",
-    "token",
-    "secret",
-    "apiKey",
-  ];
-  const sanitizedDetails: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(details)) {
-    if (sensitiveFields.some((field) => key.toLowerCase().includes(field))) {
-      sanitizedDetails[key] = "[REDACTED]";
-    } else {
-      sanitizedDetails[key] = value;
-    }
-  }
-
-  // In production, this would go to a secure logging service
-  if (process.env.NODE_ENV === "production") {
-    // TODO: Send to secure logging service (e.g., AWS CloudWatch, Datadog)
-    console.log(
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        event,
-        ...sanitizedDetails,
-      })
-    );
-  } else {
-    console.log(`[SECURITY] ${event}:`, sanitizedDetails);
-  }
 }

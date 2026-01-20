@@ -2,13 +2,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   sanitizeHtml,
   sanitizeEmail,
-  sanitizePhone,
   validatePassword,
   checkRateLimit,
   RATE_LIMIT_CONFIGS,
   generateCsrfToken,
   isPhiEntity,
-  sanitizeErrorMessage,
 } from "./security";
 
 describe("Security Utilities", () => {
@@ -52,18 +50,6 @@ describe("Security Utilities", () => {
         expect(sanitizeEmail("not-an-email")).toBeNull();
         expect(sanitizeEmail("@example.com")).toBeNull();
         expect(sanitizeEmail("test@")).toBeNull();
-      });
-    });
-
-    describe("sanitizePhone", () => {
-      it("should validate Japanese phone numbers", () => {
-        expect(sanitizePhone("03-1234-5678")).toBe("03-1234-5678");
-        expect(sanitizePhone("090-1234-5678")).toBe("090-1234-5678");
-      });
-
-      it("should return null for invalid phone", () => {
-        expect(sanitizePhone("123")).toBeNull();
-        expect(sanitizePhone("abc-def-ghij")).toBeNull();
       });
     });
   });
@@ -185,29 +171,6 @@ describe("Security Utilities", () => {
         expect(isPhiEntity("Tenant")).toBe(false);
         expect(isPhiEntity("User")).toBe(false);
         expect(isPhiEntity("Invoice")).toBe(false);
-      });
-    });
-  });
-
-  describe("Error Handling", () => {
-    describe("sanitizeErrorMessage", () => {
-      // Note: NODE_ENV cannot be easily changed in tests
-      // These tests verify the function handles errors correctly
-      it("should handle Error objects", () => {
-        const result = sanitizeErrorMessage(new Error("Test error"));
-        // In test environment (development), it should return the message
-        expect(typeof result).toBe("string");
-        expect(result.length).toBeGreaterThan(0);
-      });
-
-      it("should handle string errors", () => {
-        const result = sanitizeErrorMessage("String error");
-        expect(typeof result).toBe("string");
-      });
-
-      it("should handle unknown error types", () => {
-        const result = sanitizeErrorMessage({ custom: "error" });
-        expect(typeof result).toBe("string");
       });
     });
   });
