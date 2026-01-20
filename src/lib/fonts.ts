@@ -1,6 +1,6 @@
 import { Noto_Sans_JP, IBM_Plex_Sans } from "next/font/google";
 
-export const notoSansJP = Noto_Sans_JP({
+const notoSansJP = Noto_Sans_JP({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
@@ -8,7 +8,7 @@ export const notoSansJP = Noto_Sans_JP({
   preload: true,
 });
 
-export const ibmPlexSans = IBM_Plex_Sans({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
