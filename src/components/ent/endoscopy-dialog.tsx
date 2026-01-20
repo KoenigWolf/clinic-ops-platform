@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface EndoscopyDialogProps {
   open: boolean;
@@ -433,10 +434,14 @@ export function EndoscopyDialog({
                   <div className="grid grid-cols-3 gap-4">
                     {imageUrls.map((url, index) => (
                       <div key={index} className="relative group">
-                        <img
+                        <Image
                           src={url}
                           alt={`内視鏡画像 ${index + 1}`}
+                          width={160}
+                          height={128}
                           className="w-full h-32 object-cover rounded-lg border"
+                          sizes="(max-width: 768px) 33vw, 160px"
+                          unoptimized
                         />
                         <button
                           type="button"

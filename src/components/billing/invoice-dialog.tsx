@@ -74,6 +74,7 @@ export function InvoiceDialog({
     name: "items",
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch is safe here.
   const watchItems = form.watch("items");
   const subtotal = watchItems.reduce(
     (sum, item) => sum + (item.quantity || 0) * (item.unitPrice || 0),
