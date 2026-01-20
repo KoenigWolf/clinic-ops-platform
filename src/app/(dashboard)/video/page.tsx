@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,10 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
 import { VideoRoom } from "@/components/video/video-room";
+import { EmptyState, PageHeader } from "@/components/layout";
+import { labels } from "@/lib/labels";
+
+const { pages: { video: pageLabels }, common, messages } = labels;
 
 // Wrapper component that uses searchParams
 function VideoPageContent() {
@@ -40,26 +44,30 @@ function VideoPageContent() {
 
   // Clear URL params after initialization (only run once)
   const [urlCleared, setUrlCleared] = useState(false);
-  if (urlSessionId && urlRoomUrl && !urlCleared) {
-    setUrlCleared(true);
-    router.replace("/video");
-  }
+  useEffect(() => {
+    if (urlSessionId && urlRoomUrl && !urlCleared) {
+      setUrlCleared(true);
+      router.replace("/video");
+    }
+  }, [router, urlRoomUrl, urlSessionId, urlCleared]);
 
   // Get today's online appointments (refetch every 10 seconds)
-  const { data: appointments } = trpc.appointment.list.useQuery({
+  const { data: appointments, isLoading, isError, refetch } = trpc.appointment.list.useQuery({
     date: new Date(),
   }, {
     refetchInterval: 10000,
     refetchOnWindowFocus: true,
   });
 
-  const onlineAppointments = appointments?.appointments.filter(
-    (apt) => apt.isOnline && ["SCHEDULED", "CONFIRMED", "WAITING", "IN_PROGRESS"].includes(apt.status)
-  );
+  const onlineAppointments = useMemo(() => (
+    appointments?.appointments.filter(
+      (apt) => apt.isOnline && ["SCHEDULED", "CONFIRMED", "WAITING", "IN_PROGRESS"].includes(apt.status)
+    )
+  ), [appointments?.appointments]);
 
   const createSessionMutation = trpc.video.createSession.useMutation({
     onError: (error) => {
-      toast.error(error.message || "セッションの作成に失敗しました");
+      toast.error(error.message || messages.error.onlineConsultationFailed);
     },
   });
 
@@ -87,7 +95,7 @@ function VideoPageContent() {
         token,
       });
     } catch {
-      toast.error("診療の開始に失敗しました");
+      toast.error(messages.error.onlineConsultationFailed);
     }
   };
 
@@ -96,9 +104,9 @@ function VideoPageContent() {
       try {
         await endSessionMutation.mutateAsync({ sessionId: activeSession.sessionId });
         setActiveSession(null);
-        toast.success("診療を終了しました");
+        toast.success(messages.success.consultationEnded);
       } catch {
-        toast.error("診療の終了に失敗しました");
+        toast.error(messages.error.consultationEndFailed);
       }
     }
   };
@@ -118,24 +126,32 @@ function VideoPageContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">オンライン診療</h1>
-        <p className="text-gray-500">ビデオ通話による診療</p>
-      </div>
+      <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* Today's Online Appointments */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Video className="h-5 w-5" />
-            本日のオンライン診療
+            {pageLabels.todayOnline}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!onlineAppointments || onlineAppointments.length === 0 ? (
+          {isError ? (
+            <EmptyState
+              message={common.loadFailed}
+              action={
+                <Button type="button" variant="outline" onClick={() => refetch()}>
+                  {common.retry}
+                </Button>
+              }
+            />
+          ) : isLoading ? (
+            <div className="text-center py-8 text-gray-500">{common.loading}</div>
+          ) : !onlineAppointments || onlineAppointments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Video className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <p>本日のオンライン診療予約はありません</p>
+              <p>{pageLabels.empty}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -199,26 +215,26 @@ function VideoPageContent() {
       {/* Instructions */}
       <Card>
         <CardHeader>
-          <CardTitle>オンライン診療について</CardTitle>
+          <CardTitle>{pageLabels.instructions.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-blue-700 mb-2">1. 事前準備</h4>
+              <h4 className="font-semibold text-blue-700 mb-2">{pageLabels.instructions.preparation.title}</h4>
               <p className="text-sm text-blue-600">
-                カメラとマイクが正常に動作することを確認してください
+                {pageLabels.instructions.preparation.description}
               </p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
-              <h4 className="font-semibold text-green-700 mb-2">2. 診療開始</h4>
+              <h4 className="font-semibold text-green-700 mb-2">{pageLabels.instructions.start.title}</h4>
               <p className="text-sm text-green-600">
-                「診療開始」ボタンをクリックしてビデオ通話を開始します
+                {pageLabels.instructions.start.description}
               </p>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
-              <h4 className="font-semibold text-purple-700 mb-2">3. 診療終了</h4>
+              <h4 className="font-semibold text-purple-700 mb-2">{pageLabels.instructions.end.title}</h4>
               <p className="text-sm text-purple-600">
-                診療が終わったら「終了」ボタンで通話を終了してください
+                {pageLabels.instructions.end.description}
               </p>
             </div>
           </div>

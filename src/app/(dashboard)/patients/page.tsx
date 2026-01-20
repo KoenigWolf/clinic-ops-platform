@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -17,21 +17,29 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Eye, FileText } from "lucide-react";
 import { PatientDialog } from "@/components/patients/patient-dialog";
-import { ResponsiveTable } from "@/components/layout";
+import { EmptyState, ResponsiveTable } from "@/components/layout";
 import { labels } from "@/lib/labels";
 
 const { pages: { patients: pageLabels }, common } = labels;
+const PAGE_SIZE = 20;
 
 export default function PatientsPage() {
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const deferredSearch = useDeferredValue(searchInput);
+  const searchValue = useMemo(() => deferredSearch.trim(), [deferredSearch]);
 
-  const { data, isLoading, refetch } = trpc.patient.list.useQuery({
-    search: search || undefined,
+  const { data, isLoading, isError, refetch } = trpc.patient.list.useQuery({
+    search: searchValue || undefined,
     page,
-    limit: 20,
+    limit: PAGE_SIZE,
   });
+
+  const totalCount = data?.total ?? 0;
+  const patientCountLabel = pageLabels.listTitle(totalCount);
+  const rangeStart = (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, totalCount);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -56,11 +64,12 @@ export default function PatientsPage() {
               <Input
                 placeholder={pageLabels.searchPlaceholder}
                 className="pl-10"
-                value={search}
+                value={searchInput}
                 onChange={(e) => {
-                  setSearch(e.target.value);
+                  setSearchInput(e.target.value);
                   setPage(1);
                 }}
+                aria-label={pageLabels.searchPlaceholder}
               />
             </div>
           </div>
@@ -70,10 +79,19 @@ export default function PatientsPage() {
       {/* Patients Table */}
       <Card>
         <CardHeader>
-          <CardTitle>{pageLabels.listTitle(data?.total || 0)}</CardTitle>
+          <CardTitle>{patientCountLabel}</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isError ? (
+            <EmptyState
+              message={common.loadFailed}
+              action={
+                <Button type="button" variant="outline" onClick={() => refetch()}>
+                  {common.retry}
+                </Button>
+              }
+            />
+          ) : isLoading ? (
             <div className="text-center py-8 text-gray-500">{common.loading}</div>
           ) : data?.patients.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -122,12 +140,12 @@ export default function PatientsPage() {
                         <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/patients/${patient.id}`}>
+                            <Link href={`/patients/${patient.id}`} aria-label="患者詳細を表示">
                               <Eye className="h-4 w-4" />
                             </Link>
                           </Button>
                           <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/records?patientId=${patient.id}`}>
+                            <Link href={`/records?patientId=${patient.id}`} aria-label="診療記録を表示">
                               <FileText className="h-4 w-4" />
                             </Link>
                           </Button>
@@ -143,7 +161,7 @@ export default function PatientsPage() {
               {data && data.pages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-gray-500">
-                    {data.total}件中 {(page - 1) * 20 + 1}-{Math.min(page * 20, data.total)}件を表示
+                    {totalCount}件中 {rangeStart}-{rangeEnd}件を表示
                   </p>
                   <div className="flex gap-2">
                     <Button

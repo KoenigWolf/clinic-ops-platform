@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Video, Clock, User, Phone } from "lucide-react";
 import { AppointmentDialog } from "@/components/appointments/appointment-dialog";
+import { EmptyState } from "@/components/layout/empty-state";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
@@ -35,12 +36,19 @@ export default function AppointmentsPage() {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [startingSessionId, setStartingSessionId] = useState<string | null>(null);
 
-  const { data: appointments, refetch } = trpc.appointment.list.useQuery({
+  const {
+    data: appointments,
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.appointment.list.useQuery({
     date: selectedDate,
   });
 
   const updateStatusMutation = trpc.appointment.updateStatus.useMutation({
+    onError: () => toast.error(messages.error.appointmentUpdateFailed),
     onSuccess: () => refetch(),
   });
 
@@ -49,6 +57,7 @@ export default function AppointmentsPage() {
   const startSessionMutation = trpc.video.startSession.useMutation();
 
   const handleStartOnlineConsultation = async (appointmentId: string) => {
+    setStartingSessionId(appointmentId);
     try {
       await updateStatusMutation.mutateAsync({ id: appointmentId, status: "IN_PROGRESS" });
       const session = await createSessionMutation.mutateAsync({ appointmentId });
@@ -57,8 +66,15 @@ export default function AppointmentsPage() {
       router.push(`/video?sessionId=${session.id}&roomUrl=${encodeURIComponent(roomUrl)}&token=${encodeURIComponent(token || "")}`);
     } catch {
       toast.error(messages.error.onlineConsultationFailed);
+    } finally {
+      setStartingSessionId(null);
     }
   };
+
+  const dateTitle = useMemo(
+    () => format(selectedDate, "yyyy年M月d日 (E)", { locale: ja }),
+    [selectedDate]
+  );
 
   return (
     <div className="space-y-6">
@@ -92,11 +108,24 @@ export default function AppointmentsPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>
-              {format(selectedDate, "yyyy年M月d日 (E)", { locale: ja })} の予約
+              {pageLabels.dateTitle(dateTitle)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {appointments?.appointments.length === 0 ? (
+            {isError ? (
+              <EmptyState
+                message={labels.common.loadFailed}
+                action={
+                  <Button type="button" variant="outline" onClick={() => refetch()}>
+                    {labels.common.retry}
+                  </Button>
+                }
+              />
+            ) : isLoading ? (
+              <div className={`text-center py-8 ${colors.text.muted}`}>
+                {labels.common.loading}
+              </div>
+            ) : appointments?.appointments.length === 0 ? (
               <div className={`text-center py-8 ${colors.text.muted}`}>
                 {pageLabels.empty}
               </div>
@@ -171,10 +200,12 @@ export default function AppointmentsPage() {
                           <Button
                             size="sm"
                             onClick={() => handleStartOnlineConsultation(apt.id)}
-                            disabled={createSessionMutation.isPending}
+                            disabled={startingSessionId === apt.id}
                           >
                             <Phone className="h-4 w-4 mr-1" />
-                            {createSessionMutation.isPending ? pageLabels.actions.preparing : pageLabels.actions.startOnline}
+                            {startingSessionId === apt.id
+                              ? pageLabels.actions.preparing
+                              : pageLabels.actions.startOnline}
                           </Button>
                         ) : (
                           <Button

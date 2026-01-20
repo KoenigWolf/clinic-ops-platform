@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, FileText } from "lucide-react";
 import { RecordDialog } from "@/components/records/record-dialog";
+import { EmptyState } from "@/components/layout";
 import { labels } from "@/lib/labels";
 
 const { pages: { records: pageLabels }, common } = labels;
@@ -27,12 +28,28 @@ function RecordsContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<string | null>(null);
 
-  const { data: patients } = trpc.patient.list.useQuery({ limit: 100 });
+  const {
+    data: patients,
+    isLoading: isPatientsLoading,
+    isError: isPatientsError,
+  } = trpc.patient.list.useQuery({ limit: 100 });
 
-  const { data: records, refetch } = trpc.record.listByPatient.useQuery(
+  const {
+    data: records,
+    isLoading: isRecordsLoading,
+    isError: isRecordsError,
+    refetch,
+  } = trpc.record.listByPatient.useQuery(
     { patientId: selectedPatientId || "" },
     { enabled: !!selectedPatientId }
   );
+
+  const patientOptions = useMemo(() => patients?.patients ?? [], [patients]);
+
+  const handlePatientChange = (value: string) => {
+    setSelectedPatientId(value);
+    setSelectedRecord(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -57,16 +74,28 @@ function RecordsContent() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">{pageLabels.patientSelect}</label>
+            <label className="text-sm font-medium" htmlFor="patient-select">
+              {pageLabels.patientSelect}
+            </label>
             <Select
               value={selectedPatientId || ""}
-              onValueChange={setSelectedPatientId}
+              onValueChange={handlePatientChange}
             >
-              <SelectTrigger className="w-[300px]">
+              <SelectTrigger id="patient-select" className="w-[300px]">
                 <SelectValue placeholder={pageLabels.patientPlaceholder} />
               </SelectTrigger>
               <SelectContent>
-                {patients?.patients.map((patient) => (
+                {isPatientsLoading && (
+                  <SelectItem value="__loading__" disabled>
+                    {common.loading}
+                  </SelectItem>
+                )}
+                {isPatientsError && (
+                  <SelectItem value="__error__" disabled>
+                    {common.loadFailed}
+                  </SelectItem>
+                )}
+                {patientOptions.map((patient) => (
                   <SelectItem key={patient.id} value={patient.id}>
                     {patient.patientNumber} - {patient.lastName} {patient.firstName}
                   </SelectItem>
@@ -80,13 +109,29 @@ function RecordsContent() {
       {/* Records List */}
       {selectedPatientId ? (
         <div className="space-y-4">
-          {records?.records.length === 0 ? (
+          {isRecordsError ? (
+            <EmptyState
+              message={common.loadFailed}
+              action={
+                <Button type="button" variant="outline" onClick={() => refetch()}>
+                  {common.retry}
+                </Button>
+              }
+            />
+          ) : isRecordsLoading ? (
+            <Card>
+              <CardContent className="py-8 text-center text-gray-500">
+                {common.loading}
+              </CardContent>
+            </Card>
+          ) : records?.records.length === 0 ? (
             <Card>
               <CardContent className="py-8">
                 <div className="text-center text-gray-500">
                   <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
                   <p>{pageLabels.empty}</p>
                   <Button
+                    type="button"
                     variant="outline"
                     className="mt-4"
                     onClick={() => {
@@ -103,20 +148,24 @@ function RecordsContent() {
           ) : (
             records?.records.map((record) => (
               <Card key={record.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader
-                  onClick={() => {
-                    setSelectedRecord(record.id);
-                    setIsDialogOpen(true);
-                  }}
-                >
+                <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-lg">
-                        {new Date(record.recordDate).toLocaleDateString("ja-JP", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        <button
+                          type="button"
+                          className="text-left"
+                          onClick={() => {
+                            setSelectedRecord(record.id);
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          {new Date(record.recordDate).toLocaleDateString("ja-JP", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </button>
                       </CardTitle>
                       <p className="text-sm text-gray-500">
                         {common.doctor}: {record.doctor.name}

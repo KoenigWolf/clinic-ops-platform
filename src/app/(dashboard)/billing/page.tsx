@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,18 +26,25 @@ import { toast } from "sonner";
 import { InvoiceDialog } from "@/components/billing/invoice-dialog";
 import { labels } from "@/lib/labels";
 import { invoiceStatusConfig } from "@/lib/design-tokens";
+import { EmptyState } from "@/components/layout";
 
 const { pages: { billing: pageLabels }, common, messages } = labels;
+const PAGE_SIZE = 20;
+const currencyFormatter = new Intl.NumberFormat("ja-JP", {
+  style: "currency",
+  currency: "JPY",
+  maximumFractionDigits: 0,
+});
 
 export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { data, refetch } = trpc.billing.list.useQuery({
+  const { data, isLoading, isError, refetch } = trpc.billing.list.useQuery({
     status: statusFilter !== "ALL" ? statusFilter as "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED" : undefined,
     page,
-    limit: 20,
+    limit: PAGE_SIZE,
   });
 
   const updateStatusMutation = trpc.billing.updateStatus.useMutation({
@@ -46,7 +53,7 @@ export default function BillingPage() {
       refetch();
     },
     onError: (error) => {
-      toast.error(error.message || messages.error.recordUpdateFailed);
+      toast.error(error.message || messages.error.invoiceUpdateFailed);
     },
   });
 
@@ -56,9 +63,21 @@ export default function BillingPage() {
       refetch();
     },
     onError: (error) => {
-      toast.error(error.message || messages.error.recordUpdateFailed);
+      toast.error(error.message || messages.error.paymentRecordFailed);
     },
   });
+
+  const totalCount = data?.total ?? 0;
+  const rangeStart = (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, totalCount);
+  const statusOptions = useMemo(() => ([
+    { value: "ALL", label: pageLabels.filter.all },
+    { value: "DRAFT", label: pageLabels.filter.draft },
+    { value: "SENT", label: pageLabels.filter.sent },
+    { value: "PAID", label: pageLabels.filter.paid },
+    { value: "OVERDUE", label: pageLabels.filter.overdue },
+    { value: "CANCELLED", label: pageLabels.filter.cancelled },
+  ]), [pageLabels.filter]);
 
   return (
     <div className="space-y-6">
@@ -85,7 +104,7 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              ¥{(data?.monthlyRevenue || 0).toLocaleString()}
+              {currencyFormatter.format(data?.monthlyRevenue || 0)}
             </p>
           </CardContent>
         </Card>
@@ -123,7 +142,9 @@ export default function BillingPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">{pageLabels.statusFilter}</label>
+            <label className="text-sm font-medium" htmlFor="invoice-status-filter">
+              {pageLabels.statusFilter}
+            </label>
             <Select
               value={statusFilter}
               onValueChange={(value) => {
@@ -131,16 +152,15 @@ export default function BillingPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger id="invoice-status-filter" className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">{pageLabels.filter.all}</SelectItem>
-                <SelectItem value="DRAFT">{pageLabels.filter.draft}</SelectItem>
-                <SelectItem value="SENT">{pageLabels.filter.sent}</SelectItem>
-                <SelectItem value="PAID">{pageLabels.filter.paid}</SelectItem>
-                <SelectItem value="OVERDUE">{pageLabels.filter.overdue}</SelectItem>
-                <SelectItem value="CANCELLED">{pageLabels.filter.cancelled}</SelectItem>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -150,10 +170,21 @@ export default function BillingPage() {
       {/* Invoices Table */}
       <Card>
         <CardHeader>
-          <CardTitle>{pageLabels.listTitle(data?.total || 0)}</CardTitle>
+          <CardTitle>{pageLabels.listTitle(totalCount)}</CardTitle>
         </CardHeader>
         <CardContent>
-          {data?.invoices.length === 0 ? (
+          {isError ? (
+            <EmptyState
+              message={common.loadFailed}
+              action={
+                <Button type="button" variant="outline" onClick={() => refetch()}>
+                  {common.retry}
+                </Button>
+              }
+            />
+          ) : isLoading ? (
+            <div className="text-center py-8 text-gray-500">{common.loading}</div>
+          ) : data?.invoices.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {pageLabels.empty}
             </div>
@@ -191,7 +222,7 @@ export default function BillingPage() {
                         </div>
                       </TableCell>
                       <TableCell className="font-semibold">
-                        ¥{invoice.total.toLocaleString()}
+                        {currencyFormatter.format(invoice.total)}
                         <span className="text-sm text-gray-500 font-normal block">
                           {common.taxIncluded}
                         </span>
@@ -203,7 +234,7 @@ export default function BillingPage() {
                       </TableCell>
                       <TableCell>
                         <Badge className={`${invoiceStatusConfig[invoice.status]?.bg} ${invoiceStatusConfig[invoice.status]?.text}`}>
-                          {invoiceStatusConfig[invoice.status]?.label}
+                          {invoiceStatusConfig[invoice.status]?.label ?? invoice.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -212,6 +243,7 @@ export default function BillingPage() {
                             <Button
                               size="sm"
                               variant="outline"
+                              disabled={updateStatusMutation.isPending}
                               onClick={() =>
                                 updateStatusMutation.mutate({
                                   id: invoice.id,
@@ -225,6 +257,7 @@ export default function BillingPage() {
                           {(invoice.status === "SENT" || invoice.status === "OVERDUE") && (
                             <Button
                               size="sm"
+                              disabled={recordPaymentMutation.isPending}
                               onClick={() =>
                                 recordPaymentMutation.mutate({
                                   id: invoice.id,
@@ -246,7 +279,7 @@ export default function BillingPage() {
               {data && data.pages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-gray-500">
-                    {data.total}件中 {(page - 1) * 20 + 1}-{Math.min(page * 20, data.total)}件
+                    {totalCount}件中 {rangeStart}-{rangeEnd}件
                   </p>
                   <div className="flex gap-2">
                     <Button

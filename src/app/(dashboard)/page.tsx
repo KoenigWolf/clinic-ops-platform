@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import {
@@ -22,9 +23,15 @@ import {
 import { typography, spacing } from "@/lib/design-tokens";
 import { labels } from "@/lib/labels";
 
+const currencyFormatter = new Intl.NumberFormat("ja-JP", {
+  style: "currency",
+  currency: "JPY",
+  maximumFractionDigits: 0,
+});
+
 export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession();
-  const { data, isLoading } = trpc.dashboard.get.useQuery();
+  const { data, isLoading, isError, refetch } = trpc.dashboard.get.useQuery();
 
   if (sessionStatus === "loading" || isLoading) {
     return (
@@ -42,6 +49,22 @@ export default function DashboardPage() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className={spacing.page.maxWidth}>
+        <PageHeader title={labels.pages.dashboard.title} />
+        <EmptyState
+          message={labels.common.loadFailed}
+          action={
+            <Button type="button" variant="outline" onClick={() => refetch()}>
+              {labels.common.retry}
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
   const userName = session?.user?.name ?? "ユーザー";
   const totalPatients = data?.totalPatients ?? 0;
   const todayAppointmentsCount = data?.todayAppointments?.length ?? 0;
@@ -55,7 +78,7 @@ export default function DashboardPage() {
     { label: statLabels.patients, value: totalPatients, href: "/patients" },
     { label: statLabels.todayAppointments, value: todayAppointmentsCount, href: "/appointments" },
     { label: statLabels.pendingPrescriptions, value: pendingPrescriptions, href: "/prescriptions" },
-    { label: statLabels.monthlyRevenue, value: `¥${monthlyRevenue.toLocaleString()}`, href: "/billing" },
+    { label: statLabels.monthlyRevenue, value: currencyFormatter.format(monthlyRevenue), href: "/billing" },
   ];
 
   return (
