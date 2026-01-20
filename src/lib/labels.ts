@@ -1,6 +1,7 @@
 export const labels = {
   common: {
     loading: "読み込み中...",
+    loadFailed: "読み込みに失敗しました",
     cancel: "キャンセル",
     save: "保存",
     saving: "保存中...",
@@ -29,6 +30,7 @@ export const labels = {
     default: "デフォルト",
     draft: "下書き",
     new: "新着",
+    retry: "再読み込み",
   },
 
   pages: {
@@ -208,6 +210,8 @@ export const labels = {
       },
       confirmHint: "確認してカルテに反映してください",
       newTemplate: "新規テンプレート",
+      templatesEmpty: "テンプレートがありません",
+      templatesCreateFirst: "最初のテンプレートを作成",
       categories: {
         all: "すべて",
         general: "一般",
@@ -349,6 +353,56 @@ export const labels = {
         vestibular: "平衡機能検査",
         endoscopy: "内視鏡検査",
         allergy: "アレルギー検査",
+      },
+    },
+
+    entDashboard: {
+      title: "耳鼻科ダッシュボード",
+      description: "検査統計と最近の活動",
+      viewTests: "検査一覧へ",
+      stats: {
+        totalTests: "総検査数",
+        last30Days: "直近30日",
+      },
+      sections: {
+        hearingDistribution: "聴力レベル分布",
+        hearingDescription: "全聴力検査結果の分布（左右耳別）",
+        recentTests: "最近の検査",
+        recentDescription: "直近の検査記録",
+        quickActions: "クイックアクション",
+      },
+      empty: {
+        hearing: "聴力検査データがありません",
+        tests: "検査データがありません",
+      },
+      actions: {
+        recordTest: "検査を記録",
+        templates: "テンプレート管理",
+        patients: "患者一覧",
+        records: "診療記録",
+      },
+    },
+
+    entTemplates: {
+      title: "診断テンプレート管理",
+      description: "よく使う診断・所見・処方をテンプレート化",
+      breadcrumbParent: "耳鼻科検査",
+      breadcrumbCurrent: "診断テンプレート",
+      filterLabel: "カテゴリで絞り込み:",
+      newTemplate: "新規テンプレート",
+      empty: "テンプレートがありません",
+      createFirst: "最初のテンプレートを作成",
+      deleteTitle: "テンプレートを削除しますか？",
+      deleteDescription: "この操作は取り消せません。テンプレートは完全に削除されます。",
+      deleteAction: "削除",
+      categories: {
+        ALL: "すべて",
+        EAR: "耳疾患",
+        NOSE: "鼻疾患",
+        THROAT: "咽喉頭疾患",
+        ALLERGY: "アレルギー",
+        VERTIGO: "めまい",
+        OTHER: "その他",
       },
     },
 
@@ -681,6 +735,10 @@ export const labels = {
       patientCreateFailed: "登録に失敗しました",
       patientUpdateFailed: "更新に失敗しました",
       appointmentCreateFailed: "登録に失敗しました",
+      appointmentUpdateFailed: "更新に失敗しました",
+      invoiceUpdateFailed: "更新に失敗しました",
+      paymentRecordFailed: "支払い記録に失敗しました",
+      templateDeleteFailed: "削除に失敗しました",
       recordSaveFailed: "保存に失敗しました",
       recordUpdateFailed: "更新に失敗しました",
       onlineConsultationFailed: "オンライン診療の開始に失敗しました",
