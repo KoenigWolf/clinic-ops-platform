@@ -1,13 +1,14 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import {
-  SECURITY_HEADERS,
+  applySecurityHeaders,
   checkRateLimit,
   RATE_LIMIT_CONFIGS,
   getClientIdentifier,
   rateLimitHeaders,
   generateCsrfToken,
   getCsrfCookieSettings,
+  CSRF_COOKIE_NAME,
 } from "@/lib/security";
 
 const publicPaths = ["/login", "/register", "/api/auth"];
@@ -41,48 +42,37 @@ export default auth((req) => {
         },
       }
     );
-    // Apply security headers
-    Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    return response;
+    return applySecurityHeaders(response);
   }
 
   // Allow public paths
   if (publicPaths.some((path) => pathname.startsWith(path))) {
     const response = NextResponse.next();
-    // Apply security headers
-    Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
     // Add rate limit headers
     Object.entries(
       rateLimitHeaders(rateLimit.remaining, rateLimit.resetTime)
     ).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
-    return response;
+    return applySecurityHeaders(response);
   }
 
   // Redirect to login if not authenticated
   if (!req.auth) {
     const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      `${req.nextUrl.pathname}${req.nextUrl.search}`
+    );
     const response = NextResponse.redirect(loginUrl);
-    // Apply security headers
-    Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    return response;
+    return applySecurityHeaders(response);
   }
 
   // Create response
   const response = NextResponse.next();
 
   // Apply security headers to all responses
-  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
+  applySecurityHeaders(response);
 
   // Add rate limit headers
   Object.entries(
@@ -92,7 +82,7 @@ export default auth((req) => {
   });
 
   // Set CSRF token cookie if not present
-  const existingCsrf = req.cookies.get("__Host-csrf-token");
+  const existingCsrf = req.cookies.get(CSRF_COOKIE_NAME);
   if (!existingCsrf && !pathname.startsWith("/api/")) {
     const csrfToken = generateCsrfToken();
     response.headers.append("Set-Cookie", getCsrfCookieSettings(csrfToken));
