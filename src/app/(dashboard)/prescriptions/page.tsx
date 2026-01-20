@@ -22,6 +22,7 @@ import {
 import { Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import Link from "next/link";
 import { labels } from "@/lib/labels";
 import { prescriptionStatusConfig } from "@/lib/design-tokens";
 import { EmptyState, GenericStatusBadge, PageHeader } from "@/components/layout";
@@ -133,9 +134,12 @@ export default function PrescriptionsPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">
+                          <Link
+                            href={`/patients/${rx.patient.id}`}
+                            className="font-medium hover:underline"
+                          >
                             {rx.patient.lastName} {rx.patient.firstName}
-                          </p>
+                          </Link>
                           <p className="text-sm text-gray-500">
                             {rx.patient.patientNumber}
                           </p>

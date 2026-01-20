@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,9 +135,12 @@ export default function AppointmentsPage() {
                       <div className="border-l pl-4">
                         <div className="flex items-center gap-2">
                           <User className={`h-4 w-4 ${colors.text.subtle}`} />
-                          <p className="font-medium">
+                          <Link
+                            href={`/patients/${apt.patient.id}`}
+                            className="font-medium hover:underline"
+                          >
                             {apt.patient.lastName} {apt.patient.firstName}
-                          </p>
+                          </Link>
                           <span className={typography.bodySmall}>
                             ({apt.patient.patientNumber})
                           </span>

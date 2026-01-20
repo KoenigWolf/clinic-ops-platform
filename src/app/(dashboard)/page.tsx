@@ -109,9 +109,12 @@ export default function DashboardPage() {
                       />
                       <VerticalSeparator />
                       <div>
-                        <p className={typography.cardTitle}>
+                        <Link
+                          href={`/patients/${apt.patient.id}`}
+                          className={`${typography.cardTitle} hover:underline`}
+                        >
                           {apt.patient.lastName} {apt.patient.firstName}
-                        </p>
+                        </Link>
                         <div className="flex items-center gap-2 mt-0.5">
                           <StatusBadge status={apt.status} />
                           {apt.isOnline && <OnlineBadge />}
@@ -136,7 +139,7 @@ export default function DashboardPage() {
               {patients.map((patient) => (
                 <Link
                   key={patient.id}
-                  href={`/patients?id=${patient.id}`}
+                  href={`/patients/${patient.id}`}
                   className="flex items-center gap-3 p-3 hover:bg-gray-50/50 transition-colors"
                 >
                   <Avatar name={patient.lastName} size="md" />

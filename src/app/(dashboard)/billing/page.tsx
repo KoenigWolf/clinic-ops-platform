@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Receipt, DollarSign } from "lucide-react";
 import { format } from "date-fns";
+import Link from "next/link";
 import { toast } from "sonner";
 import { InvoiceDialog } from "@/components/billing/invoice-dialog";
 import { labels } from "@/lib/labels";
@@ -211,9 +212,12 @@ export default function BillingPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">
+                          <Link
+                            href={`/patients/${invoice.patient.id}`}
+                            className="font-medium hover:underline"
+                          >
                             {invoice.patient.lastName} {invoice.patient.firstName}
-                          </p>
+                          </Link>
                           <p className="text-sm text-gray-500">
                             {invoice.patient.patientNumber}
                           </p>

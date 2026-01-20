@@ -223,18 +223,20 @@ function DashboardContent() {
                   const Icon = config.icon;
 
                   return (
-                    <Link
+                    <div
                       key={test.id}
-                      href={`/ent?patientId=${test.patient.id}`}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className={`p-2 rounded-full ${config.bg}`}>
                         <Icon className={`h-4 w-4 ${config.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
+                        <Link
+                          href={`/patients/${test.patient.id}`}
+                          className="font-medium text-sm truncate hover:underline"
+                        >
                           {test.patient.lastName} {test.patient.firstName}
-                        </p>
+                        </Link>
                         <p className="text-xs text-gray-500">
                           {test.patient.patientNumber}
                         </p>
@@ -249,8 +251,14 @@ function DashboardContent() {
                             day: "numeric",
                           })}
                         </p>
+                        <Link
+                          href={`/ent?patientId=${test.patient.id}`}
+                          className="text-xs text-gray-500 hover:underline block mt-1"
+                        >
+                          検査一覧
+                        </Link>
                       </div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

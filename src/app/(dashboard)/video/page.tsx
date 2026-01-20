@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { VideoRoom } from "@/components/video/video-room";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/layout";
 import { labels } from "@/lib/labels";
+import Link from "next/link";
 
 const { pages: { video: pageLabels }, common, messages } = labels;
 
@@ -164,9 +165,12 @@ function VideoPageContent() {
                       <User className="h-6 w-6 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-medium">
+                      <Link
+                        href={`/patients/${apt.patient.id}`}
+                        className="font-medium hover:underline"
+                      >
                         {apt.patient.lastName} {apt.patient.firstName}
-                      </p>
+                      </Link>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Clock className="h-4 w-4" />
                         {format(new Date(apt.startTime), "HH:mm", { locale: ja })}

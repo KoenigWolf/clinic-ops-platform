@@ -18,6 +18,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { labels } from "@/lib/labels";
+import Link from "next/link";
 
 const { pages: { analytics: pageLabels }, common } = labels;
 
@@ -390,9 +391,12 @@ export default function AnalyticsPage() {
                           minute: "2-digit",
                         })}
                       </span>
-                      <span>
+                      <Link
+                        href={`/patients/${apt.patient.id}`}
+                        className="hover:underline"
+                      >
                         {apt.patient.lastName} {apt.patient.firstName}
-                      </span>
+                      </Link>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{appointmentTypeLabels[apt.type] || apt.type}</Badge>

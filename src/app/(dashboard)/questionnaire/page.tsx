@@ -169,9 +169,12 @@ export default function QuestionnairePage() {
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                             <div>
-                              <p className="font-medium">
+                              <Link
+                                href={`/patients/${response.patient.id}`}
+                                className="font-medium hover:underline"
+                              >
                                 {response.patient.lastName} {response.patient.firstName}
-                              </p>
+                              </Link>
                               <p className={`text-sm ${colors.text.muted}`}>
                                 {response.patient.patientNumber}
                               </p>
@@ -223,9 +226,12 @@ export default function QuestionnairePage() {
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                             <div className="min-w-0">
-                              <p className="font-medium truncate">
+                              <Link
+                                href={`/patients/${response.patient.id}`}
+                                className="font-medium truncate hover:underline"
+                              >
                                 {response.patient.lastName} {response.patient.firstName}
-                              </p>
+                              </Link>
                               <p className={`text-xs ${colors.text.muted}`}>
                                 {response.patient.patientNumber}
                               </p>

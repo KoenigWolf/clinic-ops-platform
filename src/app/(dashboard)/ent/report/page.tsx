@@ -122,9 +122,9 @@ function ReportContent() {
             </div>
             <div className="flex">
               <span className="w-24 text-gray-600">氏名:</span>
-              <span className="font-medium">
+              <Link href={`/patients/${patient.id}`} className="font-medium hover:underline">
                 {patient.lastName} {patient.firstName}
-              </span>
+              </Link>
             </div>
             <div className="flex">
               <span className="w-24 text-gray-600">生年月日:</span>

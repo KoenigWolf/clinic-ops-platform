@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { EmptyState, PageHeader } from "@/components/layout";
 import { labels } from "@/lib/labels";
+import Link from "next/link";
 
 const { pages: { documents: pageLabels }, common, messages } = labels;
 
@@ -379,9 +380,12 @@ export default function DocumentsPage() {
                       <div className="flex items-center gap-4">
                         <div>
                           <p className="font-medium">{doc.title}</p>
-                          <p className="text-sm text-gray-500">
+                          <Link
+                            href={`/patients/${doc.patient.id}`}
+                            className="text-sm text-gray-500 hover:underline"
+                          >
                             {doc.patient.lastName} {doc.patient.firstName} ({doc.patient.patientNumber})
-                          </p>
+                          </Link>
                         </div>
                         <Badge className={getCategoryColor(doc.category)}>
                           {pageLabels.categories[doc.category as keyof typeof pageLabels.categories] ?? doc.category}
