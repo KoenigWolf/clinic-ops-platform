@@ -22,6 +22,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   Users,
   FileText,
   Calendar,
@@ -38,9 +43,10 @@ import {
   BarChart3,
   PanelLeftClose,
   PanelLeft,
+  Menu,
 } from "lucide-react";
 
-const navigation = [
+export const navigation = [
   { name: "ダッシュボード", href: "/", icon: Home },
   { name: "患者管理", href: "/patients", icon: Users },
   { name: "診療記録", href: "/records", icon: FileText },
@@ -85,7 +91,7 @@ export function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <div
         className={cn(
-          "flex h-screen flex-col text-white transition-all duration-300",
+          "hidden md:flex h-screen flex-col text-white transition-all duration-300",
           sidebar.bg,
           collapsed ? "w-16" : "w-64"
         )}
@@ -215,5 +221,105 @@ export function Sidebar() {
         </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+export function MobileHeader() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const [open, setOpen] = useState(false);
+
+  const userInitials = session?.user?.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase() || "U";
+
+  return (
+    <div className={cn("md:hidden flex items-center justify-between h-14 px-4 border-b", sidebar.bg, sidebar.border)}>
+      <Link href="/" className="flex items-center gap-2">
+        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center font-bold shadow-lg shadow-teal-500/25", sidebar.logo.bg, sidebar.logo.text)}>
+          K
+        </div>
+        <span className="text-lg font-bold bg-gradient-to-r from-white to-teal-200 bg-clip-text text-transparent">Karute</span>
+      </Link>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-white hover:bg-slate-800/60">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className={cn("w-72 p-0", sidebar.bg)}>
+          <nav className="flex flex-col h-full">
+            <div className={cn("flex items-center gap-2 h-14 px-4 border-b", sidebar.border)}>
+              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center font-bold shadow-lg shadow-teal-500/25", sidebar.logo.bg, sidebar.logo.text)}>
+                K
+              </div>
+              <span className="text-lg font-bold bg-gradient-to-r from-white to-teal-200 bg-clip-text text-transparent">Karute</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4">
+              <ul className="space-y-1 px-2">
+                {navigation.map((item) => {
+                  const isActive = pathname === item.href ||
+                    (item.href !== "/" && pathname.startsWith(item.href));
+
+                  return (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                          isActive
+                            ? sidebar.nav.active
+                            : cn(sidebar.nav.inactive, sidebar.nav.hover)
+                        )}
+                      >
+                        <item.icon className={cn("h-5 w-5 shrink-0", isActive && "drop-shadow-sm")} />
+                        {item.name}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className={cn("border-t p-4", sidebar.border)}>
+              <div className="flex items-center gap-3 mb-4">
+                <Avatar className={cn("h-10 w-10", sidebar.avatar.ring)}>
+                  <AvatarFallback className={cn("text-white text-sm font-medium", sidebar.avatar.bg)}>
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">{session?.user?.name}</p>
+                  <p className={cn("text-xs truncate", sidebar.text.muted)}>{session?.user?.email}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Link
+                  href="/settings"
+                  onClick={() => setOpen(false)}
+                  className={cn("flex items-center gap-2 rounded-lg px-3 py-2 text-sm", sidebar.nav.inactive, sidebar.nav.hover)}
+                >
+                  <Settings className="h-4 w-4" />
+                  設定
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 w-full"
+                >
+                  <LogOut className="h-4 w-4" />
+                  ログアウト
+                </button>
+              </div>
+            </div>
+          </nav>
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 }
