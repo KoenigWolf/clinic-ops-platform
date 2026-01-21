@@ -66,9 +66,16 @@ async function main() {
     },
   });
 
-  console.log("Created users:", [adminUser.email, doctorUser.email, nurseUser.email]);
+  console.log("Created users:", [
+    adminUser.email,
+    doctorUser.email,
+    nurseUser.email,
+  ]);
 
-  // Create demo patients
+  // ============================
+  // Patients (Prisma model 完全準拠)
+  // ============================
+
   const patients = [
     {
       patientNumber: "P0001",
@@ -83,8 +90,32 @@ async function main() {
       email: "tanaka@example.com",
       address: "東京都渋谷区1-2-3",
       postalCode: "150-0001",
-      insuranceNumber: "12345678",
-      insuranceType: "社会保険",
+
+      insurerNumber: "1234567",
+      insuredNumber: "89012345",
+      insuranceType: "EMPLOYEES_INSURANCE" as const,
+
+      insuranceSymbol: null,
+      insuranceExpiration: null,
+      insuranceCategory: null,
+      limitCertification: null,
+
+      publicPayerNumber: null,
+      publicRecipientNumber: null,
+      publicCategory: null,
+      publicExpiration: null,
+
+      allergies: null,
+      medicalHistory: null,
+      familyHistory: null,
+      contraindications: null,
+      currentMedications: null,
+      healthCheckInfo: null,
+      pregnant: null,
+
+      myNumberConsent: false,
+      firstVisitDate: null,
+      lastVisitDate: null,
     },
     {
       patientNumber: "P0002",
@@ -99,9 +130,32 @@ async function main() {
       email: "suzuki@example.com",
       address: "東京都新宿区4-5-6",
       postalCode: "160-0001",
-      insuranceNumber: "23456789",
-      insuranceType: "国民健康保険",
+
+      insurerNumber: "7654321",
+      insuredNumber: "11223344",
+      insuranceType: "NATIONAL_HEALTH_INSURANCE" as const,
+
+      insuranceSymbol: null,
+      insuranceExpiration: null,
+      insuranceCategory: null,
+      limitCertification: null,
+
+      publicPayerNumber: null,
+      publicRecipientNumber: null,
+      publicCategory: null,
+      publicExpiration: null,
+
       allergies: "ペニシリン",
+      medicalHistory: null,
+      familyHistory: null,
+      contraindications: null,
+      currentMedications: null,
+      healthCheckInfo: null,
+      pregnant: null,
+
+      myNumberConsent: false,
+      firstVisitDate: null,
+      lastVisitDate: null,
     },
     {
       patientNumber: "P0003",
@@ -113,14 +167,39 @@ async function main() {
       gender: "MALE" as const,
       bloodType: "O_POSITIVE" as const,
       phone: "090-3456-7890",
+      email: null,
       address: "東京都品川区7-8-9",
       postalCode: "140-0001",
-      insuranceNumber: "34567890",
-      insuranceType: "社会保険",
+
+      insurerNumber: "9999999",
+      insuredNumber: "55667788",
+      insuranceType: "EMPLOYEES_INSURANCE" as const,
+
+      insuranceSymbol: null,
+      insuranceExpiration: null,
+      insuranceCategory: null,
+      limitCertification: null,
+
+      publicPayerNumber: null,
+      publicRecipientNumber: null,
+      publicCategory: null,
+      publicExpiration: null,
+
+      allergies: null,
       medicalHistory: "高血圧",
+      familyHistory: null,
+      contraindications: null,
+      currentMedications: null,
+      healthCheckInfo: null,
+      pregnant: null,
+
+      myNumberConsent: false,
+      firstVisitDate: null,
+      lastVisitDate: null,
     },
   ];
 
+  // Insert patients
   for (const patientData of patients) {
     const patient = await prisma.patient.upsert({
       where: {
@@ -135,9 +214,10 @@ async function main() {
         tenantId: tenant.id,
       },
     });
+
     console.log("Created patient:", patient.lastName, patient.firstName);
 
-    // Create sample medical record for each patient
+    // Create sample medical record
     const record = await prisma.medicalRecord.create({
       data: {
         patientId: patient.id,
@@ -190,11 +270,11 @@ async function main() {
         doctorId: doctorUser.id,
         appointmentDate: tomorrow,
         startTime: tomorrow,
-        endTime: endTime,
+        endTime,
         type: "FOLLOWUP",
         status: "SCHEDULED",
         reason: "経過観察",
-        isOnline: patient.patientNumber === "P0002", // One online appointment
+        isOnline: patient.patientNumber === "P0002",
       },
     });
   }

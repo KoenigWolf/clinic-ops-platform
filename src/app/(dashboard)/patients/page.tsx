@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, FileText } from "lucide-react";
+import { Plus, Search, Eye, FileText, Pencil } from "lucide-react";
 import { PatientDialog } from "@/components/patients/patient-dialog";
 import { EmptyState, PageHeader, ResponsiveTable } from "@/components/layout";
 import { labels } from "@/lib/labels";
@@ -23,10 +23,33 @@ import { labels } from "@/lib/labels";
 const { pages: { patients: pageLabels }, common } = labels;
 const PAGE_SIZE = 20;
 
+// 患者データを編集用に変換する関数
+const formatPatientForEdit = (patient: any) => {
+  return {
+    ...patient,
+    dateOfBirth: patient.dateOfBirth 
+      ? new Date(patient.dateOfBirth).toISOString().split('T')[0] 
+      : "",
+    firstVisitDate: patient.firstVisitDate
+      ? new Date(patient.firstVisitDate).toISOString().split('T')[0]
+      : null,
+    lastVisitDate: patient.lastVisitDate
+      ? new Date(patient.lastVisitDate).toISOString().split('T')[0]
+      : null,
+    insuranceExpiration: patient.insuranceExpiration
+      ? new Date(patient.insuranceExpiration).toISOString().split('T')[0]
+      : null,
+    publicExpiration: patient.publicExpiration
+      ? new Date(patient.publicExpiration).toISOString().split('T')[0]
+      : null,
+  };
+};
+
 export default function PatientsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const deferredSearch = useDeferredValue(searchInput);
   const searchValue = useMemo(() => deferredSearch.trim(), [deferredSearch]);
 
@@ -41,13 +64,37 @@ export default function PatientsPage() {
   const rangeStart = (page - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(page * PAGE_SIZE, totalCount);
 
+  // 新規登録ダイアログを開く
+  const handleOpenCreateDialog = () => {
+    setSelectedPatient(null);
+    setIsDialogOpen(true);
+  };
+
+  // 編集ダイアログを開く
+  const handleOpenEditDialog = (patient: any) => {
+    setSelectedPatient(formatPatientForEdit(patient));
+    setIsDialogOpen(true);
+  };
+
+  // ダイアログを閉じる
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedPatient(null);
+  };
+
+  // 保存成功時の処理
+  const handleSuccess = () => {
+    refetch();
+    handleCloseDialog();
+  };
+
   return (
     <div className="space-y-4 sm:space-y-4">
       <PageHeader
         title={pageLabels.title}
         description={pageLabels.description}
         actions={
-          <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">
+          <Button onClick={handleOpenCreateDialog} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             {pageLabels.newPatient}
           </Button>
@@ -139,21 +186,29 @@ export default function PatientsPage() {
                         <TableCell className="hidden md:table-cell">{patient.phone || "-"}</TableCell>
                         <TableCell className="hidden lg:table-cell">{patient.insuranceNumber || "-"}</TableCell>
                         <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/patients/${patient.id}`} aria-label="患者詳細を表示">
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/records?patientId=${patient.id}`} aria-label="診療記録を表示">
-                              <FileText className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/patients/${patient.id}`} aria-label="患者詳細を表示">
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleOpenEditDialog(patient)}
+                              aria-label="患者情報を編集"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/records?patientId=${patient.id}`} aria-label="診療記録を表示">
+                                <FileText className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </ResponsiveTable>
@@ -189,14 +244,12 @@ export default function PatientsPage() {
         </CardContent>
       </Card>
 
-      {/* Create Patient Dialog */}
+      {/* Create/Edit Patient Dialog */}
       <PatientDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onSuccess={() => {
-          refetch();
-          setIsDialogOpen(false);
-        }}
+        onOpenChange={handleCloseDialog}
+        onSuccess={handleSuccess}
+        initialData={selectedPatient}
       />
     </div>
   );
