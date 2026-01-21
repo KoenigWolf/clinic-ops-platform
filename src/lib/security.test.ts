@@ -170,7 +170,7 @@ describe("Security Utilities", () => {
       it("should return false for non-PHI entities", () => {
         expect(isPhiEntity("Tenant")).toBe(false);
         expect(isPhiEntity("User")).toBe(false);
-        expect(isPhiEntity("Invoice")).toBe(false);
+        expect(isPhiEntity("Appointment")).toBe(false);
       });
     });
   });
