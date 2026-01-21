@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, doctorProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { logPhiAccess, logPhiModification } from "@/lib/audit";
 
 const questionSchema = z.object({
   id: z.string(),
@@ -224,6 +225,16 @@ export const questionnaireRouter = router({
         if (!response || response.patient.tenantId !== ctx.tenantId) {
           throw new TRPCError({ code: "NOT_FOUND" });
         }
+
+        await logPhiAccess({
+          entityType: "QuestionnaireResponse",
+          entityId: response.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
         return response;
       }),
 
@@ -245,7 +256,7 @@ export const questionnaireRouter = router({
         const summary = generateSummary(template.questions as unknown as z.infer<typeof questionSchema>[], input.answers);
         const subjective = generateSubjective(template.questions as unknown as z.infer<typeof questionSchema>[], input.answers);
 
-        return ctx.prisma.questionnaireResponse.create({
+        const questionnaireResponse = await ctx.prisma.questionnaireResponse.create({
           data: {
             templateId: input.templateId,
             patientId: input.patientId,
@@ -256,6 +267,19 @@ export const questionnaireRouter = router({
             status: "SUBMITTED",
           },
         });
+
+        await logPhiModification({
+          action: "CREATE",
+          entityType: "QuestionnaireResponse",
+          entityId: questionnaireResponse.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          newData: { templateId: input.templateId, patientId: input.patientId, appointmentId: input.appointmentId },
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
+        return questionnaireResponse;
       }),
 
     // 医師が問診を確認済みにする
@@ -270,7 +294,7 @@ export const questionnaireRouter = router({
           throw new TRPCError({ code: "NOT_FOUND" });
         }
 
-        return ctx.prisma.questionnaireResponse.update({
+        const updatedResponse = await ctx.prisma.questionnaireResponse.update({
           where: { id: input.id },
           data: {
             status: "REVIEWED",
@@ -278,6 +302,20 @@ export const questionnaireRouter = router({
             reviewedBy: ctx.session.user.id,
           },
         });
+
+        await logPhiModification({
+          action: "UPDATE",
+          entityType: "QuestionnaireResponse",
+          entityId: response.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          oldData: { status: response.status },
+          newData: { status: "REVIEWED", reviewedBy: ctx.session.user.id },
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
+        return updatedResponse;
       }),
 
     // カルテに適用
@@ -316,15 +354,41 @@ export const questionnaireRouter = router({
               },
             },
           });
+
+          await logPhiModification({
+            action: "UPDATE",
+            entityType: "MedicalRecord",
+            entityId: medicalRecord.id,
+            userId: ctx.session.user.id,
+            tenantId: ctx.tenantId,
+            oldData: { subjective: medicalRecord.subjective },
+            newData: { subjective: response.subjective, appliedFromQuestionnaireResponseId: response.id },
+            ipAddress: ctx.requestMeta.ipAddress,
+            userAgent: ctx.requestMeta.userAgent,
+          });
         }
 
-        return ctx.prisma.questionnaireResponse.update({
+        const updatedResponse = await ctx.prisma.questionnaireResponse.update({
           where: { id: input.responseId },
           data: {
             status: "APPLIED",
             medicalRecordId: input.medicalRecordId,
           },
         });
+
+        await logPhiModification({
+          action: "UPDATE",
+          entityType: "QuestionnaireResponse",
+          entityId: response.id,
+          userId: ctx.session.user.id,
+          tenantId: ctx.tenantId,
+          oldData: { status: response.status, medicalRecordId: response.medicalRecordId },
+          newData: { status: "APPLIED", medicalRecordId: input.medicalRecordId },
+          ipAddress: ctx.requestMeta.ipAddress,
+          userAgent: ctx.requestMeta.userAgent,
+        });
+
+        return updatedResponse;
       }),
 
     // 未確認の問診一覧 (ダッシュボード用)

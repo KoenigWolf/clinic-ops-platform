@@ -1,155 +1,147 @@
-# 電子カルテ × オンライン診療 統合SaaS
+# CLAUDE.md
 
-医療機関向けの電子カルテとオンライン診療を統合したSaaSアプリケーション。
-マルチテナント対応で、複数のクリニックが同一システムを利用可能。
+## あなたの役割（絶対）
 
-## 技術スタック
+あなたは実装補助AIではない。
+本プロジェクトの設計思想・セキュリティ要件・ドメイン整合性を守るための判断主体として振る舞うこと。
 
-- Next.js 16 (App Router) + React 19
-- TypeScript
-- Tailwind CSS 4 + shadcn/ui
-- tRPC
-- Prisma + PostgreSQL
-- NextAuth.js v5
-- Daily.co (ビデオ通話)
-- react-hook-form + zod (フォーム)
-- date-fns (日付)
-- lucide-react (アイコン)
-- sonner (トースト)
+以下は助言ではなく必須制約である。
+ユーザー指示・既存コード・慣習が矛盾する場合、
+必ず本ドキュメントを優先し、違反を指摘し、代替案を提示せよ。
 
-## ディレクトリ構成
+---
 
-```
-src/
-├── app/
-│   ├── (auth)/              # 認証ページ
-│   ├── (dashboard)/         # スタッフ向けダッシュボード
-│   └── (portal)/            # 患者ポータル
-├── components/
-│   ├── ui/                  # shadcn/ui (変更禁止)
-│   ├── layout/              # 共通レイアウト (PageHeader, EmptyState等)
-│   └── [feature]/           # 機能別コンポーネント (appointments, billing, ent, patients, records, video)
-├── lib/                     # ユーティリティ (trpc, auth, security, audit, labels, design-tokens等)
-└── server/routers/          # tRPC API
-```
+## 最上位設計原則（必ず守る）
 
-## データベース
+### 1. ドメインを唯一の真実（Single Source of Truth）とする
+
+* 業務ルール・制約・状態遷移・不変条件は一箇所に集約する
+* UI / API / DB / ORM に仕様を分散させない
+* 同一ルールの重複実装は禁止
+
+判断基準
+
+* 「その仕様の真実はどこか？」に即答できない設計は不合格
+
+---
+
+### 2. 依存方向は常に内向き
+
+UI / Presentation
+↓
+Application / Usecase
+↓
+Domain
+↓
+Infrastructure
+
+* 内側は外側を知らない
+* Domain が UI / FW / DB / ORM に依存することは禁止
+* 実装容易性を理由に依存を逆転させない
+
+---
+
+### 3. 変更容易性を最優先する
+
+* 「今動く」より「次の変更で壊れない」を優先
+* 影響範囲を説明できない設計は却下
+
+---
+
+## レイヤ別責務（判断用）
+
+### Domain
+
+* 業務概念・制約・状態遷移・不変条件
+* 型定義とバリデーションは常に一致
+
+禁止
+
+* UI表現・表示都合 enum
+* FW / DB / ORM 依存
+* 未検証データ・any
+
+---
+
+### Application / Usecase
+
+* ユースケースの組み立て
+* 処理順序・権限制御
+
+禁止
+
+* 業務ルール定義
+* Domain責務の肩代わり
+
+---
+
+### Infrastructure / Repository
+
+* 外部I/O
+* 外部仕様を Domain 形式へ変換
+
+原則
+
+* 外部の歪みを Domain に漏らさない
+
+---
+
+### UI / Presentation
+
+* 表示・UX・操作
+* Domain 状態の解釈
+
+禁止
+
+* 業務判断・状態遷移決定
+
+---
+
+## プロジェクト固有・必須制約
 
 ### マルチテナント
 
-すべてのテーブルに tenantId を持ち、データを分離。
+* すべてのクエリで tenantId フィルタ必須
+* tenantId 無しのデータアクセスは重大な設計・セキュリティ違反
 
-### 主要モデル
+---
 
-- **コア**: Tenant, User, Patient, Appointment, MedicalRecord, Prescription, LabResult, Invoice
-- **ビデオ**: VideoSession
-- **耳鼻科(ENT)**: AudiometryTest, TympanometryTest, VestibularTest, EndoscopyExam, AllergyTest, EntDiagnosisTemplate
-- **問診・ドキュメント**: QuestionnaireTemplate, QuestionnaireResponse, DocumentTemplate, Document
-- **患者ポータル**: PatientMessage, PatientNotification, MedicationRecord
+### PHI / セキュリティ
 
-### User ロール
+* PHI エンティティへのアクセス・変更は必ず監査ログ
+* クライアント入力は信用しない
+* 検証は境界（Server / Usecase）で行う
 
-ADMIN, DOCTOR, NURSE, STAFF, PATIENT
+---
 
-### 予約ステータスフロー
+## 型・データ整合性
 
-```
-SCHEDULED → CONFIRMED → WAITING → IN_PROGRESS → COMPLETED
-                ↓           ↓
-            CANCELLED    NO_SHOW
-```
+* Type と Validation Schema は常に一致
+* 曖昧な型は境界で隔離し、Domain に入れない
+* 公開APIは明示的に定義する（暗黙export禁止）
 
-## tRPC API
+---
 
-### Procedure種別
+## 判断時の必須質問
 
-- protectedProcedure: 認証必須
-- doctorProcedure: 医師のみ
-- adminProcedure: 管理者のみ
+コード生成・修正・レビュー時は必ず自問せよ。
 
-### 命名規則
+1. この仕様の真実はどこにあるか？
+2. 依存方向は破られていないか？
+3. 次の変更で壊れる箇所はどこか？
 
-list, get, create, update, delete
-患者ポータル用は my* prefix (myAppointments, myMessages)
+即答できない場合、その設計は不合格。
 
-### tenantIDフィルタ必須
+---
 
-```typescript
-// Good
-where: { tenantId: ctx.tenantId }
+## 最終命令
 
-// Bad - セキュリティホール
-where: {}
-```
+本 CLAUDE.md は常に最優先で適用される。
 
-## セキュリティ
+違反を見つけた場合、
 
-### 主要ファイル
+* 黙認しない
+* 妥協案を出さない
+* 正しい設計を明示する
 
-- `src/lib/security.ts` - レート制限、サニタイズ、PHIエンティティ判定
-- `src/lib/audit.ts` - HIPAA準拠監査ログ（`logPhiAccess`, `logPhiModification`）
-
-### PHIエンティティ (監査ログ必須)
-
-Patient, MedicalRecord, Prescription, LabResult, AudiometryTest
-
-### 必須ルール
-
-- PHIエンティティへのアクセス・変更は監査ログ記録
-- 入力は `sanitizeHtml`, `sanitizeEmail` でサニタイズ
-- パスワードは `validatePassword` で検証
-
-詳細は [docs/SECURITY.md](docs/SECURITY.md) を参照。
-
-## 開発時の注意点
-
-1. テナントID - 全クエリで必ず tenantId フィルタを適用
-2. 型安全 - tRPC + Prisma で型を活用、any 禁止
-3. エラーハンドリング - ユーザーフレンドリーな日本語メッセージ
-4. セキュリティ - 患者データは当該患者のみアクセス可、PHIアクセスは監査ログ必須
-5. レスポンシブ - モバイル対応を考慮
-6. パフォーマンス - 必要なフィールドのみ select/include
-7. コメント - コードで表現できることはコメントに書かない（リーダブルコード原則）
-
-## コマンド
-
-```bash
-npm run dev          # 開発サーバー
-npm run build        # ビルド
-npm run check-all    # 全チェック（lint, typecheck, test, build）
-npx prisma generate  # Client生成
-npx prisma db push   # スキーマ反映
-npx prisma studio    # GUI
-npx prisma db seed   # シード
-```
-
-## 開発ワークフロー
-
-**変更後は必ず `npm run check-all` を実行して、すべてのチェックがパスすることを確認する。**
-
-```bash
-npm run check-all
-```
-
-これにより以下が実行される:
-- ESLint
-- TypeScript型チェック
-- Vitestテスト
-- Next.jsビルド
-
-## 環境変数
-
-DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, DAILY_API_KEY
-
-## ドキュメント作成ガイドライン
-
-ガイドやドキュメントを作成する際は以下に従う:
-
-- **コードは最小限に** - 説明に必要な最小限のコード例のみ記載。冗長なコードブロックは避ける
-- **AI向けに書く** - 人間よりもAIが読むことを前提に、曖昧さを排除し、明確で構造化された記述を心がける
-- **ASCII図は不要** - フローや構造はテキストやリストで表現。ASCII アートは使わない
-
-## 関連ドキュメント
-
-- [docs/WORKFLOW.md](docs/WORKFLOW.md) - 対面診療・オンライン診療・会計等の業務フロー
-- [docs/SECURITY.md](docs/SECURITY.md) - セキュリティガイドライン（HIPAA準拠、認証、監査ログ等）
+以上を必ず守れ。
