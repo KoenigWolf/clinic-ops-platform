@@ -1,0 +1,134 @@
+# 改善要件リスト
+## 追記ルール
+- 各追加は日付見出し（YYYY-MM-DD）で区切る
+- 優先度は [P0|P1|P2] を付けて運用
+- 項目はプロジェクト全体に影響する改善を中心に記載
+
+## 1. ハードコード文字列のラベル化
+
+### 1.1 Dashboard - appointments/page.tsx
+- [x] Line 153: "リスト" → labels
+- [x] Line 157: "週間" → labels
+- [x] Line 190: "今週" → labels
+- [x] Line 319: "担当:" → labels
+
+### 1.2 その他のダッシュボードページ（223箇所/17ファイル）
+- [ ] video/page.tsx
+- [ ] page.tsx (dashboard home)
+- [ ] error.tsx
+- [ ] patients/page.tsx
+- [ ] documents/page.tsx
+- [ ] analytics/page.tsx
+- [ ] billing/page.tsx
+- [ ] prescriptions/page.tsx
+- [ ] ent/page.tsx
+- [ ] ent/dashboard/page.tsx
+- [ ] ent/templates/page.tsx
+- [ ] staff/[id]/page.tsx
+- [ ] questionnaire/page.tsx
+- [ ] ent/report/page.tsx
+- [ ] patients/[id]/page.tsx
+
+## 2. 共通コンポーネント作成
+
+### 2.1 ConfirmDialog
+- [x] 削除確認用の再利用可能なダイアログコンポーネント
+- [x] Props: title, description, onConfirm, onCancel, isDestructive, isLoading
+- [x] 使用箇所: medications削除、templates削除、documents削除など
+- [x] 作成ファイル: src/components/layout/confirm-dialog.tsx
+
+### 2.2 Pagination
+- [x] ページネーション用コンポーネント
+- [x] Props: currentPage, totalPages, onPageChange, showFirstLast
+- [x] 使用箇所: patients一覧、appointments一覧、records一覧
+- [x] 作成ファイル: src/components/layout/pagination.tsx
+
+### 2.3 FilterCard
+- [ ] フィルタリング用カードコンポーネント
+- [ ] 検索、日付範囲、ステータスフィルタを統一
+
+## 3. ユーティリティ関数
+
+### 3.1 日付フォーマットヘルパー (src/lib/date-utils.ts)
+- [x] formatDate(date) → "yyyy年M月d日"
+- [x] formatDateShort(date) → "M月d日"
+- [x] formatDateWithDay(date) → "M月d日(月)"
+- [x] formatDateTime(date) → "yyyy年M月d日 HH:mm"
+- [x] formatTime(date) → "HH:mm"
+- [x] formatRelative(date) → "3日前" など
+
+## 4. UX改善
+
+### 4.1 ローディング状態
+- [ ] ボタンのローディング状態を統一（isPending時にdisabled + スピナー）
+- [ ] Skeleton コンポーネントのレスポンシブ対応
+
+### 4.2 フォーカス管理
+- [ ] ダイアログオープン時の初期フォーカス設定
+- [ ] フォーム送信後のフォーカス移動
+
+### 4.3 オプティミスティック更新
+- [ ] ステータス更新時の即時UI反映
+- [ ] エラー時のロールバック
+
+## 5. 既存バグ修正（feature/patient-model-redesign）
+
+### 5.1 TypeScript エラー
+- [x] prisma generate 実行で解決
+
+## 6. コード品質
+
+### 6.1 型安全性
+- [ ] any型の排除
+- [ ] 厳密な型定義の追加
+
+### 6.2 テスト
+- [ ] 新規コンポーネントのユニットテスト追加
+- [ ] ユーティリティ関数のテスト追加
+
+## 完了サマリー
+
+### High 優先度（完了）
+- [x] TypeScript エラー修正（prisma generate で解決）
+- [x] ConfirmDialog 作成
+- [x] 日付フォーマットヘルパー作成
+- [x] Pagination 作成
+- [x] appointments ページラベル化
+
+### Medium 優先度（未完了）
+- [ ] その他ダッシュボードページのラベル化
+- [ ] FilterCard 作成
+- [ ] ローディング状態統一
+
+### Low 優先度（未完了）
+- [ ] UX改善（フォーカス管理、オプティミスティック更新）
+- [ ] テスト追加
+
+## 2026-01-22 グローバル改善レビュー
+
+### 1. 運用・信頼性
+- [ ] [P0] 本番監視の導入（エラートラッキング + メトリクス + アラート）
+- [ ] [P0] DBバックアップ/リストア手順の整備と定期検証
+- [ ] [P1] ジョブ実行基盤（キュー + リトライ + 冪等性）を設計
+- [ ] [P1] ヘルスチェック/リードネスの標準化
+
+### 2. セキュリティ・コンプライアンス
+- [ ] [P0] テナント分離の保証策（RLS or 強制スコープ + 侵入テスト）
+- [ ] [P0] 秘密情報の管理方針（回転、漏洩時の手順、監査）
+- [ ] [P1] 監査ログの網羅性レビュー（重要操作の漏れ確認）
+- [ ] [P1] 重要データの暗号化方針（保存・転送・S3）
+
+### 3. 品質・テスト
+- [ ] [P0] 主要業務フローのE2Eテスト（予約/診療/請求/ポータル）
+- [ ] [P1] tRPC ルーターの統合テストと回帰テストの拡充
+- [ ] [P2] テストデータ/シードの再現性と速度改善
+
+### 4. パフォーマンス・スケール
+- [ ] [P1] 重い一覧の最適化（クエリ最適化 + 画面仮想化）
+- [ ] [P1] キャッシュ戦略（再検証・無効化・TTL）の設計
+- [ ] [P2] 画像/ファイル配信の最適化（署名URL、CDN）
+
+### 5. 開発・運用フロー
+- [ ] [P1] CI/CD強化（check-all自動化 + Prismaマイグレーション検証）
+- [ ] [P1] 環境変数バリデーション（起動時フェイルファスト）
+- [ ] [P2] 障害対応ランブックと運用ドキュメント整備
