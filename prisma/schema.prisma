@@ -891,8 +891,9 @@ model QuestionnaireResponse {
   appointmentId String?
   appointment   Appointment? @relation(fields: [appointmentId], references: [id])
 
+  // カルテへの取り込み - onDelete: Restrict により削除不可（監査保全）
   medicalRecordId String?
-  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
 
   @@index([patientId])
   @@index([templateId])
