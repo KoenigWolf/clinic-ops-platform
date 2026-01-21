@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Clock, User, Phone, ChevronLeft, ChevronRight, List, CalendarDays } from "lucide-react";
+import { Plus, Clock, User, Phone, ChevronLeft, ChevronRight, List, CalendarDays, Calendar as CalendarIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AppointmentDialog } from "@/components/appointments/appointment-dialog";
 import { WeekSchedule } from "@/components/appointments/week-schedule";
 import { AppointmentPopover } from "@/components/appointments/appointment-popover";
@@ -149,11 +150,11 @@ export default function AppointmentsPage() {
               <TabsList>
                 <TabsTrigger value="list" className="gap-1.5">
                   <List className="h-4 w-4" />
-                  <span className="hidden sm:inline">リスト</span>
+                  <span className="hidden sm:inline">{pageLabels.viewMode.list}</span>
                 </TabsTrigger>
                 <TabsTrigger value="week" className="gap-1.5">
                   <CalendarDays className="h-4 w-4" />
-                  <span className="hidden sm:inline">週間</span>
+                  <span className="hidden sm:inline">{pageLabels.viewMode.week}</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -186,7 +187,7 @@ export default function AppointmentsPage() {
                 size="sm"
                 onClick={() => handleWeekChange("today")}
               >
-                今週
+                {pageLabels.thisWeek}
               </Button>
               <Button
                 variant="outline"
@@ -208,9 +209,18 @@ export default function AppointmentsPage() {
               }
             />
           ) : isLoading ? (
-            <div className="text-center py-8 text-gray-500">
-              {labels.common.loading}
-            </div>
+            <Card>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-7 gap-2">
+                  {[...Array(7)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="h-6 w-full" />
+                      <Skeleton className="h-48 w-full" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <WeekSchedule
               weekStart={weekStart}
@@ -254,13 +264,25 @@ export default function AppointmentsPage() {
                   }
                 />
               ) : isLoading ? (
-                <div className="text-center py-8 text-gray-500">
-                  {labels.common.loading}
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-20" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-16" />
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : listData?.appointments.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {pageLabels.empty}
-                </div>
+                <EmptyState message={pageLabels.empty} icon={CalendarIcon} />
               ) : (
                 <div className="space-y-4">
                   {listData?.appointments.map((apt) => (
@@ -294,7 +316,7 @@ export default function AppointmentsPage() {
                           <div className="flex items-center gap-2 mt-1">
                             <Clock className="h-4 w-4 text-gray-400" />
                             <p className="text-sm text-gray-600">
-                              担当:{" "}
+                              {pageLabels.doctorLabel}{" "}
                               <Link
                                 href={`/staff/${apt.doctor.id}`}
                                 className="hover:underline"

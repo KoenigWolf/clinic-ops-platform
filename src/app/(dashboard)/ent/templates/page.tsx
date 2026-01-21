@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import { EmptyState, PageHeader } from "@/components/layout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { labels } from "@/lib/labels";
 
 const { pages: { entTemplates: pageLabels }, common, messages } = labels;
@@ -138,27 +139,42 @@ export default function TemplatesPage() {
           }
         />
       ) : isLoading ? (
-        <div className="text-center py-8 text-gray-500">{common.loading}</div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : templates?.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center text-gray-500">
-              <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <p>{pageLabels.empty}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => {
-                  setSelectedTemplateId(null);
-                  setDialogOpen(true);
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {pageLabels.createFirst}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          message={pageLabels.empty}
+          action={
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedTemplateId(null);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {pageLabels.createFirst}
+            </Button>
+          }
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {templates?.map((template) => (

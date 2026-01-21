@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Ear, Eye, Activity, FlaskConical, FileText, BarChart3 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import {
   AudiometryTab,
@@ -208,26 +209,31 @@ function EntContent() {
       {/* Tabs */}
       {selectedPatientId ? (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="audiometry" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+            <TabsTrigger value="audiometry" className="flex items-center gap-1 sm:gap-2">
               <Ear className="h-4 w-4" />
-              {pageLabels.tabs.audiometry}
+              <span className="hidden sm:inline">{pageLabels.tabs.audiometry}</span>
+              <span className="sm:hidden">聴力</span>
             </TabsTrigger>
-            <TabsTrigger value="tympanometry" className="flex items-center gap-2">
+            <TabsTrigger value="tympanometry" className="flex items-center gap-1 sm:gap-2">
               <Activity className="h-4 w-4" />
-              {pageLabels.tabs.tympanometry}
+              <span className="hidden sm:inline">{pageLabels.tabs.tympanometry}</span>
+              <span className="sm:hidden">鼓膜</span>
             </TabsTrigger>
-            <TabsTrigger value="vestibular" className="flex items-center gap-2">
+            <TabsTrigger value="vestibular" className="flex items-center gap-1 sm:gap-2">
               <Activity className="h-4 w-4" />
-              {pageLabels.tabs.vestibular}
+              <span className="hidden sm:inline">{pageLabels.tabs.vestibular}</span>
+              <span className="sm:hidden">平衡</span>
             </TabsTrigger>
-            <TabsTrigger value="endoscopy" className="flex items-center gap-2">
+            <TabsTrigger value="endoscopy" className="flex items-center gap-1 sm:gap-2">
               <Eye className="h-4 w-4" />
-              {pageLabels.tabs.endoscopy}
+              <span className="hidden sm:inline">{pageLabels.tabs.endoscopy}</span>
+              <span className="sm:hidden">内視鏡</span>
             </TabsTrigger>
-            <TabsTrigger value="allergy" className="flex items-center gap-2">
+            <TabsTrigger value="allergy" className="flex items-center gap-1 sm:gap-2">
               <FlaskConical className="h-4 w-4" />
-              {pageLabels.tabs.allergy}
+              <span className="hidden sm:inline">{pageLabels.tabs.allergy}</span>
+              <span className="sm:hidden">ｱﾚﾙｷﾞｰ</span>
             </TabsTrigger>
           </TabsList>
 
@@ -299,9 +305,31 @@ function EntContent() {
   );
 }
 
+function EntLoadingSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+      <Card>
+        <CardContent className="pt-4">
+          <Skeleton className="h-10 w-[300px]" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function EntPage() {
   return (
-    <Suspense fallback={<div className="text-gray-500">{common.loading}</div>}>
+    <Suspense fallback={<EntLoadingSkeleton />}>
       <EntContent />
     </Suspense>
   );

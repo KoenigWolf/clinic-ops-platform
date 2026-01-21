@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { EmptyState, PageHeader } from "@/components/layout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { labels } from "@/lib/labels";
 
 const { pages: { entDashboard: pageLabels }, common } = labels;
@@ -153,13 +154,19 @@ function DashboardContent() {
                 }
               />
             ) : distLoading ? (
-              <div className="h-48 flex items-center justify-center text-gray-400">
-                {common.loading}
+              <div className="space-y-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                ))}
               </div>
             ) : totalHearingTests === 0 ? (
-              <div className="h-48 flex items-center justify-center text-gray-400">
-                {pageLabels.empty.hearing}
-              </div>
+              <EmptyState message={pageLabels.empty.hearing} icon={Ear} />
             ) : (
               <div className="space-y-3">
                 {Object.entries(hearingLevelConfig).map(([key, config]) => {
@@ -209,13 +216,20 @@ function DashboardContent() {
                 }
               />
             ) : recentLoading ? (
-              <div className="h-48 flex items-center justify-center text-gray-400">
-                {common.loading}
+              <div className="space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-24 mb-1" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                ))}
               </div>
             ) : !recentTests?.length ? (
-              <div className="h-48 flex items-center justify-center text-gray-400">
-                {pageLabels.empty.tests}
-              </div>
+              <EmptyState message={pageLabels.empty.tests} icon={Calendar} />
             ) : (
               <div className="space-y-3">
                 {recentTests.map((test) => {
@@ -305,9 +319,30 @@ function DashboardContent() {
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-64 mt-2" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="pt-4">
+              <Skeleton className="h-4 w-16 mb-2" />
+              <Skeleton className="h-8 w-12" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function EntDashboardPage() {
   return (
-    <Suspense fallback={<div className="text-gray-500">{common.loading}</div>}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent />
     </Suspense>
   );

@@ -10,12 +10,15 @@ import {
   FileText,
   Pill,
   MessageSquare,
-  AlertCircle,
   CheckCircle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
+import { PageHeader, StatCard, StatGrid, EmptyState } from "@/components/layout";
+import { labels } from "@/lib/labels";
+
+const { portal: { notifications: pageLabels }, common } = labels;
 
 const TYPE_CONFIG = {
   APPOINTMENT: { icon: Calendar, color: "bg-blue-100 text-blue-600" },
@@ -35,7 +38,7 @@ export default function NotificationsPage() {
 
   const markAllAsReadMutation = trpc.portal.markAllMyNotificationsAsRead.useMutation({
     onSuccess: () => {
-      toast.success("すべて既読にしました");
+      toast.success(labels.messages.success.statusUpdated);
       refetch();
     },
   });
@@ -45,66 +48,37 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">お知らせ</h1>
-          <p className="text-gray-500">クリニックからのお知らせ</p>
-        </div>
-        {(unreadCount || 0) > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => markAllAsReadMutation.mutate()}
-            disabled={markAllAsReadMutation.isPending}
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            すべて既読にする
-          </Button>
-        )}
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          (unreadCount || 0) > 0 ? (
+            <Button
+              variant="outline"
+              onClick={() => markAllAsReadMutation.mutate()}
+              disabled={markAllAsReadMutation.isPending}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {pageLabels.markAllAsRead}
+            </Button>
+          ) : null
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Bell className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{notifications?.length || 0}</p>
-                <p className="text-xs text-gray-500">すべてのお知らせ</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{unreadCount || 0}</p>
-                <p className="text-xs text-gray-500">未読</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid columns={2}>
+        <StatCard label={pageLabels.stats.total} value={notifications?.length || 0} />
+        <StatCard label={pageLabels.stats.unread} value={unreadCount || 0} />
+      </StatGrid>
 
       {/* Notifications List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">お知らせ一覧</CardTitle>
+          <CardTitle className="text-lg">{pageLabels.listTitle}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {!notifications?.length ? (
-            <div className="text-center py-12 text-gray-500">
-              <Bell className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <p>お知らせはありません</p>
-            </div>
+            <EmptyState message={pageLabels.empty} icon={Bell} />
           ) : (
             <div className="divide-y">
               {notifications.map((notif) => {
@@ -129,7 +103,7 @@ export default function NotificationsPage() {
                               <h3 className="font-medium">{notif.title}</h3>
                               {!notif.isRead && (
                                 <Badge variant="destructive" className="text-xs">
-                                  新着
+                                  {common.new}
                                 </Badge>
                               )}
                             </div>
@@ -147,7 +121,7 @@ export default function NotificationsPage() {
                               size="sm"
                               onClick={() => handleMarkAsRead(notif.id)}
                             >
-                              既読にする
+                              {pageLabels.markAsRead}
                             </Button>
                           )}
                         </div>

@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, FileText } from "lucide-react";
 import { RecordDialog } from "@/components/records/record-dialog";
 import { EmptyState, PageHeader } from "@/components/layout";
@@ -120,32 +121,39 @@ function RecordsContent() {
               }
             />
           ) : isRecordsLoading ? (
-            <Card>
-              <CardContent className="py-8 text-center text-gray-500">
-                {common.loading}
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-32 mt-2" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-20 w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : records?.records.length === 0 ? (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-gray-500">
-                  <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                  <p>{pageLabels.empty}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => {
-                      setSelectedRecord(null);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {pageLabels.createFirst}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <EmptyState
+              message={pageLabels.empty}
+              icon={FileText}
+              action={
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedRecord(null);
+                    setIsDialogOpen(true);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {pageLabels.createFirst}
+                </Button>
+              }
+            />
           ) : (
             records?.records.map((record) => (
               <Card key={record.id} className="hover:shadow-md transition-shadow cursor-pointer">
@@ -191,7 +199,7 @@ function RecordsContent() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {record.subjective && (
                       <div>
                         <h4 className="text-sm font-semibold text-blue-600 mb-1">{pageLabels.soap.subjective}</h4>
@@ -236,13 +244,7 @@ function RecordsContent() {
           )}
         </div>
       ) : (
-        <Card>
-          <CardContent className="py-8">
-            <div className="text-center text-gray-500">
-              {pageLabels.patientPlaceholder}
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState message={pageLabels.patientPlaceholder} icon={FileText} />
       )}
 
       {/* Record Dialog */}
@@ -262,9 +264,37 @@ function RecordsContent() {
   );
 }
 
+function RecordsLoadingSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+      <Card>
+        <CardContent className="pt-4">
+          <Skeleton className="h-10 w-[300px]" />
+        </CardContent>
+      </Card>
+      <div className="space-y-4">
+        {[...Array(2)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-20 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function RecordsPage() {
   return (
-    <Suspense fallback={<div className="text-gray-500">{labels.common.loading}</div>}>
+    <Suspense fallback={<RecordsLoadingSkeleton />}>
       <RecordsContent />
     </Suspense>
   );

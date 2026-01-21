@@ -23,9 +23,13 @@ import {
   User,
   Building,
 } from "lucide-react";
+import { PageHeader, EmptyState } from "@/components/layout";
 import { formatDistanceToNow, format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
+import { labels } from "@/lib/labels";
+
+const { portal: { messages: pageLabels }, common } = labels;
 
 export default function MessagesPage() {
   const [composeOpen, setComposeOpen] = useState(false);
@@ -35,7 +39,7 @@ export default function MessagesPage() {
   const { data: messages, refetch } = trpc.portal.myMessages.useQuery();
   const sendMutation = trpc.portal.sendMyMessage.useMutation({
     onSuccess: () => {
-      toast.success("メッセージを送信しました");
+      toast.success(labels.messages.success.messageSent);
       setComposeOpen(false);
       setNewMessage({ subject: "", content: "" });
       refetch();
@@ -56,7 +60,7 @@ export default function MessagesPage() {
 
   const handleSend = () => {
     if (!newMessage.subject || !newMessage.content) {
-      toast.error("件名と本文を入力してください");
+      toast.error(labels.messages.error.requiredFields);
       return;
     }
     sendMutation.mutate(newMessage);
@@ -65,32 +69,28 @@ export default function MessagesPage() {
   const selectedMessageData = messages?.find((m) => m.id === selectedMessage);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">メッセージ</h1>
-          <p className="text-gray-500">クリニックとのやり取り</p>
-        </div>
-        <Button onClick={() => setComposeOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          新規メッセージ
-        </Button>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Button onClick={() => setComposeOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            {pageLabels.newMessage}
+          </Button>
+        }
+      />
 
       {/* Message List & Detail */}
       <div className="grid md:grid-cols-3 gap-6">
         {/* Message List */}
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle className="text-lg">受信トレイ</CardTitle>
+            <CardTitle className="text-lg">{pageLabels.inbox}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {!messages?.length ? (
-              <div className="text-center py-8 text-gray-500 px-4">
-                <MessageSquare className="mx-auto h-10 w-10 text-gray-300 mb-2" />
-                <p>メッセージはありません</p>
-              </div>
+              <EmptyState message={pageLabels.empty.list} icon={MessageSquare} />
             ) : (
               <div className="divide-y max-h-[500px] overflow-y-auto">
                 {messages.map((msg) => (
@@ -109,7 +109,7 @@ export default function MessagesPage() {
                           ) : (
                             <User className="h-4 w-4 text-gray-400 shrink-0" />
                           )}
-                          <p className="font-medium text-sm truncate">{msg.subject || "（件名なし）"}</p>
+                          <p className="font-medium text-sm truncate">{msg.subject || pageLabels.noSubject}</p>
                         </div>
                         <p className="text-xs text-gray-500 truncate mt-1">
                           {msg.content}
@@ -123,7 +123,7 @@ export default function MessagesPage() {
                       </div>
                       {!msg.isRead && (
                         <Badge variant="destructive" className="shrink-0 text-xs">
-                          新着
+                          {common.new}
                         </Badge>
                       )}
                     </div>
@@ -140,17 +140,17 @@ export default function MessagesPage() {
             {selectedMessageData ? (
               <div className="space-y-4">
                 <div className="border-b pb-4">
-                  <h2 className="text-lg font-semibold">{selectedMessageData.subject || "（件名なし）"}</h2>
+                  <h2 className="text-lg font-semibold">{selectedMessageData.subject || pageLabels.noSubject}</h2>
                   <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
                     {selectedMessageData.senderType === "STAFF" ? (
                       <>
                         <Building className="h-4 w-4" />
-                        <span>クリニック</span>
+                        <span>{pageLabels.sender.clinic}</span>
                       </>
                     ) : (
                       <>
                         <User className="h-4 w-4" />
-                        <span>あなた</span>
+                        <span>{pageLabels.sender.you}</span>
                       </>
                     )}
                     <span className="mx-2">•</span>
@@ -168,7 +168,7 @@ export default function MessagesPage() {
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
                 <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
-                <p>メッセージを選択してください</p>
+                <p>{pageLabels.empty.select}</p>
               </div>
             )}
           </CardContent>
@@ -179,37 +179,37 @@ export default function MessagesPage() {
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>新規メッセージ</DialogTitle>
+            <DialogTitle>{pageLabels.dialog.title}</DialogTitle>
             <DialogDescription>
-              クリニックへのお問い合わせを送信できます
+              {pageLabels.dialog.description}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>件名</Label>
+              <Label>{pageLabels.form.subject}</Label>
               <Input
                 value={newMessage.subject}
                 onChange={(e) => setNewMessage({ ...newMessage, subject: e.target.value })}
-                placeholder="件名を入力"
+                placeholder={pageLabels.form.subjectPlaceholder}
               />
             </div>
             <div className="space-y-2">
-              <Label>本文</Label>
+              <Label>{pageLabels.form.body}</Label>
               <Textarea
                 value={newMessage.content}
                 onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
-                placeholder="メッセージを入力..."
+                placeholder={pageLabels.form.bodyPlaceholder}
                 rows={6}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setComposeOpen(false)}>
-              キャンセル
+              {common.cancel}
             </Button>
             <Button onClick={handleSend} disabled={sendMutation.isPending}>
               <Send className="h-4 w-4 mr-2" />
-              {sendMutation.isPending ? "送信中..." : "送信"}
+              {sendMutation.isPending ? pageLabels.actions.sending : pageLabels.actions.send}
             </Button>
           </DialogFooter>
         </DialogContent>
