@@ -280,8 +280,17 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users     User[]
-  patients  Patient[]
+  users                  User[]
+  patients               Patient[]
+  appointments           Appointment[]
+  visits                 Visit[]
+  videoSessions          VideoSession[]
+  medicalRecords         MedicalRecord[]
+  questionnaireTemplates QuestionnaireTemplate[]
+  questionnaireResponses QuestionnaireResponse[]
+  prescriptions          Prescription[]
+  invoices               Invoice[]
+  invoiceItems           InvoiceItem[]
 }
 
 model User {
@@ -293,7 +302,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  appointments Appointment[]
 
   @@index([tenantId])
   @@unique([tenantId, email])
@@ -313,11 +323,12 @@ model Patient {
 
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
 
-  appointments Appointment[]
-  visits       Visit[]
-  records      MedicalRecord[]
-  prescriptions Prescription[]
-  invoices      Invoice[]
+  appointments           Appointment[]
+  visits                 Visit[]
+  records                MedicalRecord[]
+  prescriptions          Prescription[]
+  invoices               Invoice[]
+  questionnaireResponses QuestionnaireResponse[]
 
   @@index([tenantId])
   @@unique([tenantId, patientNo])
@@ -340,7 +351,8 @@ model Appointment {
   patient   Patient @relation(fields: [patientId], references: [id])
   doctor    User?   @relation(fields: [doctorId], references: [id])
 
-  visit     Visit?
+  visit                  Visit?
+  questionnaireResponses QuestionnaireResponse[]
 
   @@index([tenantId])
   @@index([tenantId, patientId, scheduledAt])
@@ -404,12 +416,12 @@ model MedicalRecord {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 取り込んだ問診（監査目的）
-  attachedQuestionnaireResponseId String?
-
   tenant  Tenant  @relation(fields: [tenantId], references: [id])
   patient Patient @relation(fields: [patientId], references: [id])
   visit   Visit?  @relation(fields: [visitId], references: [id])
+
+  // 取り込んだ問診（一対多）- QuestionnaireResponse側でonDelete: Restrictを設定
+  questionnaireResponses QuestionnaireResponse[]
 
   @@index([tenantId])
   @@index([tenantId, patientId, createdAt])
@@ -441,12 +453,15 @@ model QuestionnaireResponse {
   submittedAt DateTime                    @default(now())
   reviewedAt  DateTime?
   attachedAt  DateTime?
-  recordId    String?
 
-  tenant     Tenant                @relation(fields: [tenantId], references: [id])
-  template   QuestionnaireTemplate @relation(fields: [templateId], references: [id])
-  patient    Patient?              @relation(fields: [patientId], references: [id])
-  appointment Appointment?         @relation(fields: [appointmentId], references: [id])
+  tenant      Tenant                @relation(fields: [tenantId], references: [id])
+  template    QuestionnaireTemplate @relation(fields: [templateId], references: [id])
+  patient     Patient?              @relation(fields: [patientId], references: [id])
+  appointment Appointment?          @relation(fields: [appointmentId], references: [id])
+
+  // カルテへの取り込み - onDelete: Restrict により削除不可（監査保全）
+  medicalRecordId String?
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
   @@index([tenantId, templateId, submittedAt])
@@ -559,7 +574,7 @@ export const questionnaireSubmitResponseInput = z.object({
   templateId: z.string().min(1),
   patientId: z.string().min(1).optional(),
   appointmentId: z.string().min(1).optional(),
-  answersJson: z.unknown(), // schemaJson で検証するならここで refine
+  answersJson: z.record(z.unknown()), // 実行時にtemplate.schemaJsonで検証（下記参照）
 })
 
 export const questionnaireMarkReviewedInput = z.object({
@@ -607,54 +622,328 @@ export const invoiceCancelInput = z.object({
 
 ---
 
-# tRPC ルータ I/F 草案（意図ベース）
+# tRPC ルータ I/F 草案
 
 > 置き場所例: `src/server/routers/*.ts`
-> ポイント：updateStatusのような汎用は作らない。必ずユースケース名で。
+> 原則：updateStatusのような汎用は作らない。必ずユースケース名で。
+
+## 共通パラメータ
 
 ```ts
-// appointment router
+// ページネーション（全list系で使用）
+type PaginationInput = {
+  page?: number      // default: 1
+  limit?: number     // default: 20, max: 100
+}
+
+// 日付範囲フィルタ
+type DateRangeInput = {
+  from?: Date
+  to?: Date
+}
+```
+
+## patient router
+
+```ts
+// CRUD
+patient.create(input: patientInputSchema)
+patient.update({ id: string, data: patientInputSchema.partial() })
+patient.get({ id: string })
+patient.delete({ id: string })  // soft delete
+
+// Query
+patient.list({
+  search?: string,              // 氏名・カナ・患者番号・電話番号
+  isActive?: boolean,           // default: true
+  ...PaginationInput
+})
+// Returns: { patients: Patient[], total: number, pages: number }
+```
+
+## appointment router
+
+```ts
+// CRUD
 appointment.create(input: appointmentCreateInput)
-appointment.confirm(input: appointmentConfirmInput)
-appointment.cancel(input: appointmentCancelInput)
-appointment.markNoShow({ appointmentId })
+appointment.update({ id: string, data: appointmentUpdateInput })
+appointment.get({ id: string })
 
-// visit router
-visit.checkIn(input: visitCheckInInput)            // creates Visit if not exists, sets checkedInAt, WAITING
-visit.start(input: visitStartInput)                // WAITING -> IN_PROGRESS, sets startedAt
-visit.complete(input: visitCompleteInput)          // IN_PROGRESS -> COMPLETED, sets completedAt
-visit.startOnline(input: visitStartOnlineInput)    // creates VideoSession + Daily room, keeps Visit IN_PROGRESS
+// Query
+appointment.list({
+  patientId?: string,
+  doctorId?: string,
+  status?: AppointmentStatus | AppointmentStatus[],
+  isOnline?: boolean,
+  ...DateRangeInput,            // scheduledAt range
+  ...PaginationInput
+})
+// Returns: { appointments: Appointment[], total: number, pages: number }
 
-// video router
-video.getToken({ videoSessionId })                 // Daily token
-video.endSession({ videoSessionId })               // sets ENDED (optional: called by server on webhook)
+// State transitions
+appointment.confirm({ appointmentId: string })
+appointment.cancel({ appointmentId: string, reason?: string })
+appointment.markNoShow({ appointmentId: string })
+appointment.markNoShowBatch({ appointmentIds: string[] })  // batch
+```
 
-// questionnaire router
-questionnaire.submitResponse(input: questionnaireSubmitResponseInput)
-questionnaire.markReviewed(input: questionnaireMarkReviewedInput)
-questionnaire.attachToRecord(input: questionnaireAttachToRecordInput)
+## visit router
 
-// record router
+```ts
+// Query
+visit.get({ id: string })
+visit.getByAppointment({ appointmentId: string })
+visit.listByPatient({
+  patientId: string,
+  status?: VisitStatus | VisitStatus[],
+  ...DateRangeInput,            // createdAt range
+  ...PaginationInput
+})
+// Returns: { visits: Visit[], total: number, pages: number }
+
+// State transitions
+visit.checkIn({ appointmentId: string })        // creates Visit, WAITING
+visit.start({ visitId: string })                // WAITING -> IN_PROGRESS
+visit.complete({ visitId: string })             // IN_PROGRESS -> COMPLETED
+visit.startOnline({ visitId: string })          // creates VideoSession + Daily room
+```
+
+## video router
+
+```ts
+video.getToken({ videoSessionId: string })      // Daily token for participant
+video.endSession({ videoSessionId: string })    // ENDED (or via webhook)
+video.getSession({ id: string })
+video.listByVisit({ visitId: string })
+```
+
+## record router (MedicalRecord)
+
+```ts
+// CRUD
 record.create(input: recordCreateInput)
+record.update({ id: string, data: recordUpdateInput })
+record.get({ id: string })
 
-// billing router
-billing.createInvoice(input: invoiceCreateInput)   // creates Invoice + InvoiceItems (DRAFT)
-billing.issueInvoice(input: invoiceIssueInput)     // DRAFT -> ISSUED, sets issuedAt
-billing.markPaid(input: invoiceMarkPaidInput)      // ISSUED/SENT -> PAID, sets paidAt
-billing.cancelInvoice(input: invoiceCancelInput)   // -> CANCELLED
+// Query
+record.listByPatient({
+  patientId: string,
+  doctorId?: string,
+  ...DateRangeInput,            // recordDate range
+  ...PaginationInput
+})
+// Returns: { records: MedicalRecord[], total: number, pages: number }
 
-// portal router (patient-scoped)
-portal.myAppointments()
-portal.myMessages()
-portal.myMedications()
-portal.myInvoices() // planned
+record.getByVisit({ visitId: string })
+```
+
+## questionnaire router
+
+```ts
+// Template CRUD
+questionnaire.createTemplate(input: templateCreateInput)
+questionnaire.updateTemplate({ id: string, data: templateUpdateInput })
+questionnaire.getTemplate({ id: string })
+questionnaire.listTemplates({ ...PaginationInput })
+
+// Response
+questionnaire.submitResponse(input: questionnaireSubmitResponseInput)
+questionnaire.getResponse({ id: string })
+questionnaire.listResponses({
+  patientId?: string,
+  templateId?: string,
+  status?: QuestionnaireResponseStatus,
+  ...DateRangeInput,
+  ...PaginationInput
+})
+
+// State transitions
+questionnaire.markReviewed({ responseId: string })
+questionnaire.attachToRecord({ responseId: string, recordId: string })
+```
+
+## billing router (Invoice)
+
+```ts
+// CRUD
+billing.createInvoice(input: invoiceCreateInput)
+billing.updateInvoice({ id: string, data: invoiceUpdateInput })  // DRAFT only
+billing.getInvoice({ id: string })
+
+// Query
+billing.listByPatient({
+  patientId: string,
+  status?: InvoiceStatus | InvoiceStatus[],
+  ...DateRangeInput,
+  ...PaginationInput
+})
+billing.listByStatus({
+  status: InvoiceStatus | InvoiceStatus[],
+  ...DateRangeInput,
+  ...PaginationInput
+})
+// Returns: { invoices: Invoice[], total: number, pages: number }
+
+// State transitions
+billing.issueInvoice({ invoiceId: string })     // DRAFT -> ISSUED
+billing.sendInvoice({ invoiceId: string })      // ISSUED -> SENT (optional)
+billing.markPaid({ invoiceId: string })         // ISSUED/SENT -> PAID
+billing.cancelInvoice({ invoiceId: string, reason?: string })
+```
+
+## portal router (patient-scoped)
+
+```ts
+// 患者自身のデータのみアクセス可能（セッションからpatientIdを取得）
+portal.myAppointments({
+  status?: AppointmentStatus[],
+  ...DateRangeInput,
+  ...PaginationInput
+})
+portal.myVisits({ ...PaginationInput })
+portal.myRecords({ ...PaginationInput })
+portal.myMessages({ unreadOnly?: boolean, ...PaginationInput })
+portal.myMedications({ ...PaginationInput })
+portal.myInvoices({ status?: InvoiceStatus[], ...PaginationInput })
+portal.myQuestionnaireResponses({ ...PaginationInput })
 ```
 
 ---
 
-# 実装時の必須ガード（最短で効くやつ）
+# 実装時の必須ガード
 
 * 全 procedure で tenantId フィルタ必須
 * Visit系は AppointmentとtenantId一致を必ず確認
 * Questionnaire attach は RecordとtenantId一致 + ResponseとtenantId一致 を必ず確認
 * PHI対象（Patient/Record/Prescription/Invoice/QuestionnaireResponse）はアクセス・変更で監査ログ
+* **QuestionnaireResponse削除禁止**: カルテに取り込まれた問診回答は `onDelete: Restrict` により削除不可（監査整合性のため）
+
+## 問診回答とカルテの関係（監査整合性）
+
+```
+MedicalRecord (1) ←─── (0..1) QuestionnaireResponse
+                  attachedQuestionnaireResponseId (FK, unique)
+                  onDelete: Restrict
+```
+
+* MedicalRecordは最大1つのQuestionnaireResponseを参照可能
+* QuestionnaireResponseがカルテに取り込まれると、そのResponseは削除不可
+* 削除を試みるとDBレベルでエラー（Prisma: P2003）
+* 監査目的で問診内容の改ざん・消失を防止
+
+---
+
+# 問診回答バリデーション実装ガイド
+
+## 背景
+
+`answersJson`はテンプレートごとに異なる構造を持つため、Zodスキーマでは`z.record(z.unknown())`として受け入れる。
+ただし、PHIを含む可能性があるため、永続化前に必ず`template.schemaJson`に対して検証を行う。
+
+## 実装パターン（AJV使用）
+
+```ts
+import Ajv from "ajv"
+import { TRPCError } from "@trpc/server"
+
+const ajv = new Ajv({ allErrors: true })
+
+// questionnaire.submitResponse の実装
+submitResponse: protectedProcedure
+  .input(questionnaireSubmitResponseInput)
+  .mutation(async ({ ctx, input }) => {
+    // 1. テンプレート取得
+    const template = await ctx.prisma.questionnaireTemplate.findFirst({
+      where: {
+        id: input.templateId,
+        tenantId: ctx.tenantId,
+      },
+    })
+
+    if (!template) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "テンプレートが見つかりません" })
+    }
+
+    // 2. schemaJsonでanswersJsonを検証
+    const validate = ajv.compile(template.schemaJson as object)
+    const valid = validate(input.answersJson)
+
+    if (!valid) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "回答内容がテンプレートの形式に一致しません",
+        cause: validate.errors,
+      })
+    }
+
+    // 3. 検証成功後のみ永続化
+    const response = await ctx.prisma.questionnaireResponse.create({
+      data: {
+        tenantId: ctx.tenantId,
+        templateId: input.templateId,
+        patientId: input.patientId,
+        appointmentId: input.appointmentId,
+        answersJson: input.answersJson,
+        status: "SUBMITTED",
+      },
+    })
+
+    // 4. PHI監査ログ
+    await logPhiModification({
+      action: "CREATE",
+      entityType: "QuestionnaireResponse",
+      entityId: response.id,
+      userId: ctx.session.user.id,
+      tenantId: ctx.tenantId,
+      newData: { templateId: input.templateId },
+      ipAddress: ctx.requestMeta.ipAddress,
+      userAgent: ctx.requestMeta.userAgent,
+    })
+
+    return response
+  })
+```
+
+## schemaJson の形式例
+
+テンプレート作成時に保存する JSON Schema:
+
+```json
+{
+  "type": "object",
+  "required": ["chiefComplaint", "symptomDuration"],
+  "properties": {
+    "chiefComplaint": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "symptomDuration": {
+      "type": "string",
+      "enum": ["today", "2-3days", "1week", "2weeks", "1month", "longer"]
+    },
+    "painLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "allergies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "currentMedications": {
+      "type": "string",
+      "maxLength": 2000
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+## 必須チェック項目
+
+1. テンプレートが存在し、同一テナントに属すること
+2. answersJsonがschemaJsonに適合すること
+3. `additionalProperties: false`で予期しないフィールドを拒否
+4. 文字列フィールドには`maxLength`を設定してDoS対策
+5. 検証失敗時は詳細なエラーを返さない（攻撃者へのヒント防止）
