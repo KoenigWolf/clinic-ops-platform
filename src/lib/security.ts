@@ -394,6 +394,8 @@ export const PHI_ENTITIES = new Set([
   "EndoscopyExam",
   "AllergyTest",
   "QuestionnaireResponse",
+  "Invoice",
+  "InvoiceItem",
   "Document",
   "PatientMessage",
   "MedicationRecord",

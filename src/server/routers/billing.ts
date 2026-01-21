@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { logPhiAccess, logPhiModification } from "@/lib/audit";
 
 const invoiceItemSchema = z.object({
   description: z.string().min(1),
@@ -103,6 +104,15 @@ export const billingRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      await logPhiAccess({
+        entityType: "Invoice",
+        entityId: invoice.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
       return invoice;
     }),
 
@@ -150,7 +160,7 @@ export const billingRouter = router({
       const tax = Math.floor(subtotal * 0.1); // 10% tax
       const total = subtotal + tax;
 
-      return ctx.prisma.invoice.create({
+      const invoice = await ctx.prisma.invoice.create({
         data: {
           invoiceNumber: generateInvoiceNumber(),
           patientId: input.patientId,
@@ -166,6 +176,19 @@ export const billingRouter = router({
         },
         include: { items: true },
       });
+
+      await logPhiModification({
+        action: "CREATE",
+        entityType: "Invoice",
+        entityId: invoice.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        newData: { invoiceNumber: invoice.invoiceNumber, patientId: input.patientId, total },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return invoice;
     }),
 
   // Update invoice status
@@ -191,10 +214,24 @@ export const billingRouter = router({
         updateData.paidAt = new Date();
       }
 
-      return ctx.prisma.invoice.update({
+      const updatedInvoice = await ctx.prisma.invoice.update({
         where: { id: input.id },
         data: updateData,
       });
+
+      await logPhiModification({
+        action: "UPDATE",
+        entityType: "Invoice",
+        entityId: invoice.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        oldData: { status: invoice.status },
+        newData: { status: input.status },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return updatedInvoice;
     }),
 
   // Record payment
@@ -212,7 +249,7 @@ export const billingRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return ctx.prisma.invoice.update({
+      const updatedInvoice = await ctx.prisma.invoice.update({
         where: { id: input.id },
         data: {
           status: "PAID",
@@ -220,5 +257,19 @@ export const billingRouter = router({
           paymentMethod: input.paymentMethod,
         },
       });
+
+      await logPhiModification({
+        action: "UPDATE",
+        entityType: "Invoice",
+        entityId: invoice.id,
+        userId: ctx.session.user.id,
+        tenantId: ctx.tenantId,
+        oldData: { status: invoice.status, paymentMethod: invoice.paymentMethod },
+        newData: { status: "PAID", paymentMethod: input.paymentMethod },
+        ipAddress: ctx.requestMeta.ipAddress,
+        userAgent: ctx.requestMeta.userAgent,
+      });
+
+      return updatedInvoice;
     }),
 });
