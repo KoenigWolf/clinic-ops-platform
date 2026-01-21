@@ -7,3 +7,5 @@ export { StatusBadge, OnlineBadge, GenericStatusBadge } from "./status-badge";
 export { Avatar } from "./avatar";
 export { TimeDisplay, DateDisplay, VerticalSeparator } from "./time-display";
 export { ResponsiveTable } from "./responsive-table";
+export { ConfirmDialog } from "./confirm-dialog";
+export { Pagination } from "./pagination";
