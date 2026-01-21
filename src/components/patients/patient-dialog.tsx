@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { trpc } from "@/lib/trpc";
@@ -52,6 +53,11 @@ export function PatientDialog({
     resolver: zodResolver(patientInputSchema),
     defaultValues: initialData ?? patientInputDefaults,
   });
+
+  // initialDataが変更されたらフォームをリセット
+  useEffect(() => {
+    form.reset(initialData ?? patientInputDefaults);
+  }, [initialData, form]);
 
   const createMutation = trpc.patient.create.useMutation({
     onSuccess: () => {
@@ -861,7 +867,7 @@ export function PatientDialog({
               <input
                 type="checkbox"
                 checked={field.value === true}
-                onChange={(e) => field.onChange(e.target.checked ? true : null)}
+                onChange={(e) => field.onChange(e.target.checked)}
                 className="h-4 w-4 mt-1"
               />
             </FormControl>

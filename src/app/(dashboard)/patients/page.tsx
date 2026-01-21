@@ -29,25 +29,25 @@ type Patient = RouterOutputs["patient"]["list"]["patients"][number];
 const { pages: { patients: pageLabels }, common } = labels;
 const PAGE_SIZE = 20;
 
+// UTC安全な日付フォーマット（YYYY-MM-DD）
+const toDateInput = (value: Date | string | null | undefined): string | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 // 患者データを編集用に変換する関数
 const formatPatientForEdit = (patient: Patient): PatientForEdit => {
   return {
     ...patient,
-    dateOfBirth: patient.dateOfBirth
-      ? new Date(patient.dateOfBirth).toISOString().split('T')[0]
-      : "",
-    firstVisitDate: patient.firstVisitDate
-      ? new Date(patient.firstVisitDate).toISOString().split('T')[0]
-      : null,
-    lastVisitDate: patient.lastVisitDate
-      ? new Date(patient.lastVisitDate).toISOString().split('T')[0]
-      : null,
-    insuranceExpiration: patient.insuranceExpiration
-      ? new Date(patient.insuranceExpiration).toISOString().split('T')[0]
-      : null,
-    publicExpiration: patient.publicExpiration
-      ? new Date(patient.publicExpiration).toISOString().split('T')[0]
-      : null,
+    dateOfBirth: toDateInput(patient.dateOfBirth) ?? "",
+    firstVisitDate: toDateInput(patient.firstVisitDate),
+    lastVisitDate: toDateInput(patient.lastVisitDate),
+    insuranceExpiration: toDateInput(patient.insuranceExpiration),
+    publicExpiration: toDateInput(patient.publicExpiration),
   };
 };
 
