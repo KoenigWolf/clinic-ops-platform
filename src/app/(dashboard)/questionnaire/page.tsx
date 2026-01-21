@@ -31,6 +31,7 @@ import {
   EmptyState,
   PageHeader,
 } from "@/components/layout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { labels } from "@/lib/labels";
 
 const { pages: { questionnaire: pageLabels }, common } = labels;
@@ -102,7 +103,34 @@ export default function QuestionnairePage() {
           }
         />
       ) : isLoading ? (
-        <div className="text-center py-8 text-gray-500">{common.loading}</div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm p-5">
+                <Skeleton className="h-3 w-14 mb-3" />
+                <Skeleton className="h-7 w-16" />
+              </div>
+            ))}
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-24" />
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <>
           {/* Stats */}
@@ -284,20 +312,18 @@ export default function QuestionnairePage() {
               </div>
 
               {!templates?.length ? (
-                <Card className="bg-white rounded-xl shadow-sm">
-                  <CardContent className="py-8">
-                    <div className="text-center">
-                      <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                      <p className="text-gray-500">{pageLabels.templatesEmpty}</p>
-                      <Link href="/questionnaire/templates/new">
-                        <Button variant="outline" className="mt-4">
-                          <Plus className="mr-2 h-4 w-4" />
-                          {pageLabels.templatesCreateFirst}
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EmptyState
+                  icon={FileText}
+                  message={pageLabels.templatesEmpty}
+                  action={
+                    <Link href="/questionnaire/templates/new">
+                      <Button variant="outline">
+                        <Plus className="mr-2 h-4 w-4" />
+                        {pageLabels.templatesCreateFirst}
+                      </Button>
+                    </Link>
+                  }
+                />
               ) : (
                 <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {templates.map((template) => (

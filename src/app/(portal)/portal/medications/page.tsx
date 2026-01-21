@@ -29,18 +29,14 @@ import {
   Plus,
   Edit,
   Trash2,
-  Calendar,
-  AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
+import { PageHeader, StatCard, StatGrid, EmptyState } from "@/components/layout";
+import { labels } from "@/lib/labels";
 
-const MEDICATION_TYPES = [
-  { value: "PRESCRIPTION", label: "処方薬" },
-  { value: "OTC", label: "市販薬" },
-  { value: "SUPPLEMENT", label: "サプリメント" },
-];
+const { portal: { medications: pageLabels }, common } = labels;
 
 export default function MedicationsPage() {
   const [activeTab, setActiveTab] = useState("current");
@@ -61,7 +57,7 @@ export default function MedicationsPage() {
 
   const addMutation = trpc.portal.addMyMedication.useMutation({
     onSuccess: () => {
-      toast.success("お薬を追加しました");
+      toast.success(labels.messages.success.medicationAdded);
       setDialogOpen(false);
       setEditingMed(null);
       refetch();
@@ -71,7 +67,7 @@ export default function MedicationsPage() {
 
   const updateMutation = trpc.portal.updateMyMedication.useMutation({
     onSuccess: () => {
-      toast.success("お薬を更新しました");
+      toast.success(labels.messages.success.medicationUpdated);
       setDialogOpen(false);
       setEditingMed(null);
       refetch();
@@ -81,7 +77,7 @@ export default function MedicationsPage() {
 
   const deleteMutation = trpc.portal.deleteMyMedication.useMutation({
     onSuccess: () => {
-      toast.success("お薬を削除しました");
+      toast.success(labels.messages.success.medicationDeleted);
       refetch();
     },
     onError: (error) => toast.error(error.message),
@@ -114,7 +110,7 @@ export default function MedicationsPage() {
 
   const handleSave = () => {
     if (!editingMed?.name || !editingMed?.dosage || !editingMed?.frequency) {
-      toast.error("必須項目を入力してください");
+      toast.error(labels.messages.error.requiredFields);
       return;
     }
 
@@ -138,85 +134,46 @@ export default function MedicationsPage() {
   const medications = activeTab === "current" ? currentMedications : allMedications;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">お薬手帳</h1>
-          <p className="text-gray-500">服用中のお薬を管理できます</p>
-        </div>
-        <Button onClick={openNewMed}>
-          <Plus className="h-4 w-4 mr-2" />
-          お薬を追加
-        </Button>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title={pageLabels.title}
+        description={pageLabels.description}
+        actions={
+          <Button onClick={openNewMed}>
+            <Plus className="h-4 w-4 mr-2" />
+            {pageLabels.addMedication}
+          </Button>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Pill className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{currentMedications?.length || 0}</p>
-                <p className="text-xs text-gray-500">服用中</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{allMedications?.length || 0}</p>
-                <p className="text-xs text-gray-500">合計</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {currentMedications?.filter((m) => m.type === "PRESCRIPTION").length || 0}
-                </p>
-                <p className="text-xs text-gray-500">処方薬</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid columns={3}>
+        <StatCard label={pageLabels.stats.active} value={currentMedications?.length || 0} />
+        <StatCard label={pageLabels.stats.total} value={allMedications?.length || 0} />
+        <StatCard
+          label={pageLabels.stats.prescription}
+          value={currentMedications?.filter((m) => m.type === "PRESCRIPTION").length || 0}
+        />
+      </StatGrid>
 
       {/* Medications List */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="current">服用中</TabsTrigger>
-          <TabsTrigger value="all">すべて</TabsTrigger>
+          <TabsTrigger value="current">{pageLabels.tabs.active}</TabsTrigger>
+          <TabsTrigger value="all">{pageLabels.tabs.all}</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
           {!medications?.length ? (
-            <Card>
-              <CardContent className="py-12">
-                <div className="text-center text-gray-500">
-                  <Pill className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                  <p>{activeTab === "current" ? "服用中の薬はありません" : "お薬の記録はありません"}</p>
-                  <Button variant="outline" className="mt-4" onClick={openNewMed}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    お薬を追加
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Pill}
+              message={activeTab === "current" ? pageLabels.empty.active : pageLabels.empty.all}
+              action={
+                <Button variant="outline" onClick={openNewMed}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {pageLabels.addMedication}
+                </Button>
+              }
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {medications.map((med) => (
@@ -230,19 +187,19 @@ export default function MedicationsPage() {
                       <Badge
                         variant={med.type === "PRESCRIPTION" ? "default" : "secondary"}
                       >
-                        {MEDICATION_TYPES.find((t) => t.value === med.type)?.label}
+                        {pageLabels.types[med.type as keyof typeof pageLabels.types]}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">服用方法</span>
+                        <span className="text-gray-500">{pageLabels.properties.instructions}</span>
                         <span className="font-medium">{med.frequency}</span>
                       </div>
                       {med.startDate && (
                         <div className="flex justify-between">
-                          <span className="text-gray-500">開始日</span>
+                          <span className="text-gray-500">{pageLabels.properties.startDate}</span>
                           <span>
                             {format(new Date(med.startDate), "yyyy年M月d日", { locale: ja })}
                           </span>
@@ -250,7 +207,7 @@ export default function MedicationsPage() {
                       )}
                       {med.endDate && (
                         <div className="flex justify-between">
-                          <span className="text-gray-500">終了日</span>
+                          <span className="text-gray-500">{pageLabels.properties.endDate}</span>
                           <span>
                             {format(new Date(med.endDate), "yyyy年M月d日", { locale: ja })}
                           </span>
@@ -288,16 +245,16 @@ export default function MedicationsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingMed?.id ? "お薬を編集" : "お薬を追加"}
+              {editingMed?.id ? pageLabels.dialog.editTitle : pageLabels.dialog.addTitle}
             </DialogTitle>
             <DialogDescription>
-              服用中のお薬を記録します
+              {pageLabels.dialog.description}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>お薬の名前 *</Label>
+                <Label>{pageLabels.form.name} *</Label>
                 <Input
                   value={editingMed?.name || ""}
                   onChange={(e) => setEditingMed((prev) => prev ? { ...prev, name: e.target.value } : null)}
@@ -305,7 +262,7 @@ export default function MedicationsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>種類 *</Label>
+                <Label>{pageLabels.form.type} *</Label>
                 <Select
                   value={editingMed?.type || "PRESCRIPTION"}
                   onValueChange={(value) => setEditingMed((prev) => prev ? { ...prev, type: value } : null)}
@@ -314,9 +271,9 @@ export default function MedicationsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {MEDICATION_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                    {(Object.keys(pageLabels.types) as Array<keyof typeof pageLabels.types>).map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {pageLabels.types[key]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -325,7 +282,7 @@ export default function MedicationsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>用量 *</Label>
+                <Label>{pageLabels.form.dosage} *</Label>
                 <Input
                   value={editingMed?.dosage || ""}
                   onChange={(e) => setEditingMed((prev) => prev ? { ...prev, dosage: e.target.value } : null)}
@@ -333,7 +290,7 @@ export default function MedicationsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>服用方法 *</Label>
+                <Label>{pageLabels.form.instructions} *</Label>
                 <Input
                   value={editingMed?.frequency || ""}
                   onChange={(e) => setEditingMed((prev) => prev ? { ...prev, frequency: e.target.value } : null)}
@@ -343,7 +300,7 @@ export default function MedicationsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>開始日 *</Label>
+                <Label>{pageLabels.form.startDate} *</Label>
                 <Input
                   type="date"
                   value={editingMed?.startDate || ""}
@@ -351,7 +308,7 @@ export default function MedicationsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>終了日</Label>
+                <Label>{pageLabels.form.endDate}</Label>
                 <Input
                   type="date"
                   value={editingMed?.endDate || ""}
@@ -360,7 +317,7 @@ export default function MedicationsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>備考</Label>
+              <Label>{pageLabels.form.notes}</Label>
               <Textarea
                 value={editingMed?.notes || ""}
                 onChange={(e) => setEditingMed((prev) => prev ? { ...prev, notes: e.target.value } : null)}
@@ -371,13 +328,13 @@ export default function MedicationsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              キャンセル
+              {common.cancel}
             </Button>
             <Button
               onClick={handleSave}
               disabled={addMutation.isPending || updateMutation.isPending}
             >
-              {addMutation.isPending || updateMutation.isPending ? "保存中..." : "保存"}
+              {addMutation.isPending || updateMutation.isPending ? common.saving : common.save}
             </Button>
           </DialogFooter>
         </DialogContent>

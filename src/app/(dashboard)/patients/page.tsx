@@ -17,7 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, FileText, Pencil } from "lucide-react";
+import { Plus, Search, Eye, FileText, Users, Pencil } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PatientDialog } from "@/components/patients/patient-dialog";
 import { EmptyState, PageHeader, ResponsiveTable } from "@/components/layout";
 import { labels } from "@/lib/labels";
@@ -144,11 +145,20 @@ export default function PatientsPage() {
               }
             />
           ) : isLoading ? (
-            <div className="text-center py-8 text-gray-500">{common.loading}</div>
-          ) : data?.patients.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {pageLabels.empty}
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3">
+                  <Skeleton className="h-4 w-20 hidden sm:block" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-6 w-12 hidden md:block" />
+                  <Skeleton className="h-4 w-24 hidden lg:block" />
+                  <Skeleton className="h-4 w-24 hidden md:block" />
+                  <Skeleton className="h-8 w-16 ml-auto" />
+                </div>
+              ))}
             </div>
+          ) : data?.patients.length === 0 ? (
+            <EmptyState message={pageLabels.empty} icon={Users} />
           ) : (
             <>
               <ResponsiveTable>

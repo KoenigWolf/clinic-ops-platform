@@ -28,14 +28,14 @@ import {
   Plus,
   FileText,
   FileSignature,
-  FilePlus,
   Edit,
   Trash2,
   Eye,
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
-import { EmptyState, PageHeader } from "@/components/layout";
+import { EmptyState, PageHeader, StatCard, StatGrid } from "@/components/layout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { labels } from "@/lib/labels";
 import Link from "next/link";
 
@@ -186,56 +186,24 @@ export default function DocumentsPage() {
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">{pageLabels.stats.templateCount}</p>
-                <p className="text-2xl font-bold">{templates?.length || 0}</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-200" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">{pageLabels.stats.issuedDocuments}</p>
-                <p className="text-2xl font-bold">{documents?.length || 0}</p>
-              </div>
-              <FileSignature className="h-8 w-8 text-green-200" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">{pageLabels.stats.referralLetters}</p>
-                <p className="text-2xl font-bold">
-                  {documents?.filter((d) => d.category === "REFERRAL").length || 0}
-                </p>
-              </div>
-              <FilePlus className="h-8 w-8 text-purple-200" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">{pageLabels.stats.certificates}</p>
-                <p className="text-2xl font-bold">
-                  {documents?.filter((d) => d.category === "CERTIFICATE").length || 0}
-                </p>
-              </div>
-              <FileSignature className="h-8 w-8 text-orange-200" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid columns={4}>
+        <StatCard
+          label={pageLabels.stats.templateCount}
+          value={templates?.length || 0}
+        />
+        <StatCard
+          label={pageLabels.stats.issuedDocuments}
+          value={documents?.length || 0}
+        />
+        <StatCard
+          label={pageLabels.stats.referralLetters}
+          value={documents?.filter((d) => d.category === "REFERRAL").length || 0}
+        />
+        <StatCard
+          label={pageLabels.stats.certificates}
+          value={documents?.filter((d) => d.category === "CERTIFICATE").length || 0}
+        />
+      </StatGrid>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -281,7 +249,24 @@ export default function DocumentsPage() {
               }
             />
           ) : templatesLoading ? (
-            <div className="text-center py-8 text-gray-500">{common.loading}</div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <Skeleton className="h-5 w-32 mb-2" />
+                        <Skeleton className="h-4 w-48" />
+                      </div>
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-12 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : !templates?.length ? (
             <EmptyState
               icon={FileText}
@@ -365,7 +350,30 @@ export default function DocumentsPage() {
               }
             />
           ) : documentsLoading ? (
-            <div className="text-center py-8 text-gray-500">{common.loading}</div>
+            <Card>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <Skeleton className="h-5 w-40 mb-1" />
+                          <Skeleton className="h-4 w-32" />
+                        </div>
+                        <Skeleton className="h-6 w-16" />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-4 w-20" />
+                        <div className="flex gap-1">
+                          <Skeleton className="h-8 w-8" />
+                          <Skeleton className="h-8 w-8" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           ) : !documents?.length ? (
             <EmptyState icon={FileSignature} message={pageLabels.empty.issued} />
           ) : (

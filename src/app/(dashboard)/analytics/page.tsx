@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/layout";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   FileText,
@@ -60,22 +61,57 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        {common.loading}
+      <div className="space-y-4">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="pt-4">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-4 w-16 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <EmptyState
-        message={common.loadFailed}
-        action={
-          <Button type="button" variant="outline" onClick={() => refetch()}>
-            {common.retry}
-          </Button>
-        }
-      />
+      <div className="space-y-4">
+        <PageHeader title={pageLabels.title} description={pageLabels.description} />
+        <EmptyState
+          message={common.loadFailed}
+          action={
+            <Button type="button" variant="outline" onClick={() => refetch()}>
+              {common.retry}
+            </Button>
+          }
+        />
+      </div>
     );
   }
 

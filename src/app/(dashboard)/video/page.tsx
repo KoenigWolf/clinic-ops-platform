@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, Phone, User, Clock } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
@@ -147,12 +148,25 @@ function VideoPageContent() {
               }
             />
           ) : isLoading ? (
-            <div className="text-center py-8 text-gray-500">{common.loading}</div>
-          ) : !onlineAppointments || onlineAppointments.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Video className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <p>{pageLabels.empty}</p>
+            <div className="space-y-4">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <div>
+                      <Skeleton className="h-5 w-32 mb-1" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : !onlineAppointments || onlineAppointments.length === 0 ? (
+            <EmptyState message={pageLabels.empty} icon={Video} />
           ) : (
             <div className="space-y-4">
               {onlineAppointments.map((apt) => (

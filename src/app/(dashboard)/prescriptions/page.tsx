@@ -19,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, X } from "lucide-react";
+import { Check, X, Pill } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -106,11 +107,18 @@ export default function PrescriptionsPage() {
               }
             />
           ) : isLoading ? (
-            <div className="text-center py-8 text-gray-500">{common.loading}</div>
-          ) : data?.prescriptions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {pageLabels.empty}
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-24 hidden md:block" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              ))}
             </div>
+          ) : data?.prescriptions.length === 0 ? (
+            <EmptyState message={pageLabels.empty} icon={Pill} />
           ) : (
             <>
               <div className="overflow-x-auto -mx-4 sm:mx-0">

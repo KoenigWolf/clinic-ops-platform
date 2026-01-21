@@ -12,16 +12,21 @@ import {
   Video,
   ChevronRight,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader, StatCard, StatGrid, EmptyState } from "@/components/layout";
 import { format, isAfter, isBefore, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useState } from "react";
+import { labels } from "@/lib/labels";
+
+const { portal: { appointments: pageLabels } } = labels;
 
 const STATUS_CONFIG = {
-  SCHEDULED: { label: "予約済", color: "bg-blue-100 text-blue-800" },
-  CONFIRMED: { label: "確定", color: "bg-green-100 text-green-800" },
-  CANCELLED: { label: "キャンセル", color: "bg-gray-100 text-gray-800" },
-  COMPLETED: { label: "完了", color: "bg-purple-100 text-purple-800" },
-  NO_SHOW: { label: "未来院", color: "bg-red-100 text-red-800" },
+  SCHEDULED: { label: pageLabels.status.scheduled, color: "bg-blue-100 text-blue-800" },
+  CONFIRMED: { label: pageLabels.status.confirmed, color: "bg-green-100 text-green-800" },
+  CANCELLED: { label: pageLabels.status.cancelled, color: "bg-gray-100 text-gray-800" },
+  COMPLETED: { label: pageLabels.status.completed, color: "bg-purple-100 text-purple-800" },
+  NO_SHOW: { label: pageLabels.status.noShow, color: "bg-red-100 text-red-800" },
 };
 
 const TYPE_CONFIG = {
@@ -50,108 +55,75 @@ export default function AppointmentsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="space-y-4">
+        <div>
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48 mt-2" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-sm p-5">
+              <Skeleton className="h-3 w-14 mb-3" />
+              <Skeleton className="h-7 w-16" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <div className="flex-1">
+                    <Skeleton className="h-5 w-32 mb-2" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">予約</h1>
-        <p className="text-gray-500">診療予約の確認</p>
-      </div>
+    <div className="space-y-4">
+      <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{upcomingAppointments?.length || 0}</p>
-                <p className="text-xs text-gray-500">今後の予約</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Clock className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {upcomingAppointments?.filter((a) => a.status === "CONFIRMED").length || 0}
-                </p>
-                <p className="text-xs text-gray-500">確定済み</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Video className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {upcomingAppointments?.filter((a) => a.isOnline).length || 0}
-                </p>
-                <p className="text-xs text-gray-500">オンライン</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-gray-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{pastAppointments?.length || 0}</p>
-                <p className="text-xs text-gray-500">過去の予約</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid columns={4}>
+        <StatCard label={pageLabels.stats.upcoming} value={upcomingAppointments?.length || 0} />
+        <StatCard
+          label={pageLabels.stats.confirmed}
+          value={upcomingAppointments?.filter((a) => a.status === "CONFIRMED").length || 0}
+        />
+        <StatCard
+          label={pageLabels.stats.online}
+          value={upcomingAppointments?.filter((a) => a.isOnline).length || 0}
+        />
+        <StatCard label={pageLabels.stats.past} value={pastAppointments?.length || 0} />
+      </StatGrid>
 
       {/* Appointments List */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="upcoming">
-            今後の予約
+            {pageLabels.tabs.upcoming}
             {(upcomingAppointments?.length || 0) > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {upcomingAppointments?.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="past">過去の予約</TabsTrigger>
+          <TabsTrigger value="past">{pageLabels.tabs.past}</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
           {!displayAppointments?.length ? (
-            <Card>
-              <CardContent className="py-12">
-                <div className="text-center text-gray-500">
-                  <Calendar className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                  <p>
-                    {activeTab === "upcoming"
-                      ? "今後の予約はありません"
-                      : "過去の予約はありません"}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Calendar}
+              message={activeTab === "upcoming" ? pageLabels.empty.upcoming : pageLabels.empty.past}
+            />
           ) : (
             <div className="space-y-4">
               {displayAppointments.map((apt) => {
@@ -187,18 +159,18 @@ export default function AppointmentsPage() {
                                 {isVideo ? (
                                   <>
                                     <Video className="h-4 w-4" />
-                                    <span>オンライン診療</span>
+                                    <span>{pageLabels.location.online}</span>
                                   </>
                                 ) : (
                                   <>
                                     <MapPin className="h-4 w-4" />
-                                    <span>来院</span>
+                                    <span>{pageLabels.location.inPerson}</span>
                                   </>
                                 )}
                               </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                              担当: {apt.doctor?.name || "未定"}
+                              {pageLabels.doctorLabel(apt.doctor?.name || "")}
                             </p>
                             {apt.notes && (
                               <p className="text-sm text-gray-500 mt-2">{apt.notes}</p>
@@ -207,7 +179,7 @@ export default function AppointmentsPage() {
                         </div>
                         {isVideo && apt.status === "CONFIRMED" && activeTab === "upcoming" && (
                           <Button className="shrink-0">
-                            診療を開始
+                            {pageLabels.startConsultation}
                             <ChevronRight className="h-4 w-4 ml-1" />
                           </Button>
                         )}

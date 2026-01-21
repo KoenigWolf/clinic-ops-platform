@@ -19,14 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Receipt, DollarSign } from "lucide-react";
+import { Plus, Receipt } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
 import { InvoiceDialog } from "@/components/billing/invoice-dialog";
 import { labels } from "@/lib/labels";
 import { invoiceStatusConfig } from "@/lib/design-tokens";
-import { EmptyState, GenericStatusBadge, PageHeader } from "@/components/layout";
+import { EmptyState, GenericStatusBadge, PageHeader, StatCard, StatGrid } from "@/components/layout";
 
 const { pages: { billing: pageLabels }, common, messages } = labels;
 const PAGE_SIZE = 20;
@@ -93,49 +94,20 @@ export default function BillingPage() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
-              {pageLabels.stats.monthlyRevenue}
-            </CardTitle>
-            <DollarSign className="h-5 w-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {currencyFormatter.format(data?.monthlyRevenue || 0)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
-              {pageLabels.stats.unpaidCount}
-            </CardTitle>
-            <Receipt className="h-5 w-5 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {data?.unpaidCount || 0}件
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
-              {pageLabels.stats.overdueCount}
-            </CardTitle>
-            <Receipt className="h-5 w-5 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {data?.overdueCount || 0}件
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid columns={3}>
+        <StatCard
+          label={pageLabels.stats.monthlyRevenue}
+          value={currencyFormatter.format(data?.monthlyRevenue || 0)}
+        />
+        <StatCard
+          label={pageLabels.stats.unpaidCount}
+          value={`${data?.unpaidCount || 0}件`}
+        />
+        <StatCard
+          label={pageLabels.stats.overdueCount}
+          value={`${data?.overdueCount || 0}件`}
+        />
+      </StatGrid>
 
       {/* Filters */}
       <Card>
@@ -182,11 +154,19 @@ export default function BillingPage() {
               }
             />
           ) : isLoading ? (
-            <div className="text-center py-8 text-gray-500">{common.loading}</div>
-          ) : data?.invoices.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {pageLabels.empty}
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3">
+                  <Skeleton className="h-4 w-20 hidden sm:block" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20 hidden lg:block" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              ))}
             </div>
+          ) : data?.invoices.length === 0 ? (
+            <EmptyState message={pageLabels.empty} icon={Receipt} />
           ) : (
             <>
               <div className="overflow-x-auto -mx-4 sm:mx-0">

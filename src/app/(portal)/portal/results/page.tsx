@@ -10,83 +10,60 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader, StatCard, StatGrid, EmptyState } from "@/components/layout";
+import { labels } from "@/lib/labels";
+
+const { portal: { results: pageLabels } } = labels;
 
 export default function LabResultsPage() {
   const { data: labResults, isLoading } = trpc.portal.myLabResults.useQuery();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="space-y-4">
+        <div>
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48 mt-2" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-sm p-5">
+              <Skeleton className="h-3 w-14 mb-3" />
+              <Skeleton className="h-7 w-16" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24 mt-1" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">検査結果</h1>
-        <p className="text-gray-500">過去の検査結果を確認できます</p>
-      </div>
+    <div className="space-y-4">
+      <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileText className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{labResults?.length || 0}</p>
-                <p className="text-xs text-gray-500">検査件数</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {labResults?.filter((r) => !r.isAbnormal).length || 0}
-                </p>
-                <p className="text-xs text-gray-500">正常</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {labResults?.filter((r) => r.isAbnormal).length || 0}
-                </p>
-                <p className="text-xs text-gray-500">要確認</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid columns={3}>
+        <StatCard label={pageLabels.stats.total} value={labResults?.length || 0} />
+        <StatCard label={pageLabels.stats.normal} value={labResults?.filter((r) => !r.isAbnormal).length || 0} />
+        <StatCard label={pageLabels.stats.abnormal} value={labResults?.filter((r) => r.isAbnormal).length || 0} />
+      </StatGrid>
 
       {/* Results List */}
       {!labResults?.length ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center text-gray-500">
-              <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <p>検査結果はありません</p>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState message={pageLabels.empty} icon={FileText} />
       ) : (
         <div className="space-y-4">
           {labResults.map((result) => (
@@ -106,7 +83,7 @@ export default function LabResultsPage() {
                         : "bg-green-100 text-green-800"
                     }
                   >
-                    {result.isAbnormal ? "要確認" : "正常"}
+                    {result.isAbnormal ? pageLabels.badge.abnormal : pageLabels.badge.normal}
                   </Badge>
                 </div>
               </CardHeader>
@@ -114,10 +91,10 @@ export default function LabResultsPage() {
                 <div className="space-y-3 pt-2 border-t">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                     <div className="flex-1">
-                      <p className="font-medium text-sm">検査結果</p>
+                      <p className="font-medium text-sm">{pageLabels.properties.resultLabel}</p>
                       {(result.referenceMin != null || result.referenceMax != null) && (
                         <p className="text-xs text-gray-500">
-                          基準値: {result.referenceMin ?? "-"} ~ {result.referenceMax ?? "-"} {result.unit}
+                          {pageLabels.properties.referenceRange} {result.referenceMin ?? "-"} ~ {result.referenceMax ?? "-"} {result.unit}
                         </p>
                       )}
                     </div>
@@ -135,7 +112,7 @@ export default function LabResultsPage() {
                   {result.notes && (
                     <div className="p-3 bg-yellow-50 rounded-lg">
                       <p className="text-sm text-yellow-800">
-                        <strong>備考:</strong> {result.notes}
+                        <strong>{pageLabels.properties.notes}</strong> {result.notes}
                       </p>
                     </div>
                   )}

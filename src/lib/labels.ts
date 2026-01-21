@@ -119,6 +119,12 @@ export const labels = {
       calendar: "カレンダー",
       dateTitle: (date: string) => `${date} の予約`,
       empty: "この日の予約はありません",
+      viewMode: {
+        list: "リスト",
+        week: "週間",
+      },
+      thisWeek: "今週",
+      doctorLabel: "担当:",
       actions: {
         checkIn: "受付",
         start: "開始",
@@ -643,9 +649,23 @@ export const labels = {
         normal: "正常",
       },
       properties: {
+        resultLabel: "検査結果",
         referenceRange: "基準値:",
         notes: "備考:",
       },
+    },
+
+    notifications: {
+      title: "お知らせ",
+      description: "クリニックからのお知らせ",
+      markAllAsRead: "すべて既読にする",
+      stats: {
+        total: "すべてのお知らせ",
+        unread: "未読",
+      },
+      listTitle: "お知らせ一覧",
+      empty: "お知らせはありません",
+      markAsRead: "既読にする",
     },
   },
 
