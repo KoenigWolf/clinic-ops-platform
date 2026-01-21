@@ -1,22 +1,33 @@
+# Dependencies
 node_modules
-# Keep environment variables out of version control
-.env
 
+# Environment variables
+.env
+.env*.local
+
+# Prisma
 /src/generated/prisma
 
-# Next.js build output
+# Next.js
 .next
 out
+.vercel
 
-# TypeScript build info
+# Turbopack
+.turbo
+
+# TypeScript
 *.tsbuildinfo
 
-# OS / editor
+# Test coverage
+coverage
+
+# OS / Editor
 .DS_Store
 .idea
 .vscode
 
-# Local tooling
+# Claude Code
 .claude
 
 # Logs

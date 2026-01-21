@@ -2,31 +2,39 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { logPhiAccess, logPhiModification } from "@/lib/audit";
+import { sanitizeHtml } from "@/lib/security";
+import { patientInputSchema, type PatientInput } from "@/domain/patient/schema";
 
-const patientSchema = z.object({
-  patientNumber: z.string().min(1),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  firstNameKana: z.string().optional(),
-  lastNameKana: z.string().optional(),
-  dateOfBirth: z.date(),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]),
-  bloodType: z.enum([
-    "A_POSITIVE", "A_NEGATIVE", "B_POSITIVE", "B_NEGATIVE",
-    "O_POSITIVE", "O_NEGATIVE", "AB_POSITIVE", "AB_NEGATIVE"
-  ]).optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  address: z.string().optional(),
-  postalCode: z.string().optional(),
-  emergencyContact: z.string().optional(),
-  emergencyPhone: z.string().optional(),
-  allergies: z.string().optional(),
-  medicalHistory: z.string().optional(),
-  insuranceNumber: z.string().optional(),
-  insuranceType: z.string().optional(),
-  notes: z.string().optional(),
-});
+// テキストフィールドをサニタイズするヘルパー関数
+function sanitizePatientTextFields<T extends Partial<PatientInput>>(input: T): T {
+  return {
+    ...input,
+    ...(input.allergies !== undefined && {
+      allergies: input.allergies ? sanitizeHtml(input.allergies) : null,
+    }),
+    ...(input.medicalHistory !== undefined && {
+      medicalHistory: input.medicalHistory ? sanitizeHtml(input.medicalHistory) : null,
+    }),
+    ...(input.familyHistory !== undefined && {
+      familyHistory: input.familyHistory ? sanitizeHtml(input.familyHistory) : null,
+    }),
+    ...(input.contraindications !== undefined && {
+      contraindications: input.contraindications ? sanitizeHtml(input.contraindications) : null,
+    }),
+    ...(input.currentMedications !== undefined && {
+      currentMedications: input.currentMedications ? sanitizeHtml(input.currentMedications) : null,
+    }),
+    ...(input.healthCheckInfo !== undefined && {
+      healthCheckInfo: input.healthCheckInfo ? sanitizeHtml(input.healthCheckInfo) : null,
+    }),
+    ...(input.notes !== undefined && {
+      notes: input.notes ? sanitizeHtml(input.notes) : null,
+    }),
+    ...(input.limitCertification !== undefined && {
+      limitCertification: input.limitCertification ? sanitizeHtml(input.limitCertification) : null,
+    }),
+  };
+}
 
 export const patientRouter = router({
   // List patients
@@ -101,7 +109,6 @@ export const patientRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      // Log PHI access for HIPAA compliance
       await logPhiAccess({
         entityType: "Patient",
         entityId: patient.id,
@@ -115,10 +122,9 @@ export const patientRouter = router({
     }),
 
   // Create patient
-  create: protectedProcedure
-    .input(patientSchema)
+    create: protectedProcedure
+    .input(patientInputSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check for duplicate patient number
       const existing = await ctx.prisma.patient.findFirst({
         where: {
           tenantId: ctx.tenantId,
@@ -133,15 +139,21 @@ export const patientRouter = router({
         });
       }
 
+      const sanitizedInput = sanitizePatientTextFields(input);
+
       const patient = await ctx.prisma.patient.create({
         data: {
-          ...input,
+          ...sanitizedInput,
+          dateOfBirth: new Date(input.dateOfBirth),
+          firstVisitDate: input.firstVisitDate ? new Date(input.firstVisitDate) : null,
+          lastVisitDate: input.lastVisitDate ? new Date(input.lastVisitDate) : null,
+          insuranceExpiration: input.insuranceExpiration ? new Date(input.insuranceExpiration) : null,
+          publicExpiration: input.publicExpiration ? new Date(input.publicExpiration) : null,
           email: input.email || null,
           tenantId: ctx.tenantId,
         },
       });
 
-      // Log PHI creation for HIPAA compliance
       await logPhiModification({
         action: "CREATE",
         entityType: "Patient",
@@ -156,11 +168,11 @@ export const patientRouter = router({
       return patient;
     }),
 
-  // Update patient
-  update: protectedProcedure
+    // Update patient
+    update: protectedProcedure
     .input(z.object({
       id: z.string(),
-      data: patientSchema.partial(),
+      data: patientInputSchema.partial(),
     }))
     .mutation(async ({ ctx, input }) => {
       const patient = await ctx.prisma.patient.findFirst({
@@ -174,15 +186,35 @@ export const patientRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      const sanitizedData = sanitizePatientTextFields(input.data);
+
       const updatedPatient = await ctx.prisma.patient.update({
-        where: { id: input.id },
+        where: {
+          id: input.id,
+          tenantId: ctx.tenantId,
+        },
         data: {
-          ...input.data,
+          ...sanitizedData,
+          // 日付フィールドの変換
+          ...(input.data.dateOfBirth && {
+            dateOfBirth: new Date(input.data.dateOfBirth),
+          }),
+          ...(input.data.firstVisitDate !== undefined && {
+            firstVisitDate: input.data.firstVisitDate ? new Date(input.data.firstVisitDate) : null,
+          }),
+          ...(input.data.lastVisitDate !== undefined && {
+            lastVisitDate: input.data.lastVisitDate ? new Date(input.data.lastVisitDate) : null,
+          }),
+          ...(input.data.insuranceExpiration !== undefined && {
+            insuranceExpiration: input.data.insuranceExpiration ? new Date(input.data.insuranceExpiration) : null,
+          }),
+          ...(input.data.publicExpiration !== undefined && {
+            publicExpiration: input.data.publicExpiration ? new Date(input.data.publicExpiration) : null,
+          }),
           email: input.data.email || null,
         },
       });
 
-      // Log PHI modification for HIPAA compliance
       await logPhiModification({
         action: "UPDATE",
         entityType: "Patient",
@@ -214,11 +246,13 @@ export const patientRouter = router({
       }
 
       const deletedPatient = await ctx.prisma.patient.update({
-        where: { id: input.id },
+        where: {
+          id: input.id,
+          tenantId: ctx.tenantId,
+        },
         data: { isActive: false },
       });
 
-      // Log PHI deletion for HIPAA compliance
       await logPhiModification({
         action: "DELETE",
         entityType: "Patient",

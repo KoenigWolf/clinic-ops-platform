@@ -111,58 +111,95 @@ model VerificationToken {
 // ==================== 患者管理 ====================
 
 model Patient {
-  id              String    @id @default(cuid())
-  patientNumber   String
-  firstName       String
-  lastName        String
-  firstNameKana   String?
-  lastNameKana    String?
-  dateOfBirth     DateTime
-  gender          Gender
-  bloodType       BloodType?
-  phone           String?
-  email           String?
-  address         String?
-  postalCode      String?
-  emergencyContact String?
-  emergencyPhone  String?
-  allergies       String?
-  medicalHistory  String?
-  insuranceNumber String?
-  insuranceType   String?
-  notes           String?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  patientNumber         String
+  
+  // 基本情報
+  firstName             String
+  lastName              String
+  firstNameKana         String    // 必須に変更
+  lastNameKana          String    // 必須に変更
+  dateOfBirth           DateTime
+  gender                Gender
+  bloodType             BloodType?
+  
+  // 住所・連絡先
+  phone                 String    // 必須に変更
+  email                 String?
+  address               String    // 必須に変更
+  postalCode            String?
+  emergencyContact      String?
+  emergencyRelationship String?   // 新規追加: 続柄
+  emergencyPhone        String?
+  
+  // マイナンバーカード
+  myNumberConsent       Boolean   @default(false) // 新規追加
+  
+  // 来院情報
+  firstVisitDate        DateTime? // 新規追加
+  lastVisitDate         DateTime? // 新規追加
+  
+  // 医療情報
+  allergies             String?   @db.Text
+  medicalHistory        String?   @db.Text
+  familyHistory         String?   @db.Text // 新規追加
+  contraindications     String?   @db.Text // 新規追加: 禁忌情報
+  currentMedications    String?   @db.Text // 新規追加: 服薬中の薬
+  healthCheckInfo       String?   @db.Text // 新規追加: 特定健診情報
+  pregnant              Boolean?  // 新規追加: 妊娠中
+  
+  // 保険情報（オンライン資格確認対応）
+  insurerNumber         String    // 新規追加: 保険者番号（必須）
+  insuredNumber         String    // 新規追加: 被保険者番号（必須）
+  insuranceNumber       String?   // 既存: 保険証番号（保持）
+  insuranceType         InsuranceType? // enumに変更
+  insuranceSymbol       String?   // 新規追加: 記号
+  insuranceExpiration   DateTime? // 新規追加: 有効期限
+  insuranceCategory     InsuranceCategory? // 新規追加: 本人/家族区分
+  limitCertification    String?   // 新規追加: 限度額認定
+  
+  // 公費負担医療
+  publicPayerNumber     String?   // 新規追加: 公費負担者番号
+  publicRecipientNumber String?   // 新規追加: 公費受給者番号
+  publicCategory        PublicCategory? // 新規追加: 公費区分
+  publicExpiration      DateTime? // 新規追加: 公費有効期限
+  
+  // その他
+  notes                 String?   @db.Text
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // テナント関連
+  tenantId              String
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  medicalRecords  MedicalRecord[]
-  prescriptions   Prescription[]
-  labResults      LabResult[]
-  medicalImages   MedicalImage[]
-  appointments    Appointment[]
-  invoices        Invoice[]
-  audiometryTests   AudiometryTest[]
-  tympanometryTests TympanometryTest[]
-  vestibularTests   VestibularTest[]
-  endoscopyExams    EndoscopyExam[]
-  allergyTests      AllergyTest[]
-
-  // 問診・文書・メッセージ
+  // リレーション
+  medicalRecords        MedicalRecord[]
+  prescriptions         Prescription[]
+  labResults            LabResult[]
+  medicalImages         MedicalImage[]
+  appointments          Appointment[]
+  invoices              Invoice[]
+  audiometryTests       AudiometryTest[]
+  tympanometryTests     TympanometryTest[]
+  vestibularTests       VestibularTest[]
+  endoscopyExams        EndoscopyExam[]
+  allergyTests          AllergyTest[]
   questionnaireResponses QuestionnaireResponse[]
-  documents              Document[]
-  messages               PatientMessage[]
-  notifications          PatientNotification[]
-  medicationRecords      MedicationRecord[]
+  documents             Document[]
+  messages              PatientMessage[]
+  notifications         PatientNotification[]
+  medicationRecords     MedicationRecord[]
 
   @@unique([tenantId, patientNumber])
   @@index([tenantId])
   @@index([lastName, firstName])
+  @@index([lastNameKana, firstNameKana]) // 新規追加: カナ検索用
   @@map("patients")
 }
 
+// 既存のenum
 enum Gender {
   MALE
   FEMALE
@@ -178,6 +215,31 @@ enum BloodType {
   O_NEGATIVE
   AB_POSITIVE
   AB_NEGATIVE
+}
+
+// 新規追加のenum
+enum InsuranceType {
+  NATIONAL_HEALTH_INSURANCE    // 国民健康保険
+  EMPLOYEES_INSURANCE          // 社会保険(被用者保険)
+  MUTUAL_AID_INSURANCE         // 共済組合
+  LATE_STAGE_ELDERLY           // 後期高齢者医療
+  OTHER                        // その他
+}
+
+enum InsuranceCategory {
+  INSURED                      // 本人(被保険者)
+  DEPENDENT                    // 家族(被扶養者)
+}
+
+enum PublicCategory {
+  LIVELIHOOD_PROTECTION        // 生活保護
+  INTRACTABLE_DISEASE          // 難病医療
+  MENTAL_HEALTH                // 精神通院医療
+  CHILD_MEDICAL                // 小児慢性特定疾病
+  ATOMIC_BOMB_SURVIVOR         // 原爆被爆者援護
+  SPECIFIED_DISEASE            // 特定疾患
+  MATERNAL_HEALTH              // 母子保健
+  OTHER                        // その他
 }
 
 // ==================== 診療記録 (SOAP形式) ====================
@@ -829,8 +891,9 @@ model QuestionnaireResponse {
   appointmentId String?
   appointment   Appointment? @relation(fields: [appointmentId], references: [id])
 
+  // カルテへの取り込み - onDelete: Restrict により削除不可（監査保全）
   medicalRecordId String?
-  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id])
+  medicalRecord   MedicalRecord? @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
 
   @@index([patientId])
   @@index([templateId])
