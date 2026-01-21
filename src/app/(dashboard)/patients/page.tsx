@@ -2,6 +2,8 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import Link from "next/link";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@/server/routers";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,16 +21,20 @@ import { Plus, Search, Eye, FileText, Pencil } from "lucide-react";
 import { PatientDialog } from "@/components/patients/patient-dialog";
 import { EmptyState, PageHeader, ResponsiveTable } from "@/components/layout";
 import { labels } from "@/lib/labels";
+import type { PatientForEdit } from "@/domain/patient/schema";
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type Patient = RouterOutputs["patient"]["list"]["patients"][number];
 
 const { pages: { patients: pageLabels }, common } = labels;
 const PAGE_SIZE = 20;
 
 // 患者データを編集用に変換する関数
-const formatPatientForEdit = (patient: any) => {
+const formatPatientForEdit = (patient: Patient): PatientForEdit => {
   return {
     ...patient,
-    dateOfBirth: patient.dateOfBirth 
-      ? new Date(patient.dateOfBirth).toISOString().split('T')[0] 
+    dateOfBirth: patient.dateOfBirth
+      ? new Date(patient.dateOfBirth).toISOString().split('T')[0]
       : "",
     firstVisitDate: patient.firstVisitDate
       ? new Date(patient.firstVisitDate).toISOString().split('T')[0]
@@ -49,7 +55,7 @@ export default function PatientsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientForEdit | null>(null);
   const deferredSearch = useDeferredValue(searchInput);
   const searchValue = useMemo(() => deferredSearch.trim(), [deferredSearch]);
 
@@ -71,7 +77,7 @@ export default function PatientsPage() {
   };
 
   // 編集ダイアログを開く
-  const handleOpenEditDialog = (patient: any) => {
+  const handleOpenEditDialog = (patient: Patient) => {
     setSelectedPatient(formatPatientForEdit(patient));
     setIsDialogOpen(true);
   };
