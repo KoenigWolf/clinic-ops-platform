@@ -17,9 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, FileText, Users } from "lucide-react";
+import { Plus, Search, Eye, FileText, Users, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, Eye, FileText, Pencil } from "lucide-react";
 import { PatientDialog } from "@/components/patients/patient-dialog";
 import { EmptyState, PageHeader, ResponsiveTable } from "@/components/layout";
 import { labels } from "@/lib/labels";
