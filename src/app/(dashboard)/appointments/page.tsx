@@ -31,6 +31,7 @@ import { format, startOfWeek, endOfWeek, addWeeks, addDays, addMonths, startOfMo
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
 import { labels } from "@/lib/labels";
+import { AppointmentStatus } from "@/lib/domain/appointment-status";
 
 const { pages: { appointments: pageLabels }, messages } = labels;
 
@@ -124,9 +125,12 @@ export default function AppointmentsPage() {
 
   const updateStatusMutation = trpc.appointment.updateStatus.useMutation({
     onError: () => toast.error(messages.error.appointmentUpdateFailed),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       refetch();
-      setIsPopoverOpen(false);
+      // ポップオーバーを開いたまま、選択中の予約のステータスを更新
+      if (selectedAppointment && selectedAppointment.id === variables.id) {
+        setSelectedAppointment({ ...selectedAppointment, status: variables.status });
+      }
     },
   });
 
@@ -136,8 +140,9 @@ export default function AppointmentsPage() {
 
   const handleStartOnlineConsultation = async (appointmentId: string) => {
     setStartingSessionId(appointmentId);
+    setIsPopoverOpen(false);
     try {
-      await updateStatusMutation.mutateAsync({ id: appointmentId, status: "IN_PROGRESS" });
+      await updateStatusMutation.mutateAsync({ id: appointmentId, status: AppointmentStatus.IN_PROGRESS });
       const session = await createSessionMutation.mutateAsync({ appointmentId });
       const { token, roomUrl } = await getTokenMutation.mutateAsync({ sessionId: session.id });
       await startSessionMutation.mutateAsync({ sessionId: session.id });
@@ -370,19 +375,19 @@ export default function AppointmentsPage() {
                   <div className="flex items-center gap-3">
                     <StatusBadge status={apt.status} />
 
-                    {apt.status === "SCHEDULED" && (
+                    {apt.status === AppointmentStatus.SCHEDULED && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          updateStatusMutation.mutate({ id: apt.id, status: "WAITING" });
+                          updateStatusMutation.mutate({ id: apt.id, status: AppointmentStatus.WAITING });
                         }}
                       >
                         {pageLabels.actions.checkIn}
                       </Button>
                     )}
-                    {apt.status === "WAITING" && apt.isOnline && (
+                    {apt.status === AppointmentStatus.WAITING && apt.isOnline && (
                       <Button
                         size="sm"
                         onClick={(e) => {
@@ -395,24 +400,24 @@ export default function AppointmentsPage() {
                         {startingSessionId === apt.id ? pageLabels.actions.preparing : pageLabels.actions.startOnline}
                       </Button>
                     )}
-                    {apt.status === "WAITING" && !apt.isOnline && (
+                    {apt.status === AppointmentStatus.WAITING && !apt.isOnline && (
                       <Button
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          updateStatusMutation.mutate({ id: apt.id, status: "IN_PROGRESS" });
+                          updateStatusMutation.mutate({ id: apt.id, status: AppointmentStatus.IN_PROGRESS });
                         }}
                       >
                         {pageLabels.actions.start}
                       </Button>
                     )}
-                    {apt.status === "IN_PROGRESS" && (
+                    {apt.status === AppointmentStatus.IN_PROGRESS && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          updateStatusMutation.mutate({ id: apt.id, status: "COMPLETED" });
+                          updateStatusMutation.mutate({ id: apt.id, status: AppointmentStatus.COMPLETED });
                         }}
                       >
                         {pageLabels.actions.complete}
