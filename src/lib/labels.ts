@@ -120,10 +120,16 @@ export const labels = {
       dateTitle: (date: string) => `${date} の予約`,
       empty: "この日の予約はありません",
       viewMode: {
-        list: "リスト",
-        week: "週間",
+        list: "一覧",
+        day: "日",
+        week: "週",
+        month: "月",
       },
-      thisWeek: "今週",
+      navigation: {
+        today: "今日",
+        thisWeek: "今週",
+        thisMonth: "今月",
+      },
       doctorLabel: "担当:",
       actions: {
         checkIn: "受付",
@@ -131,6 +137,34 @@ export const labels = {
         startOnline: "オンライン診療開始",
         preparing: "準備中...",
         complete: "完了",
+        cancel: "予約をキャンセル",
+      },
+      detail: {
+        statusTimeline: {
+          scheduled: "予約済み",
+          waiting: "受付完了",
+          inProgress: "診療中",
+          completed: "完了",
+          cancelled: "キャンセル済み",
+          noShow: "来院なし",
+        },
+        sections: {
+          dateTime: "予約日時",
+          doctor: "担当医",
+          consultationType: "診療形態",
+          reason: "予約理由",
+        },
+        consultationType: {
+          online: "オンライン診療",
+          inPerson: "来院診療",
+        },
+        badge: {
+          online: "オンライン",
+        },
+      },
+      schedule: {
+        appointmentCount: (count: number) => `${count}件の予約`,
+        moreAppointments: (count: number) => `+${count}件`,
       },
     },
 
