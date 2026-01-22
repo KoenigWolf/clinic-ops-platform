@@ -17,10 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, FileText } from "lucide-react";
 import { RecordDialog } from "@/components/records/record-dialog";
-import { EmptyState, PageHeader } from "@/components/layout";
+import { EmptyState, PageHeader, Pagination } from "@/components/layout";
 import { labels } from "@/lib/labels";
 
 const { pages: { records: pageLabels }, common } = labels;
+const PAGE_SIZE = 10;
 
 function RecordsContent() {
   const searchParams = useSearchParams();
@@ -29,6 +30,7 @@ function RecordsContent() {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(patientIdParam);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const {
     data: patients,
@@ -42,7 +44,7 @@ function RecordsContent() {
     isError: isRecordsError,
     refetch,
   } = trpc.record.listByPatient.useQuery(
-    { patientId: selectedPatientId || "" },
+    { patientId: selectedPatientId || "", page, limit: PAGE_SIZE },
     { enabled: !!selectedPatientId }
   );
 
@@ -51,6 +53,7 @@ function RecordsContent() {
   const handlePatientChange = (value: string) => {
     setSelectedPatientId(value);
     setSelectedRecord(null);
+    setPage(1);
   };
 
   return (
@@ -108,14 +111,7 @@ function RecordsContent() {
       {selectedPatientId ? (
         <div className="space-y-4">
           {isRecordsError ? (
-            <EmptyState
-              message={common.loadFailed}
-              action={
-                <Button type="button" variant="outline" onClick={() => refetch()}>
-                  {common.retry}
-                </Button>
-              }
-            />
+            <EmptyState message={common.loadFailed} onRetry={refetch} />
           ) : isRecordsLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -151,8 +147,9 @@ function RecordsContent() {
               }
             />
           ) : (
-            records?.records.map((record) => (
-              <Card key={record.id} className="hover:shadow-md transition-shadow cursor-pointer">
+            <>
+              {records?.records.map((record) => (
+                <Card key={record.id} className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -236,7 +233,22 @@ function RecordsContent() {
                   )}
                 </CardContent>
               </Card>
-            ))
+              ))}
+
+              {/* Pagination */}
+              {records && records.pages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    {records.total}件中 {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, records.total)}件
+                  </p>
+                  <Pagination
+                    currentPage={page}
+                    totalPages={records.pages}
+                    onPageChange={setPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : (
