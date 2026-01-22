@@ -276,10 +276,13 @@ ADMIN, DOCTOR, NURSE, STAFF, PATIENT
 
 ## ドキュメント
 
-- [設計ガイドライン](CLAUDE.md) - 技術仕様・コード規則
-- [診療フローガイド](docs/WORKFLOW.md) - 業務フロー・操作手順
-- [デザインシステム](docs/DESIGN.md) - カラー・タイポグラフィ
-- [セキュリティ](docs/SECURITY.md) - 認証・監査ログ
+| ドキュメント | 説明 |
+|-------------|------|
+| [CLAUDE.md](CLAUDE.md) | 設計ガイドライン・コード規則（AI向け） |
+| [ROADMAP.md](ROADMAP.md) | 改善タスク管理（PR単位） |
+| [docs/WORKFLOW.md](docs/WORKFLOW.md) | 診療業務フロー |
+| [docs/DESIGN.md](docs/DESIGN.md) | デザインシステム |
+| [docs/SECURITY.md](docs/SECURITY.md) | セキュリティ・監査ログ |
 
 ## ライセンス
 
