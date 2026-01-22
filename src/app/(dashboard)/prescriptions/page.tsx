@@ -27,6 +27,8 @@ const PAGE_SIZE = 20;
 export default function PrescriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
+  const [pendingDispenseId, setPendingDispenseId] = useState<string | null>(null);
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = trpc.prescription.list.useQuery({
     status: statusFilter !== "ALL" ? statusFilter as "PENDING" | "DISPENSED" | "CANCELLED" : undefined,
@@ -42,6 +44,9 @@ export default function PrescriptionsPage() {
     onError: (error) => {
       toast.error(error.message || messages.error.recordUpdateFailed);
     },
+    onSettled: () => {
+      setPendingDispenseId(null);
+    },
   });
 
   const cancelMutation = trpc.prescription.cancel.useMutation({
@@ -51,6 +56,9 @@ export default function PrescriptionsPage() {
     },
     onError: (error) => {
       toast.error(error.message || messages.error.recordUpdateFailed);
+    },
+    onSettled: () => {
+      setPendingCancelId(null);
     },
   });
 
@@ -183,10 +191,13 @@ export default function PrescriptionsPage() {
                                   size="sm"
                                   variant="outline"
                                   className="flex-1"
-                                  onClick={() => dispenseMutation.mutate({ id: rx.id })}
-                                  disabled={dispenseMutation.isPending}
+                                  onClick={() => {
+                                    setPendingDispenseId(rx.id);
+                                    dispenseMutation.mutate({ id: rx.id });
+                                  }}
+                                  disabled={pendingDispenseId === rx.id}
                                 >
-                                  {dispenseMutation.isPending ? (
+                                  {pendingDispenseId === rx.id ? (
                                     <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                                   ) : (
                                     <Check className="h-4 w-4 mr-1" />
@@ -197,10 +208,13 @@ export default function PrescriptionsPage() {
                                   size="sm"
                                   variant="ghost"
                                   className="text-red-600"
-                                  onClick={() => cancelMutation.mutate({ id: rx.id })}
-                                  disabled={cancelMutation.isPending}
+                                  onClick={() => {
+                                    setPendingCancelId(rx.id);
+                                    cancelMutation.mutate({ id: rx.id });
+                                  }}
+                                  disabled={pendingCancelId === rx.id}
                                 >
-                                  {cancelMutation.isPending ? (
+                                  {pendingCancelId === rx.id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
                                     <X className="h-4 w-4" />
@@ -221,10 +235,13 @@ export default function PrescriptionsPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => dispenseMutation.mutate({ id: rx.id })}
-                                disabled={dispenseMutation.isPending}
+                                onClick={() => {
+                                  setPendingDispenseId(rx.id);
+                                  dispenseMutation.mutate({ id: rx.id });
+                                }}
+                                disabled={pendingDispenseId === rx.id}
                               >
-                                {dispenseMutation.isPending ? (
+                                {pendingDispenseId === rx.id ? (
                                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                                 ) : (
                                   <Check className="h-4 w-4 mr-1" />
@@ -235,10 +252,13 @@ export default function PrescriptionsPage() {
                                 size="sm"
                                 variant="ghost"
                                 className="text-red-600"
-                                onClick={() => cancelMutation.mutate({ id: rx.id })}
-                                disabled={cancelMutation.isPending}
+                                onClick={() => {
+                                  setPendingCancelId(rx.id);
+                                  cancelMutation.mutate({ id: rx.id });
+                                }}
+                                disabled={pendingCancelId === rx.id}
                               >
-                                {cancelMutation.isPending ? (
+                                {pendingCancelId === rx.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                   <X className="h-4 w-4" />
