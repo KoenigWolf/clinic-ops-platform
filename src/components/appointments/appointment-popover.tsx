@@ -28,6 +28,8 @@ import {
 import { labels } from "@/lib/labels";
 import {
   AppointmentStatus,
+  STATUS_FLOW,
+  getStatusFlowIndex,
   getRevertStatus,
   canCancel,
   shouldShowActions,
@@ -66,37 +68,38 @@ interface AppointmentPopoverProps {
   isStartingSession: boolean;
 }
 
-type StatusStep = {
-  key: string;
-  labelKey: keyof typeof detailLabels.statusTimeline;
-  icon: LucideIcon;
+/** ステータスごとのアイコン（UI表現） */
+const STATUS_ICONS: Record<AppointmentStatusType, LucideIcon> = {
+  [AppointmentStatus.SCHEDULED]: Calendar,
+  [AppointmentStatus.WAITING]: Clock,
+  [AppointmentStatus.IN_PROGRESS]: Stethoscope,
+  [AppointmentStatus.COMPLETED]: CheckCircle2,
+  [AppointmentStatus.CANCELLED]: XCircle,
+  [AppointmentStatus.NO_SHOW]: XCircle,
 };
 
-const statusSteps: StatusStep[] = [
-  { key: "SCHEDULED", labelKey: "scheduled", icon: Calendar },
-  { key: "WAITING", labelKey: "waiting", icon: Clock },
-  { key: "IN_PROGRESS", labelKey: "inProgress", icon: Stethoscope },
-  { key: "COMPLETED", labelKey: "completed", icon: CheckCircle2 },
-];
-
-function getStatusIndex(status: string): number {
-  if (status === AppointmentStatus.CANCELLED || status === AppointmentStatus.NO_SHOW) return -1;
-  const idx = statusSteps.findIndex((s) => s.key === status);
-  return idx >= 0 ? idx : 0;
-}
+/** ステータスごとのラベルキー（UI表現） */
+const STATUS_LABEL_KEYS: Record<AppointmentStatusType, keyof typeof detailLabels.statusTimeline> = {
+  [AppointmentStatus.SCHEDULED]: "scheduled",
+  [AppointmentStatus.WAITING]: "waiting",
+  [AppointmentStatus.IN_PROGRESS]: "inProgress",
+  [AppointmentStatus.COMPLETED]: "completed",
+  [AppointmentStatus.CANCELLED]: "cancelled",
+  [AppointmentStatus.NO_SHOW]: "noShow",
+};
 
 function StatusTimeline({ currentStatus }: { currentStatus: string }) {
-  const currentIndex = getStatusIndex(currentStatus);
-  const isCancelledOrNoShow = currentStatus === AppointmentStatus.CANCELLED || currentStatus === AppointmentStatus.NO_SHOW;
+  const currentIndex = getStatusFlowIndex(currentStatus);
+  const isCancelledOrNoShow = currentIndex === -1;
 
   if (isCancelledOrNoShow) {
+    const Icon = STATUS_ICONS[currentStatus as AppointmentStatusType] || XCircle;
+    const labelKey = STATUS_LABEL_KEYS[currentStatus as AppointmentStatusType] || "cancelled";
     return (
       <div className="flex items-center justify-center gap-2 py-4 px-3 bg-red-50 rounded-lg">
-        <XCircle className="h-5 w-5 text-red-500" />
+        <Icon className="h-5 w-5 text-red-500" />
         <span className="text-sm font-medium text-red-600">
-          {currentStatus === AppointmentStatus.CANCELLED
-            ? detailLabels.statusTimeline.cancelled
-            : detailLabels.statusTimeline.noShow}
+          {detailLabels.statusTimeline[labelKey]}
         </span>
       </div>
     );
@@ -105,14 +108,15 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   return (
     <div className="py-3">
       <div className="flex items-center justify-between">
-        {statusSteps.map((step, index) => {
-          const Icon = step.icon;
+        {STATUS_FLOW.map((status, index) => {
+          const Icon = STATUS_ICONS[status];
+          const labelKey = STATUS_LABEL_KEYS[status];
           const isCompleted = index < currentIndex;
           const isCurrent = index === currentIndex;
           const isPending = index > currentIndex;
 
           return (
-            <div key={step.key} className="flex items-center flex-1">
+            <div key={status} className="flex items-center flex-1">
               <div className="flex flex-col items-center">
                 <div
                   className={`
@@ -132,10 +136,10 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
                     ${isPending ? "text-gray-400" : ""}
                   `}
                 >
-                  {detailLabels.statusTimeline[step.labelKey]}
+                  {detailLabels.statusTimeline[labelKey]}
                 </span>
               </div>
-              {index < statusSteps.length - 1 && (
+              {index < STATUS_FLOW.length - 1 && (
                 <div
                   className={`
                     flex-1 h-0.5 mx-2 mt-[-18px]
