@@ -1,14 +1,17 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { labels } from "@/lib/labels";
 
 interface EmptyStateProps {
   message: string;
   icon?: LucideIcon;
   action?: React.ReactNode;
+  onRetry?: () => void;
 }
 
-export function EmptyState({ message, icon: Icon, action }: EmptyStateProps) {
+export function EmptyState({ message, icon: Icon, action, onRetry }: EmptyStateProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm py-12 text-center">
       {Icon && (
@@ -17,7 +20,15 @@ export function EmptyState({ message, icon: Icon, action }: EmptyStateProps) {
         </div>
       )}
       <p className="text-sm text-gray-400">{message}</p>
-      {action && <div className="mt-4">{action}</div>}
+      {(action || onRetry) && (
+        <div className="mt-4">
+          {action ?? (
+            <Button type="button" variant="outline" onClick={onRetry}>
+              {labels.common.retry}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
