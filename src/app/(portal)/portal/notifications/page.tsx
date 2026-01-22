@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const TYPE_CONFIG = {
 };
 
 export default function NotificationsPage() {
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const { data: notifications, refetch } = trpc.portal.myNotifications.useQuery();
   const { data: unreadCount } = trpc.portal.myUnreadNotificationCount.useQuery();
 
@@ -44,8 +46,17 @@ export default function NotificationsPage() {
     },
   });
 
-  const handleMarkAsRead = (id: string) => {
-    markAsReadMutation.mutate({ id });
+  const handleMarkAsRead = async (id: string) => {
+    setPendingIds((prev) => new Set(prev).add(id));
+    try {
+      await markAsReadMutation.mutateAsync({ id });
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
   return (
@@ -124,10 +135,10 @@ export default function NotificationsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              disabled={markAsReadMutation.isPending}
+                              disabled={pendingIds.has(notif.id)}
                               onClick={() => handleMarkAsRead(notif.id)}
                             >
-                              {markAsReadMutation.isPending && (
+                              {pendingIds.has(notif.id) && (
                                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                               )}
                               {pageLabels.markAsRead}
