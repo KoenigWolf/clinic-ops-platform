@@ -66,30 +66,26 @@ export default function PrescriptionsPage() {
       <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">{pageLabels.statusFilter}</label>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">{pageLabels.filter.all}</SelectItem>
-                <SelectItem value="PENDING">{pageLabels.filter.pending}</SelectItem>
-                <SelectItem value="DISPENSED">{pageLabels.filter.dispensed}</SelectItem>
-                <SelectItem value="CANCELLED">{pageLabels.filter.cancelled}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium">{pageLabels.statusFilter}</label>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => {
+            setStatusFilter(value);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">{pageLabels.filter.all}</SelectItem>
+            <SelectItem value="PENDING">{pageLabels.filter.pending}</SelectItem>
+            <SelectItem value="DISPENSED">{pageLabels.filter.dispensed}</SelectItem>
+            <SelectItem value="CANCELLED">{pageLabels.filter.cancelled}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Prescriptions Table */}
       <Card>
