@@ -170,6 +170,13 @@ export const labels = {
         appointmentCount: (count: number) => `${count}件の予約`,
         moreAppointments: (count: number) => `+${count}件`,
       },
+      type: {
+        INITIAL: "初診",
+        FOLLOWUP: "再診",
+        CONSULTATION: "相談",
+        CHECKUP: "健診",
+        EMERGENCY: "緊急",
+      },
     },
 
     records: {
