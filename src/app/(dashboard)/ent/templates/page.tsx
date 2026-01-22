@@ -126,14 +126,7 @@ export default function TemplatesPage() {
 
       {/* Templates List */}
       {isError ? (
-        <EmptyState
-          message={common.loadFailed}
-          action={
-            <Button type="button" variant="outline" onClick={() => refetch()}>
-              {common.retry}
-            </Button>
-          }
-        />
+        <EmptyState message={common.loadFailed} onRetry={refetch} />
       ) : isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (

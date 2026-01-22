@@ -240,14 +240,7 @@ export default function DocumentsPage() {
           </div>
 
           {templatesError ? (
-            <EmptyState
-              message={common.loadFailed}
-              action={
-                <Button type="button" variant="outline" onClick={() => refetchTemplates()}>
-                  {common.retry}
-                </Button>
-              }
-            />
+            <EmptyState message={common.loadFailed} onRetry={refetchTemplates} />
           ) : templatesLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
@@ -341,14 +334,7 @@ export default function DocumentsPage() {
           </div>
 
           {documentsError ? (
-            <EmptyState
-              message={common.loadFailed}
-              action={
-                <Button type="button" variant="outline" onClick={() => refetchDocuments()}>
-                  {common.retry}
-                </Button>
-              }
-            />
+            <EmptyState message={common.loadFailed} onRetry={refetchDocuments} />
           ) : documentsLoading ? (
             <Card>
               <CardContent className="p-0">

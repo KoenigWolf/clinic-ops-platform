@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import {
@@ -55,14 +54,7 @@ export default function DashboardPage() {
     return (
       <div className="mx-auto w-full max-w-7xl">
         <PageHeader title={labels.pages.dashboard.title} />
-        <EmptyState
-          message={labels.common.loadFailed}
-          action={
-            <Button type="button" variant="outline" onClick={() => refetch()}>
-              {labels.common.retry}
-            </Button>
-          }
-        />
+        <EmptyState message={labels.common.loadFailed} onRetry={refetch} />
       </div>
     );
   }

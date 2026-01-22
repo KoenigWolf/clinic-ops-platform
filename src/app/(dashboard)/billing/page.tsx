@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { InvoiceDialog } from "@/components/billing/invoice-dialog";
 import { labels } from "@/lib/labels";
 import { invoiceStatusConfig } from "@/lib/design-tokens";
-import { EmptyState, GenericStatusBadge, PageHeader, StatCard, StatGrid } from "@/components/layout";
+import { EmptyState, GenericStatusBadge, PageHeader, Pagination, StatCard, StatGrid } from "@/components/layout";
 
 const { pages: { billing: pageLabels }, common, messages } = labels;
 const PAGE_SIZE = 20;
@@ -141,14 +141,7 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           {isError ? (
-            <EmptyState
-              message={common.loadFailed}
-              action={
-                <Button type="button" variant="outline" onClick={() => refetch()}>
-                  {common.retry}
-                </Button>
-              }
-            />
+            <EmptyState message={common.loadFailed} onRetry={refetch} />
           ) : isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
@@ -304,27 +297,14 @@ export default function BillingPage() {
               {/* Pagination */}
               {data && data.pages > 1 && (
                 <div className="flex items-center justify-between mt-4">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {totalCount}件中 {rangeStart}-{rangeEnd}件
                   </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                    >
-                      {common.prev}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
-                      disabled={page === data.pages}
-                    >
-                      {common.next}
-                    </Button>
-                  </div>
+                  <Pagination
+                    currentPage={page}
+                    totalPages={data.pages}
+                    onPageChange={setPage}
+                  />
                 </div>
               )}
             </>

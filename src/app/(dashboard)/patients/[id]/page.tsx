@@ -120,16 +120,7 @@ export default function PatientDetailPage() {
   }
 
   if (isError || !patient) {
-    return (
-      <EmptyState
-        message={common.loadFailed}
-        action={
-          <Button type="button" variant="outline" onClick={() => refetch()}>
-            {common.retry}
-          </Button>
-        }
-      />
-    );
+    return <EmptyState message={common.loadFailed} onRetry={refetch} />;
   }
 
   const fullName = `${patient.lastName} ${patient.firstName}`;

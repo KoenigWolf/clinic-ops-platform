@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState, PageHeader, Avatar } from "@/components/layout";
@@ -32,14 +31,7 @@ export default function StaffDetailPage() {
 
   if (isError || !data) {
     return (
-      <EmptyState
-        message={common.loadFailed}
-        action={
-          <Button type="button" variant="outline" onClick={() => refetch()}>
-            {common.retry}
-          </Button>
-        }
-      />
+      <EmptyState message={common.loadFailed} onRetry={refetch} />
     );
   }
 

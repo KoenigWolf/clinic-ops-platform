@@ -139,14 +139,7 @@ function VideoPageContent() {
         </CardHeader>
         <CardContent>
           {isError ? (
-            <EmptyState
-              message={common.loadFailed}
-              action={
-                <Button type="button" variant="outline" onClick={() => refetch()}>
-                  {common.retry}
-                </Button>
-              }
-            />
+            <EmptyState message={common.loadFailed} onRetry={refetch} />
           ) : isLoading ? (
             <div className="space-y-4">
               {[...Array(2)].map((_, i) => (

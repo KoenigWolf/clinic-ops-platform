@@ -3,7 +3,6 @@
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -103,14 +102,7 @@ export default function AnalyticsPage() {
     return (
       <div className="space-y-4">
         <PageHeader title={pageLabels.title} description={pageLabels.description} />
-        <EmptyState
-          message={common.loadFailed}
-          action={
-            <Button type="button" variant="outline" onClick={() => refetch()}>
-              {common.retry}
-            </Button>
-          }
-        />
+        <EmptyState message={common.loadFailed} onRetry={refetch} />
       </div>
     );
   }
