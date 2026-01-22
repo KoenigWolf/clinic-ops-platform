@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -80,7 +81,8 @@ export function SelectFilter({
   width = "md",
   className = "",
 }: SelectFilterProps) {
-  const triggerId = id || `filter-${label.replace(/\s+/g, "-").toLowerCase()}`;
+  const autoId = useId();
+  const triggerId = id || autoId;
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
