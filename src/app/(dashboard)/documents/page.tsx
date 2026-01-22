@@ -57,6 +57,7 @@ export default function DocumentsPage() {
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [activeTab, setActiveTab] = useState("templates");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<{
     id?: string;
     name: string;
@@ -124,6 +125,9 @@ export default function DocumentsPage() {
       refetchTemplates();
     },
     onError: (error) => toast.error(error.message || messages.error.templateDeleteFailed),
+    onSettled: () => {
+      setPendingDeleteId(null);
+    },
   });
 
   const handleSaveTemplate = () => {
@@ -305,10 +309,13 @@ export default function DocumentsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
-                        disabled={deleteMutation.isPending}
-                        onClick={() => deleteMutation.mutate({ id: template.id })}
+                        disabled={pendingDeleteId === template.id}
+                        onClick={() => {
+                          setPendingDeleteId(template.id);
+                          deleteMutation.mutate({ id: template.id });
+                        }}
                       >
-                        {deleteMutation.isPending ? (
+                        {pendingDeleteId === template.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Trash2 className="h-4 w-4" />
