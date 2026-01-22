@@ -5,24 +5,16 @@ import { format, addDays, isSameDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Video } from "lucide-react";
+import {
+  TIME_SLOTS,
+  SLOT_HEIGHT,
+  APPOINTMENT_STATUS_COLORS,
+  getTimePosition,
+  getAppointmentHeight,
+} from "@/lib/appointment-config";
 
-const TIME_SLOTS = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-];
-
-const SLOT_HEIGHT = 48;
-
-const statusColors: Record<string, string> = {
-  SCHEDULED: "bg-gray-100 border-gray-300 text-gray-700",
-  CONFIRMED: "bg-blue-50 border-blue-300 text-blue-700",
-  WAITING: "bg-amber-50 border-amber-300 text-amber-700",
-  IN_PROGRESS: "bg-green-50 border-green-300 text-green-700",
-  COMPLETED: "bg-gray-50 border-gray-200 text-gray-500",
-  CANCELLED: "bg-red-50 border-red-200 text-red-400 line-through",
-  NO_SHOW: "bg-red-50 border-red-200 text-red-400",
-};
+const WEEK_SLOT_HEIGHT = SLOT_HEIGHT.week;
+const TIME_COLUMN_WIDTH = "72px";
 
 type Appointment = {
   id: string;
@@ -49,22 +41,6 @@ interface WeekScheduleProps {
   onAppointmentClick: (appointment: Appointment) => void;
 }
 
-function getTimePosition(time: Date | string): number {
-  const d = new Date(time);
-  const hours = d.getHours();
-  const minutes = d.getMinutes();
-  const startHour = 9;
-  const slotMinutes = 30;
-  return ((hours - startHour) * 60 + minutes) / slotMinutes;
-}
-
-function getAppointmentHeight(start: Date | string, end: Date | string): number {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const durationMinutes = (endDate.getTime() - startDate.getTime()) / (1000 * 60);
-  return (durationMinutes / 30) * SLOT_HEIGHT;
-}
-
 export function WeekSchedule({
   weekStart,
   appointments,
@@ -89,28 +65,32 @@ export function WeekSchedule({
   }, [appointments, days]);
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b bg-gray-50">
-        <div className="p-2 border-r" />
+    <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
+      {/* ヘッダー: 曜日 */}
+      <div
+        className="grid border-b bg-slate-50"
+        style={{ gridTemplateColumns: `${TIME_COLUMN_WIDTH} repeat(7, 1fr)` }}
+      >
+        <div className="p-3 border-r border-slate-200 bg-slate-100" />
         {days.map((day) => {
           const isToday = isSameDay(day, today);
           return (
             <div
               key={day.toISOString()}
               className={cn(
-                "p-2 text-center border-r last:border-r-0",
+                "py-3 px-2 text-center border-r border-slate-200 last:border-r-0",
                 isToday && "bg-blue-50"
               )}
             >
               <div className={cn(
-                "text-xs",
-                isToday ? "text-blue-600" : "text-gray-500"
+                "text-xs font-medium",
+                isToday ? "text-blue-600" : "text-slate-500"
               )}>
                 {format(day, "E", { locale: ja })}
               </div>
               <div className={cn(
-                "text-sm font-semibold",
-                isToday ? "text-blue-600" : "text-gray-900"
+                "text-lg font-bold mt-0.5",
+                isToday ? "text-blue-600" : "text-slate-800"
               )}>
                 {format(day, "d")}
               </div>
@@ -119,18 +99,42 @@ export function WeekSchedule({
         })}
       </div>
 
-      <div className="grid grid-cols-[60px_repeat(7,1fr)] overflow-auto max-h-[600px]">
-        <div className="border-r">
-          {TIME_SLOTS.map((time) => (
-            <div
-              key={time}
-              className="h-12 border-b last:border-b-0 px-2 flex items-start justify-end pt-1"
-            >
-              <span className="text-xs text-gray-400 tabular-nums">{time}</span>
-            </div>
-          ))}
+      {/* タイムグリッド */}
+      <div
+        className="grid overflow-auto max-h-[700px]"
+        style={{ gridTemplateColumns: `${TIME_COLUMN_WIDTH} repeat(7, 1fr)` }}
+      >
+        {/* 時間列 */}
+        <div className="border-r border-slate-200 bg-slate-50">
+          {TIME_SLOTS.map((time) => {
+            const isHour = time.endsWith(":00");
+            const isHalf = time.endsWith(":30");
+            return (
+              <div
+                key={time}
+                className={cn(
+                  "h-7 flex items-center justify-end pr-3 border-b",
+                  isHour && "bg-slate-100 border-slate-300",
+                  isHalf && "border-slate-200",
+                  !isHour && !isHalf && "border-slate-100"
+                )}
+              >
+                <span
+                  className={cn(
+                    "text-xs tabular-nums",
+                    isHour && "text-slate-700 font-semibold",
+                    isHalf && "text-slate-500 font-medium",
+                    !isHour && !isHalf && "text-slate-400"
+                  )}
+                >
+                  {time}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
+        {/* 日付列 */}
         {days.map((day) => {
           const dayKey = format(day, "yyyy-MM-dd");
           const dayAppointments = appointmentsByDay[dayKey] || [];
@@ -140,46 +144,55 @@ export function WeekSchedule({
             <div
               key={day.toISOString()}
               className={cn(
-                "relative border-r last:border-r-0",
-                isToday && "bg-blue-50/30"
+                "relative border-r border-slate-200 last:border-r-0",
+                isToday && "bg-blue-50/40"
               )}
             >
-              {TIME_SLOTS.map((time) => (
-                <div
-                  key={time}
-                  className="h-12 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => onSlotClick(day, time)}
-                />
-              ))}
+              {TIME_SLOTS.map((time) => {
+                const isHour = time.endsWith(":00");
+                const isHalf = time.endsWith(":30");
+                return (
+                  <div
+                    key={time}
+                    className={cn(
+                      "h-7 cursor-pointer transition-colors hover:bg-blue-50/50 border-b",
+                      isHour && "bg-slate-50/50 border-slate-300",
+                      isHalf && "border-slate-200",
+                      !isHour && !isHalf && "border-slate-100"
+                    )}
+                    onClick={() => onSlotClick(day, time)}
+                  />
+                );
+              })}
 
               {dayAppointments.map((apt) => {
-                const top = getTimePosition(apt.startTime) * SLOT_HEIGHT;
-                const height = getAppointmentHeight(apt.startTime, apt.endTime);
+                const top = getTimePosition(apt.startTime) * WEEK_SLOT_HEIGHT;
+                const height = getAppointmentHeight(apt.startTime, apt.endTime, WEEK_SLOT_HEIGHT);
                 const startTime = format(new Date(apt.startTime), "HH:mm");
 
                 return (
                   <div
                     key={apt.id}
                     className={cn(
-                      "absolute left-0.5 right-0.5 rounded border px-1 py-0.5 cursor-pointer overflow-hidden transition-shadow hover:shadow-md hover:z-10",
-                      statusColors[apt.status] || statusColors.SCHEDULED
+                      "absolute left-1 right-1 rounded-md border-l-4 px-2 py-1 cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:z-10 hover:scale-[1.02]",
+                      APPOINTMENT_STATUS_COLORS[apt.status] || APPOINTMENT_STATUS_COLORS.SCHEDULED
                     )}
-                    style={{ top: `${top}px`, height: `${Math.max(height - 2, 20)}px` }}
+                    style={{ top: `${top}px`, height: `${Math.max(height - 2, 24)}px` }}
                     onClick={(e) => {
                       e.stopPropagation();
                       onAppointmentClick(apt);
                     }}
                   >
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-medium truncate">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold truncate">
                         {apt.patient.lastName}
                       </span>
                       {apt.isOnline && (
-                        <Video className="h-3 w-3 shrink-0" />
+                        <Video className="h-3 w-3 shrink-0 opacity-70" />
                       )}
                     </div>
-                    {height >= 40 && (
-                      <div className="text-xs opacity-75 truncate">
+                    {height >= 52 && (
+                      <div className="text-xs opacity-60 truncate mt-0.5">
                         {startTime}
                       </div>
                     )}
