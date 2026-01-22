@@ -138,6 +138,10 @@ export const labels = {
         preparing: "準備中...",
         complete: "完了",
         cancel: "予約をキャンセル",
+        revertToScheduled: "予約済みに戻す",
+        revertToWaiting: "受付済みに戻す",
+        revertToInProgress: "診療中に戻す",
+        revertCancellation: "キャンセルを取り消す",
       },
       detail: {
         statusTimeline: {
