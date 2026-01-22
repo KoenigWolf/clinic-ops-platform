@@ -106,6 +106,27 @@ Infrastructure
 
 ---
 
+### tRPC API 命名規則
+
+| 操作 | 命名 | 例 |
+|------|------|-----|
+| 一覧取得 | `list` | `patient.list` |
+| 単一取得 | `get` | `patient.get` |
+| 作成 | `create` | `patient.create` |
+| 更新 | `update` | `patient.update` |
+| 削除 | `delete` | `patient.delete` |
+| 患者ポータル用 | `my*` prefix | `myAppointments`, `myMessages` |
+
+Procedure種別
+
+| 種別 | 対象 |
+|------|------|
+| `protectedProcedure` | 認証済み全員 |
+| `doctorProcedure` | ADMIN, DOCTOR |
+| `adminProcedure` | ADMINのみ |
+
+---
+
 ### PHI / セキュリティ
 
 * PHI エンティティへのアクセス・変更は必ず監査ログ

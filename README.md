@@ -195,6 +195,21 @@ npx prisma db push
 npm run db:seed
 ```
 
+### トラブルシューティング
+
+| エラー | 原因 | 解決策 |
+|--------|------|--------|
+| `Missing required environment variable: DATABASE_URL` | DATABASE_URLが未設定 | Vercel Dashboardで設定後、再デプロイ |
+| `NEXTAUTH_SECRET is not set` | AUTH_SECRETが未設定 | `openssl rand -base64 32`で生成して設定 |
+| ログインできない | NEXTAUTH_URLが不正、またはシード未実行 | URLが`https://`で始まるか確認、`npm run db:seed`実行 |
+| ビデオ通話が動作しない | DAILY_API_KEY/DAILY_DOMAINが未設定 | Daily.coでAPIキーを取得して設定 |
+
+### デプロイ時のセキュリティ注意事項
+
+- **AUTH_SECRET**: 必ずランダムな文字列を使用（環境ごとに異なる値）
+- **DATABASE_URL**: 本番では必ずSSL接続（`?sslmode=require`）
+- **環境変数**: `.env`ファイルはGitにコミットしない
+
 ---
 
 ## ローカル開発Tips
@@ -276,10 +291,13 @@ ADMIN, DOCTOR, NURSE, STAFF, PATIENT
 
 ## ドキュメント
 
-- [設計ガイドライン](CLAUDE.md) - 技術仕様・コード規則
-- [診療フローガイド](docs/WORKFLOW.md) - 業務フロー・操作手順
-- [デザインシステム](docs/DESIGN.md) - カラー・タイポグラフィ
-- [セキュリティ](docs/SECURITY.md) - 認証・監査ログ
+| ドキュメント | 説明 |
+|-------------|------|
+| [CLAUDE.md](CLAUDE.md) | 設計ガイドライン・コード規則（AI向け） |
+| [ROADMAP.md](ROADMAP.md) | 改善タスク管理（PR単位） |
+| [docs/WORKFLOW.md](docs/WORKFLOW.md) | 診療業務フロー |
+| [docs/DESIGN.md](docs/DESIGN.md) | デザインシステム |
+| [docs/SECURITY.md](docs/SECURITY.md) | セキュリティ・監査ログ |
 
 ## ライセンス
 

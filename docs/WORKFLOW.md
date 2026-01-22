@@ -218,8 +218,6 @@ Appointment（予約） → Visit（受付〜診療） → MedicalRecord（カ�
 
 ---
 
----
-
 # Prisma スキーマ草案（必要最小 + 実装可能）
 
 > 置き場所例: `prisma/schema.prisma`（既存があるなら該当部分だけマージ）

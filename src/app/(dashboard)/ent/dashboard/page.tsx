@@ -81,14 +81,7 @@ function DashboardContent() {
 
       {/* Stats Overview */}
       {statsError ? (
-        <EmptyState
-          message={common.loadFailed}
-          action={
-            <Button type="button" variant="outline" onClick={() => refetchStats()}>
-              {common.retry}
-            </Button>
-          }
-        />
+        <EmptyState message={common.loadFailed} onRetry={refetchStats} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
@@ -145,14 +138,7 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             {distError ? (
-              <EmptyState
-                message={common.loadFailed}
-                action={
-                  <Button type="button" variant="outline" onClick={() => refetchDistribution()}>
-                    {common.retry}
-                  </Button>
-                }
-              />
+              <EmptyState message={common.loadFailed} onRetry={refetchDistribution} />
             ) : distLoading ? (
               <div className="space-y-3">
                 {[...Array(6)].map((_, i) => (
@@ -207,14 +193,7 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             {recentError ? (
-              <EmptyState
-                message={common.loadFailed}
-                action={
-                  <Button type="button" variant="outline" onClick={() => refetchRecent()}>
-                    {common.retry}
-                  </Button>
-                }
-              />
+              <EmptyState message={common.loadFailed} onRetry={refetchRecent} />
             ) : recentLoading ? (
               <div className="space-y-3">
                 {[...Array(4)].map((_, i) => (

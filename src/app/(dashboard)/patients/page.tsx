@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Eye, FileText, Users, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PatientDialog } from "@/components/patients/patient-dialog";
-import { EmptyState, PageHeader, ResponsiveTable } from "@/components/layout";
+import { EmptyState, PageHeader, Pagination, ResponsiveTable } from "@/components/layout";
 import { labels } from "@/lib/labels";
 import type { PatientForEdit } from "@/domain/patient/schema";
 
@@ -130,14 +130,7 @@ export default function PatientsPage() {
         </CardHeader>
         <CardContent>
           {isError ? (
-            <EmptyState
-              message={common.loadFailed}
-              action={
-                <Button type="button" variant="outline" onClick={() => refetch()}>
-                  {common.retry}
-                </Button>
-              }
-            />
+            <EmptyState message={common.loadFailed} onRetry={refetch} />
           ) : isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
@@ -226,27 +219,14 @@ export default function PatientsPage() {
               {/* Pagination */}
               {data && data.pages > 1 && (
                 <div className="flex items-center justify-between mt-4">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {totalCount}件中 {rangeStart}-{rangeEnd}件を表示
                   </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                    >
-                      {common.prev}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
-                      disabled={page === data.pages}
-                    >
-                      {common.next}
-                    </Button>
-                  </div>
+                  <Pagination
+                    currentPage={page}
+                    totalPages={data.pages}
+                    onPageChange={setPage}
+                  />
                 </div>
               )}
             </>

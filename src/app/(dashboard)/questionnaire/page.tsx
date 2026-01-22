@@ -94,14 +94,7 @@ export default function QuestionnairePage() {
       />
 
       {isError ? (
-        <EmptyState
-          message={common.loadFailed}
-          action={
-            <Button type="button" variant="outline" onClick={() => refetch()}>
-              {common.retry}
-            </Button>
-          }
-        />
+        <EmptyState message={common.loadFailed} onRetry={refetch} />
       ) : isLoading ? (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

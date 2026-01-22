@@ -200,14 +200,7 @@ export default function AppointmentsPage() {
           </div>
 
           {isError ? (
-            <EmptyState
-              message={labels.common.loadFailed}
-              action={
-                <Button type="button" variant="outline" onClick={() => refetch()}>
-                  {labels.common.retry}
-                </Button>
-              }
-            />
+            <EmptyState message={labels.common.loadFailed} onRetry={refetch} />
           ) : isLoading ? (
             <Card>
               <CardContent className="p-4">
@@ -255,14 +248,7 @@ export default function AppointmentsPage() {
             </CardHeader>
             <CardContent>
               {isError ? (
-                <EmptyState
-                  message={labels.common.loadFailed}
-                  action={
-                    <Button type="button" variant="outline" onClick={() => refetch()}>
-                      {labels.common.retry}
-                    </Button>
-                  }
-                />
+                <EmptyState message={labels.common.loadFailed} onRetry={refetch} />
               ) : isLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
