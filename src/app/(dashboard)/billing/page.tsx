@@ -12,14 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Receipt } from "lucide-react";
+import { Plus, Receipt, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -27,7 +20,7 @@ import { toast } from "sonner";
 import { InvoiceDialog } from "@/components/billing/invoice-dialog";
 import { labels } from "@/lib/labels";
 import { invoiceStatusConfig } from "@/lib/design-tokens";
-import { EmptyState, GenericStatusBadge, PageHeader, Pagination, StatCard, StatGrid } from "@/components/layout";
+import { EmptyState, GenericStatusBadge, PageHeader, Pagination, SelectFilter, StatCard, StatGrid } from "@/components/layout";
 
 const { pages: { billing: pageLabels }, common, messages } = labels;
 const PAGE_SIZE = 20;
@@ -110,29 +103,16 @@ export default function BillingPage() {
       </StatGrid>
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium" htmlFor="invoice-status-filter">
-          {pageLabels.statusFilter}
-        </label>
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => {
-            setStatusFilter(value);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger id="invoice-status-filter" className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <SelectFilter
+        label={pageLabels.statusFilter}
+        value={statusFilter}
+        onChange={(value) => {
+          setStatusFilter(value);
+          setPage(1);
+        }}
+        options={statusOptions}
+        id="invoice-status-filter"
+      />
 
       {/* Invoices Table */}
       <Card>
@@ -235,6 +215,9 @@ export default function BillingPage() {
                                   })
                                 }
                               >
+                                {updateStatusMutation.isPending && (
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                )}
                                 {pageLabels.actions.send}
                               </Button>
                             )}
@@ -250,6 +233,9 @@ export default function BillingPage() {
                                   })
                                 }
                               >
+                                {recordPaymentMutation.isPending && (
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                )}
                                 {pageLabels.actions.confirmPayment}
                               </Button>
                             )}
@@ -269,6 +255,9 @@ export default function BillingPage() {
                                   })
                                 }
                               >
+                                {updateStatusMutation.isPending && (
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                )}
                                 {pageLabels.actions.send}
                               </Button>
                             )}
@@ -283,6 +272,9 @@ export default function BillingPage() {
                                   })
                                 }
                               >
+                                {recordPaymentMutation.isPending && (
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                )}
                                 {pageLabels.actions.confirmPayment}
                               </Button>
                             )}

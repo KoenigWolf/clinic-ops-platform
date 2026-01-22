@@ -12,21 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Check, X, Pill } from "lucide-react";
+import { Check, X, Pill, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
 import { labels } from "@/lib/labels";
 import { prescriptionStatusConfig } from "@/lib/design-tokens";
-import { EmptyState, GenericStatusBadge, PageHeader, Pagination } from "@/components/layout";
+import { EmptyState, GenericStatusBadge, PageHeader, Pagination, SelectFilter } from "@/components/layout";
 
 const { pages: { prescriptions: pageLabels }, common, messages } = labels;
 const PAGE_SIZE = 20;
@@ -66,26 +59,20 @@ export default function PrescriptionsPage() {
       <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium">{pageLabels.statusFilter}</label>
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => {
-            setStatusFilter(value);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">{pageLabels.filter.all}</SelectItem>
-            <SelectItem value="PENDING">{pageLabels.filter.pending}</SelectItem>
-            <SelectItem value="DISPENSED">{pageLabels.filter.dispensed}</SelectItem>
-            <SelectItem value="CANCELLED">{pageLabels.filter.cancelled}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <SelectFilter
+        label={pageLabels.statusFilter}
+        value={statusFilter}
+        onChange={(value) => {
+          setStatusFilter(value);
+          setPage(1);
+        }}
+        options={[
+          { value: "ALL", label: pageLabels.filter.all },
+          { value: "PENDING", label: pageLabels.filter.pending },
+          { value: "DISPENSED", label: pageLabels.filter.dispensed },
+          { value: "CANCELLED", label: pageLabels.filter.cancelled },
+        ]}
+      />
 
       {/* Prescriptions Table */}
       <Card>
@@ -199,7 +186,11 @@ export default function PrescriptionsPage() {
                                   onClick={() => dispenseMutation.mutate({ id: rx.id })}
                                   disabled={dispenseMutation.isPending}
                                 >
-                                  <Check className="h-4 w-4 mr-1" />
+                                  {dispenseMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Check className="h-4 w-4 mr-1" />
+                                  )}
                                   {pageLabels.actions.dispensed}
                                 </Button>
                                 <Button
@@ -209,7 +200,11 @@ export default function PrescriptionsPage() {
                                   onClick={() => cancelMutation.mutate({ id: rx.id })}
                                   disabled={cancelMutation.isPending}
                                 >
-                                  <X className="h-4 w-4" />
+                                  {cancelMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </div>
                             )}
@@ -229,7 +224,11 @@ export default function PrescriptionsPage() {
                                 onClick={() => dispenseMutation.mutate({ id: rx.id })}
                                 disabled={dispenseMutation.isPending}
                               >
-                                <Check className="h-4 w-4 mr-1" />
+                                {dispenseMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                ) : (
+                                  <Check className="h-4 w-4 mr-1" />
+                                )}
                                 {pageLabels.actions.dispensed}
                               </Button>
                               <Button
@@ -239,7 +238,11 @@ export default function PrescriptionsPage() {
                                 onClick={() => cancelMutation.mutate({ id: rx.id })}
                                 disabled={cancelMutation.isPending}
                               >
-                                <X className="h-4 w-4" />
+                                {cancelMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <X className="h-4 w-4" />
+                                )}
                               </Button>
                             </div>
                           )}

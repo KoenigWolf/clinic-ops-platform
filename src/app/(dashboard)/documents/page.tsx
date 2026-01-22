@@ -32,6 +32,7 @@ import {
   Trash2,
   Eye,
   Download,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState, PageHeader, StatCard, StatGrid } from "@/components/layout";
@@ -304,9 +305,14 @@ export default function DocumentsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
+                        disabled={deleteMutation.isPending}
                         onClick={() => deleteMutation.mutate({ id: template.id })}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deleteMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </CardContent>

@@ -29,6 +29,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -227,9 +228,14 @@ export default function MedicationsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
+                        disabled={deleteMutation.isPending}
                         onClick={() => deleteMutation.mutate({ id: med.id })}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deleteMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </CardContent>

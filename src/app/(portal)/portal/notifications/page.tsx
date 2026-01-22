@@ -11,6 +11,7 @@ import {
   Pill,
   MessageSquare,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -59,7 +60,11 @@ export default function NotificationsPage() {
               onClick={() => markAllAsReadMutation.mutate()}
               disabled={markAllAsReadMutation.isPending}
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
+              {markAllAsReadMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
               {pageLabels.markAllAsRead}
             </Button>
           ) : null
@@ -119,8 +124,12 @@ export default function NotificationsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              disabled={markAsReadMutation.isPending}
                               onClick={() => handleMarkAsRead(notif.id)}
                             >
+                              {markAsReadMutation.isPending && (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              )}
                               {pageLabels.markAsRead}
                             </Button>
                           )}
