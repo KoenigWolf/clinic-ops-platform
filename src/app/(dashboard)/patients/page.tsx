@@ -109,25 +109,19 @@ export default function PatientsPage() {
       />
 
       {/* Search */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder={pageLabels.searchPlaceholder}
-                className="pl-10"
-                value={searchInput}
-                onChange={(e) => {
-                  setSearchInput(e.target.value);
-                  setPage(1);
-                }}
-                aria-label={pageLabels.searchPlaceholder}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder={pageLabels.searchPlaceholder}
+          className="pl-10"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
+          aria-label={pageLabels.searchPlaceholder}
+        />
+      </div>
 
       {/* Patients Table */}
       <Card>
