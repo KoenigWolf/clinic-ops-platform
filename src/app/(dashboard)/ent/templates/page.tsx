@@ -106,27 +106,23 @@ export default function TemplatesPage() {
       />
 
       {/* Category Filter */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium" htmlFor="ent-template-category">
-              {pageLabels.filterLabel}
-            </label>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger id="ent-template-category" className="w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium" htmlFor="ent-template-category">
+          {pageLabels.filterLabel}
+        </label>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger id="ent-template-category" className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value}>
+                {cat.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Templates List */}
       {isError ? (

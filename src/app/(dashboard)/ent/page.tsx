@@ -166,45 +166,41 @@ function EntContent() {
       />
 
       {/* Patient Selector */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium" htmlFor="ent-patient-select">
-              {pageLabels.patientSelect}
-            </label>
-            <Select
-              value={selectedPatientId || ""}
-              onValueChange={setSelectedPatientId}
-            >
-              <SelectTrigger id="ent-patient-select" className="w-[300px]">
-                <SelectValue placeholder={pageLabels.patientPlaceholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {isPatientsLoading && (
-                  <SelectItem value="__loading__" disabled>
-                    {common.loading}
-                  </SelectItem>
-                )}
-                {isPatientsError && (
-                  <SelectItem value="__error__" disabled>
-                    {common.loadFailed}
-                  </SelectItem>
-                )}
-                {patients?.patients.map((patient) => (
-                  <SelectItem key={patient.id} value={patient.id}>
-                    {patient.patientNumber} - {patient.lastName} {patient.firstName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isPatientsError && (
-              <Button type="button" variant="outline" onClick={() => refetchPatients()}>
-                {common.retry}
-              </Button>
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium" htmlFor="ent-patient-select">
+          {pageLabels.patientSelect}
+        </label>
+        <Select
+          value={selectedPatientId || ""}
+          onValueChange={setSelectedPatientId}
+        >
+          <SelectTrigger id="ent-patient-select" className="w-[300px]">
+            <SelectValue placeholder={pageLabels.patientPlaceholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {isPatientsLoading && (
+              <SelectItem value="__loading__" disabled>
+                {common.loading}
+              </SelectItem>
             )}
-          </div>
-        </CardContent>
-      </Card>
+            {isPatientsError && (
+              <SelectItem value="__error__" disabled>
+                {common.loadFailed}
+              </SelectItem>
+            )}
+            {patients?.patients.map((patient) => (
+              <SelectItem key={patient.id} value={patient.id}>
+                {patient.patientNumber} - {patient.lastName} {patient.firstName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isPatientsError && (
+          <Button type="button" variant="outline" onClick={() => refetchPatients()}>
+            {common.retry}
+          </Button>
+        )}
+      </div>
 
       {/* Tabs */}
       {selectedPatientId ? (
@@ -318,11 +314,7 @@ function EntLoadingSkeleton() {
           <Skeleton className="h-10 w-32" />
         </div>
       </div>
-      <Card>
-        <CardContent className="pt-4">
-          <Skeleton className="h-10 w-[300px]" />
-        </CardContent>
-      </Card>
+      <Skeleton className="h-10 w-[300px]" />
     </div>
   );
 }
