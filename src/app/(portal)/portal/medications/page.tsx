@@ -29,6 +29,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -41,6 +42,7 @@ const { portal: { medications: pageLabels }, common } = labels;
 export default function MedicationsPage() {
   const [activeTab, setActiveTab] = useState("current");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [editingMed, setEditingMed] = useState<{
     id?: string;
     name: string;
@@ -81,6 +83,9 @@ export default function MedicationsPage() {
       refetch();
     },
     onError: (error) => toast.error(error.message),
+    onSettled: () => {
+      setPendingDeleteId(null);
+    },
   });
 
   const openNewMed = () => {
@@ -227,9 +232,17 @@ export default function MedicationsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
-                        onClick={() => deleteMutation.mutate({ id: med.id })}
+                        disabled={pendingDeleteId === med.id}
+                        onClick={() => {
+                          setPendingDeleteId(med.id);
+                          deleteMutation.mutate({ id: med.id });
+                        }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {pendingDeleteId === med.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </CardContent>

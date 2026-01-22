@@ -6,7 +6,6 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/server/routers";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -17,10 +16,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, FileText, Users, Pencil } from "lucide-react";
+import { Plus, Eye, FileText, Users, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PatientDialog } from "@/components/patients/patient-dialog";
-import { EmptyState, PageHeader, Pagination, ResponsiveTable } from "@/components/layout";
+import { EmptyState, PageHeader, Pagination, ResponsiveTable, SearchFilter } from "@/components/layout";
 import { labels } from "@/lib/labels";
 import type { PatientForEdit } from "@/domain/patient/schema";
 
@@ -109,19 +108,14 @@ export default function PatientsPage() {
       />
 
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder={pageLabels.searchPlaceholder}
-          className="pl-10"
-          value={searchInput}
-          onChange={(e) => {
-            setSearchInput(e.target.value);
-            setPage(1);
-          }}
-          aria-label={pageLabels.searchPlaceholder}
-        />
-      </div>
+      <SearchFilter
+        value={searchInput}
+        onChange={(value) => {
+          setSearchInput(value);
+          setPage(1);
+        }}
+        placeholder={pageLabels.searchPlaceholder}
+      />
 
       {/* Patients Table */}
       <Card>

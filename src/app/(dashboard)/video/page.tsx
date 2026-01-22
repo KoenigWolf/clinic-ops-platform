@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Video, Phone, User, Clock } from "lucide-react";
+import { Video, Phone, User, Clock, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -198,7 +198,11 @@ function VideoPageContent() {
                       disabled={createSessionMutation.isPending}
                       className="gap-2"
                     >
-                      <Phone className="h-4 w-4" />
+                      {createSessionMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Phone className="h-4 w-4" />
+                      )}
                       診療開始
                     </Button>
                   </div>

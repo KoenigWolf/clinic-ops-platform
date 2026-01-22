@@ -12,21 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Check, X, Pill } from "lucide-react";
+import { Check, X, Pill, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
 import { labels } from "@/lib/labels";
 import { prescriptionStatusConfig } from "@/lib/design-tokens";
-import { EmptyState, GenericStatusBadge, PageHeader, Pagination } from "@/components/layout";
+import { EmptyState, GenericStatusBadge, PageHeader, Pagination, SelectFilter } from "@/components/layout";
 
 const { pages: { prescriptions: pageLabels }, common, messages } = labels;
 const PAGE_SIZE = 20;
@@ -34,6 +27,8 @@ const PAGE_SIZE = 20;
 export default function PrescriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
+  const [pendingDispenseId, setPendingDispenseId] = useState<string | null>(null);
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = trpc.prescription.list.useQuery({
     status: statusFilter !== "ALL" ? statusFilter as "PENDING" | "DISPENSED" | "CANCELLED" : undefined,
@@ -49,6 +44,9 @@ export default function PrescriptionsPage() {
     onError: (error) => {
       toast.error(error.message || messages.error.recordUpdateFailed);
     },
+    onSettled: () => {
+      setPendingDispenseId(null);
+    },
   });
 
   const cancelMutation = trpc.prescription.cancel.useMutation({
@@ -59,6 +57,9 @@ export default function PrescriptionsPage() {
     onError: (error) => {
       toast.error(error.message || messages.error.recordUpdateFailed);
     },
+    onSettled: () => {
+      setPendingCancelId(null);
+    },
   });
 
   return (
@@ -66,26 +67,20 @@ export default function PrescriptionsPage() {
       <PageHeader title={pageLabels.title} description={pageLabels.description} />
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium">{pageLabels.statusFilter}</label>
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => {
-            setStatusFilter(value);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">{pageLabels.filter.all}</SelectItem>
-            <SelectItem value="PENDING">{pageLabels.filter.pending}</SelectItem>
-            <SelectItem value="DISPENSED">{pageLabels.filter.dispensed}</SelectItem>
-            <SelectItem value="CANCELLED">{pageLabels.filter.cancelled}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <SelectFilter
+        label={pageLabels.statusFilter}
+        value={statusFilter}
+        onChange={(value) => {
+          setStatusFilter(value);
+          setPage(1);
+        }}
+        options={[
+          { value: "ALL", label: pageLabels.filter.all },
+          { value: "PENDING", label: pageLabels.filter.pending },
+          { value: "DISPENSED", label: pageLabels.filter.dispensed },
+          { value: "CANCELLED", label: pageLabels.filter.cancelled },
+        ]}
+      />
 
       {/* Prescriptions Table */}
       <Card>
@@ -196,20 +191,34 @@ export default function PrescriptionsPage() {
                                   size="sm"
                                   variant="outline"
                                   className="flex-1"
-                                  onClick={() => dispenseMutation.mutate({ id: rx.id })}
-                                  disabled={dispenseMutation.isPending}
+                                  onClick={() => {
+                                    setPendingDispenseId(rx.id);
+                                    dispenseMutation.mutate({ id: rx.id });
+                                  }}
+                                  disabled={pendingDispenseId === rx.id}
                                 >
-                                  <Check className="h-4 w-4 mr-1" />
+                                  {pendingDispenseId === rx.id ? (
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Check className="h-4 w-4 mr-1" />
+                                  )}
                                   {pageLabels.actions.dispensed}
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   className="text-red-600"
-                                  onClick={() => cancelMutation.mutate({ id: rx.id })}
-                                  disabled={cancelMutation.isPending}
+                                  onClick={() => {
+                                    setPendingCancelId(rx.id);
+                                    cancelMutation.mutate({ id: rx.id });
+                                  }}
+                                  disabled={pendingCancelId === rx.id}
                                 >
-                                  <X className="h-4 w-4" />
+                                  {pendingCancelId === rx.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </div>
                             )}
@@ -226,20 +235,34 @@ export default function PrescriptionsPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => dispenseMutation.mutate({ id: rx.id })}
-                                disabled={dispenseMutation.isPending}
+                                onClick={() => {
+                                  setPendingDispenseId(rx.id);
+                                  dispenseMutation.mutate({ id: rx.id });
+                                }}
+                                disabled={pendingDispenseId === rx.id}
                               >
-                                <Check className="h-4 w-4 mr-1" />
+                                {pendingDispenseId === rx.id ? (
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                ) : (
+                                  <Check className="h-4 w-4 mr-1" />
+                                )}
                                 {pageLabels.actions.dispensed}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="text-red-600"
-                                onClick={() => cancelMutation.mutate({ id: rx.id })}
-                                disabled={cancelMutation.isPending}
+                                onClick={() => {
+                                  setPendingCancelId(rx.id);
+                                  cancelMutation.mutate({ id: rx.id });
+                                }}
+                                disabled={pendingCancelId === rx.id}
                               >
-                                <X className="h-4 w-4" />
+                                {pendingCancelId === rx.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <X className="h-4 w-4" />
+                                )}
                               </Button>
                             </div>
                           )}

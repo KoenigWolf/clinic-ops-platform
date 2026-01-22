@@ -22,6 +22,7 @@ import {
   Send,
   User,
   Building,
+  Loader2,
 } from "lucide-react";
 import { PageHeader, EmptyState } from "@/components/layout";
 import { formatDistanceToNow, format } from "date-fns";
@@ -208,7 +209,11 @@ export default function MessagesPage() {
               {common.cancel}
             </Button>
             <Button onClick={handleSend} disabled={sendMutation.isPending}>
-              <Send className="h-4 w-4 mr-2" />
+              {sendMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
               {sendMutation.isPending ? pageLabels.actions.sending : pageLabels.actions.send}
             </Button>
           </DialogFooter>
