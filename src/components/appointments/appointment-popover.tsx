@@ -26,6 +26,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { labels } from "@/lib/labels";
+import {
+  AppointmentStatus,
+  getRevertStatus,
+  canCancel,
+  shouldShowActions,
+  type AppointmentStatusType,
+} from "@/lib/domain/appointment-status";
 
 const { pages: { appointments: pageLabels } } = labels;
 const { detail: detailLabels } = pageLabels;
@@ -49,13 +56,11 @@ type Appointment = {
   };
 };
 
-type AppointmentStatus = "SCHEDULED" | "CONFIRMED" | "WAITING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
-
 interface AppointmentPopoverProps {
   appointment: Appointment | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onStatusChange: (id: string, status: AppointmentStatus) => void;
+  onStatusChange: (id: string, status: AppointmentStatusType) => void;
   onStartOnline: (id: string) => void;
   isUpdating: boolean;
   isStartingSession: boolean;
@@ -75,21 +80,21 @@ const statusSteps: StatusStep[] = [
 ];
 
 function getStatusIndex(status: string): number {
-  if (status === "CANCELLED" || status === "NO_SHOW") return -1;
+  if (status === AppointmentStatus.CANCELLED || status === AppointmentStatus.NO_SHOW) return -1;
   const idx = statusSteps.findIndex((s) => s.key === status);
   return idx >= 0 ? idx : 0;
 }
 
 function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   const currentIndex = getStatusIndex(currentStatus);
-  const isCancelled = currentStatus === "CANCELLED" || currentStatus === "NO_SHOW";
+  const isCancelledOrNoShow = currentStatus === AppointmentStatus.CANCELLED || currentStatus === AppointmentStatus.NO_SHOW;
 
-  if (isCancelled) {
+  if (isCancelledOrNoShow) {
     return (
       <div className="flex items-center justify-center gap-2 py-4 px-3 bg-red-50 rounded-lg">
         <XCircle className="h-5 w-5 text-red-500" />
         <span className="text-sm font-medium text-red-600">
-          {currentStatus === "CANCELLED"
+          {currentStatus === AppointmentStatus.CANCELLED
             ? detailLabels.statusTimeline.cancelled
             : detailLabels.statusTimeline.noShow}
         </span>
@@ -143,6 +148,109 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
         })}
       </div>
     </div>
+  );
+}
+
+/** 戻るラベルのマッピング */
+const REVERT_LABELS: Record<AppointmentStatusType, string> = {
+  [AppointmentStatus.SCHEDULED]: pageLabels.actions.revertToScheduled,
+  [AppointmentStatus.WAITING]: pageLabels.actions.revertToWaiting,
+  [AppointmentStatus.IN_PROGRESS]: pageLabels.actions.revertToInProgress,
+  [AppointmentStatus.COMPLETED]: "", // 使用されない
+  [AppointmentStatus.CANCELLED]: pageLabels.actions.revertCancellation,
+  [AppointmentStatus.NO_SHOW]: "", // 使用されない
+};
+
+/** 進むアクションボタン */
+function ForwardActions({
+  appointment,
+  onStatusChange,
+  onStartOnline,
+  isUpdating,
+  isStartingSession,
+}: {
+  appointment: Appointment;
+  onStatusChange: (id: string, status: AppointmentStatusType) => void;
+  onStartOnline: (id: string) => void;
+  isUpdating: boolean;
+  isStartingSession: boolean;
+}) {
+  const { status, id, isOnline } = appointment;
+
+  if (status === AppointmentStatus.SCHEDULED) {
+    return (
+      <Button
+        className="w-full h-12 text-base"
+        onClick={() => onStatusChange(id, AppointmentStatus.WAITING)}
+        disabled={isUpdating}
+      >
+        <Clock className="h-5 w-5 mr-2" />
+        {pageLabels.actions.checkIn}
+      </Button>
+    );
+  }
+
+  if (status === AppointmentStatus.WAITING) {
+    return isOnline ? (
+      <Button
+        className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700"
+        onClick={() => onStartOnline(id)}
+        disabled={isStartingSession}
+      >
+        <Phone className="h-5 w-5 mr-2" />
+        {isStartingSession ? pageLabels.actions.preparing : pageLabels.actions.startOnline}
+      </Button>
+    ) : (
+      <Button
+        className="w-full h-12 text-base"
+        onClick={() => onStatusChange(id, AppointmentStatus.IN_PROGRESS)}
+        disabled={isUpdating}
+      >
+        <Stethoscope className="h-5 w-5 mr-2" />
+        {pageLabels.actions.start}
+      </Button>
+    );
+  }
+
+  if (status === AppointmentStatus.IN_PROGRESS) {
+    return (
+      <Button
+        className="w-full h-12 text-base bg-emerald-600 hover:bg-emerald-700"
+        onClick={() => onStatusChange(id, AppointmentStatus.COMPLETED)}
+        disabled={isUpdating}
+      >
+        <CheckCircle2 className="h-5 w-5 mr-2" />
+        {pageLabels.actions.complete}
+      </Button>
+    );
+  }
+
+  return null;
+}
+
+/** 戻るアクションボタン */
+function RevertAction({
+  appointment,
+  onStatusChange,
+  isUpdating,
+}: {
+  appointment: Appointment;
+  onStatusChange: (id: string, status: AppointmentStatusType) => void;
+  isUpdating: boolean;
+}) {
+  const revertTo = getRevertStatus(appointment.status);
+  if (!revertTo) return null;
+
+  return (
+    <Button
+      className="w-full"
+      variant="outline"
+      onClick={() => onStatusChange(appointment.id, revertTo)}
+      disabled={isUpdating}
+    >
+      <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+      {REVERT_LABELS[revertTo]}
+    </Button>
   );
 }
 
@@ -284,61 +392,36 @@ export function AppointmentPopover({
         </div>
 
         {/* フッター: アクションボタン */}
-        {!["COMPLETED", "CANCELLED", "NO_SHOW"].includes(appointment.status) && (
+        {shouldShowActions(appointment.status) && (
           <div className="border-t bg-white px-6 py-4 space-y-3">
-            {appointment.status === "SCHEDULED" && (
+            {/* 進むアクション: ステータスに応じた主要ボタン */}
+            <ForwardActions
+              appointment={appointment}
+              onStatusChange={onStatusChange}
+              onStartOnline={onStartOnline}
+              isUpdating={isUpdating}
+              isStartingSession={isStartingSession}
+            />
+
+            {/* 戻るアクション: Domain層のgetRevertStatusで判定 */}
+            <RevertAction
+              appointment={appointment}
+              onStatusChange={onStatusChange}
+              isUpdating={isUpdating}
+            />
+
+            {/* キャンセルアクション: Domain層のcanCancelで判定 */}
+            {canCancel(appointment.status) && (
               <Button
-                className="w-full h-12 text-base"
-                onClick={() => onStatusChange(appointment.id, "WAITING")}
+                className="w-full"
+                variant="ghost"
+                onClick={() => onStatusChange(appointment.id, AppointmentStatus.CANCELLED)}
                 disabled={isUpdating}
               >
-                <Clock className="h-5 w-5 mr-2" />
-                {pageLabels.actions.checkIn}
+                <XCircle className="h-4 w-4 mr-2 text-red-500" />
+                <span className="text-red-500">{pageLabels.actions.cancel}</span>
               </Button>
             )}
-
-            {appointment.status === "WAITING" && (
-              appointment.isOnline ? (
-                <Button
-                  className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700"
-                  onClick={() => onStartOnline(appointment.id)}
-                  disabled={isStartingSession}
-                >
-                  <Phone className="h-5 w-5 mr-2" />
-                  {isStartingSession ? pageLabels.actions.preparing : pageLabels.actions.startOnline}
-                </Button>
-              ) : (
-                <Button
-                  className="w-full h-12 text-base"
-                  onClick={() => onStatusChange(appointment.id, "IN_PROGRESS")}
-                  disabled={isUpdating}
-                >
-                  <Stethoscope className="h-5 w-5 mr-2" />
-                  {pageLabels.actions.start}
-                </Button>
-              )
-            )}
-
-            {appointment.status === "IN_PROGRESS" && (
-              <Button
-                className="w-full h-12 text-base bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => onStatusChange(appointment.id, "COMPLETED")}
-                disabled={isUpdating}
-              >
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                {pageLabels.actions.complete}
-              </Button>
-            )}
-
-            <Button
-              className="w-full"
-              variant="ghost"
-              onClick={() => onStatusChange(appointment.id, "CANCELLED")}
-              disabled={isUpdating}
-            >
-              <XCircle className="h-4 w-4 mr-2 text-red-500" />
-              <span className="text-red-500">{pageLabels.actions.cancel}</span>
-            </Button>
           </div>
         )}
       </SheetContent>
