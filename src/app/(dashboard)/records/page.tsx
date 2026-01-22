@@ -73,40 +73,36 @@ function RecordsContent() {
       />
 
       {/* Patient Selector */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium" htmlFor="patient-select">
-              {pageLabels.patientSelect}
-            </label>
-            <Select
-              value={selectedPatientId || ""}
-              onValueChange={handlePatientChange}
-            >
-              <SelectTrigger id="patient-select" className="w-[300px]">
-                <SelectValue placeholder={pageLabels.patientPlaceholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {isPatientsLoading && (
-                  <SelectItem value="__loading__" disabled>
-                    {common.loading}
-                  </SelectItem>
-                )}
-                {isPatientsError && (
-                  <SelectItem value="__error__" disabled>
-                    {common.loadFailed}
-                  </SelectItem>
-                )}
-                {patientOptions.map((patient) => (
-                  <SelectItem key={patient.id} value={patient.id}>
-                    {patient.patientNumber} - {patient.lastName} {patient.firstName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium" htmlFor="patient-select">
+          {pageLabels.patientSelect}
+        </label>
+        <Select
+          value={selectedPatientId || ""}
+          onValueChange={handlePatientChange}
+        >
+          <SelectTrigger id="patient-select" className="w-[300px]">
+            <SelectValue placeholder={pageLabels.patientPlaceholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {isPatientsLoading && (
+              <SelectItem value="__loading__" disabled>
+                {common.loading}
+              </SelectItem>
+            )}
+            {isPatientsError && (
+              <SelectItem value="__error__" disabled>
+                {common.loadFailed}
+              </SelectItem>
+            )}
+            {patientOptions.map((patient) => (
+              <SelectItem key={patient.id} value={patient.id}>
+                {patient.patientNumber} - {patient.lastName} {patient.firstName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Records List */}
       {selectedPatientId ? (
@@ -271,11 +267,7 @@ function RecordsLoadingSkeleton() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-10 w-32" />
       </div>
-      <Card>
-        <CardContent className="pt-4">
-          <Skeleton className="h-10 w-[300px]" />
-        </CardContent>
-      </Card>
+      <Skeleton className="h-10 w-[300px]" />
       <div className="space-y-4">
         {[...Array(2)].map((_, i) => (
           <Card key={i}>
