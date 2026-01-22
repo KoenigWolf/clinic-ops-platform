@@ -58,8 +58,12 @@
 - [x] 作成ファイル: src/components/layout/pagination.tsx
 
 ##### 2.3 FilterCard
-- [ ] フィルタリング用カードコンポーネント
-- [ ] 検索、日付範囲、ステータスフィルタを統一
+- [x] フィルタリング用コンポーネント群
+- [x] SearchFilter: 検索入力（アイコン付き）
+- [x] SelectFilter: ラベル付きセレクト
+- [x] FilterBar: フィルタラッパー
+- [x] 作成ファイル: src/components/layout/filter.tsx
+- [x] 適用: patients, prescriptions, billing
 
 #### 3. ユーティリティ関数
 
@@ -74,7 +78,7 @@
 #### 4. UX改善
 
 ##### 4.1 ローディング状態
-- [ ] ボタンのローディング状態を統一（isPending時にdisabled + スピナー）
+- [x] ボタンのローディング状態を統一（isPending時にdisabled + スピナー）
 - [ ] Skeleton コンポーネントのレスポンシブ対応
 
 ##### 4.2 フォーカス管理
@@ -111,8 +115,8 @@
 
 ##### Medium 優先度（未完了）
 - [ ] その他ダッシュボードページのラベル化
-- [ ] FilterCard 作成
-- [ ] ローディング状態統一
+- [x] FilterCard 作成
+- [x] ローディング状態統一
 
 ##### Low 優先度（未完了）
 - [ ] UX改善（フォーカス管理、オプティミスティック更新）
