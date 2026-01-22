@@ -34,6 +34,8 @@ export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [pendingUpdateId, setPendingUpdateId] = useState<string | null>(null);
+  const [pendingRecordPaymentId, setPendingRecordPaymentId] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = trpc.billing.list.useQuery({
     status: statusFilter !== "ALL" ? statusFilter as "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED" : undefined,
@@ -49,6 +51,9 @@ export default function BillingPage() {
     onError: (error) => {
       toast.error(error.message || messages.error.invoiceUpdateFailed);
     },
+    onSettled: () => {
+      setPendingUpdateId(null);
+    },
   });
 
   const recordPaymentMutation = trpc.billing.recordPayment.useMutation({
@@ -58,6 +63,9 @@ export default function BillingPage() {
     },
     onError: (error) => {
       toast.error(error.message || messages.error.paymentRecordFailed);
+    },
+    onSettled: () => {
+      setPendingRecordPaymentId(null);
     },
   });
 
@@ -207,15 +215,16 @@ export default function BillingPage() {
                                 size="sm"
                                 variant="outline"
                                 className="w-full"
-                                disabled={updateStatusMutation.isPending}
-                                onClick={() =>
+                                disabled={pendingUpdateId === invoice.id}
+                                onClick={() => {
+                                  setPendingUpdateId(invoice.id);
                                   updateStatusMutation.mutate({
                                     id: invoice.id,
                                     status: "SENT",
-                                  })
-                                }
+                                  });
+                                }}
                               >
-                                {updateStatusMutation.isPending && (
+                                {pendingUpdateId === invoice.id && (
                                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                                 )}
                                 {pageLabels.actions.send}
@@ -225,15 +234,16 @@ export default function BillingPage() {
                               <Button
                                 size="sm"
                                 className="w-full"
-                                disabled={recordPaymentMutation.isPending}
-                                onClick={() =>
+                                disabled={pendingRecordPaymentId === invoice.id}
+                                onClick={() => {
+                                  setPendingRecordPaymentId(invoice.id);
                                   recordPaymentMutation.mutate({
                                     id: invoice.id,
                                     paymentMethod: "現金",
-                                  })
-                                }
+                                  });
+                                }}
                               >
-                                {recordPaymentMutation.isPending && (
+                                {pendingRecordPaymentId === invoice.id && (
                                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                                 )}
                                 {pageLabels.actions.confirmPayment}
@@ -247,15 +257,16 @@ export default function BillingPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={updateStatusMutation.isPending}
-                                onClick={() =>
+                                disabled={pendingUpdateId === invoice.id}
+                                onClick={() => {
+                                  setPendingUpdateId(invoice.id);
                                   updateStatusMutation.mutate({
                                     id: invoice.id,
                                     status: "SENT",
-                                  })
-                                }
+                                  });
+                                }}
                               >
-                                {updateStatusMutation.isPending && (
+                                {pendingUpdateId === invoice.id && (
                                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                                 )}
                                 {pageLabels.actions.send}
@@ -264,15 +275,16 @@ export default function BillingPage() {
                             {(invoice.status === "SENT" || invoice.status === "OVERDUE") && (
                               <Button
                                 size="sm"
-                                disabled={recordPaymentMutation.isPending}
-                                onClick={() =>
+                                disabled={pendingRecordPaymentId === invoice.id}
+                                onClick={() => {
+                                  setPendingRecordPaymentId(invoice.id);
                                   recordPaymentMutation.mutate({
                                     id: invoice.id,
                                     paymentMethod: "現金",
-                                  })
-                                }
+                                  });
+                                }}
                               >
-                                {recordPaymentMutation.isPending && (
+                                {pendingRecordPaymentId === invoice.id && (
                                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                                 )}
                                 {pageLabels.actions.confirmPayment}
