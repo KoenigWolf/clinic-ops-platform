@@ -20,6 +20,28 @@ export const AppointmentStatus = {
 export type AppointmentStatusType = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
 /**
+ * 予約ステータスの進行順序（タイムライン表示用）
+ * キャンセル・来院なしは通常フローから外れるため含まない
+ */
+export const STATUS_FLOW: AppointmentStatusType[] = [
+  AppointmentStatus.SCHEDULED,
+  AppointmentStatus.WAITING,
+  AppointmentStatus.IN_PROGRESS,
+  AppointmentStatus.COMPLETED,
+];
+
+/**
+ * ステータスの進行順序でのインデックスを取得
+ * @returns フロー内のインデックス、フロー外の場合は -1
+ */
+export function getStatusFlowIndex(status: string): number {
+  if (status === AppointmentStatus.CANCELLED || status === AppointmentStatus.NO_SHOW) {
+    return -1;
+  }
+  return STATUS_FLOW.indexOf(status as AppointmentStatusType);
+}
+
+/**
  * ステータス遷移の定義
  * - forward: 進める先のステータス一覧
  * - revert: 戻せる先のステータス（null = 戻せない）
