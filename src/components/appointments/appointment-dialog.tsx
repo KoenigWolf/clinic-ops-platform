@@ -31,6 +31,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { SLOT_MINUTES, TIME_SLOTS } from "@/lib/appointment-config";
+import { labels } from "@/lib/labels";
+
+const { pages: { appointments: pageLabels } } = labels;
 
 const appointmentSchema = z.object({
   patientId: z.string().min(1, "患者を選択してください"),
@@ -45,13 +49,6 @@ const appointmentSchema = z.object({
 
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
 
-const typeLabels = {
-  INITIAL: "初診",
-  FOLLOWUP: "再診",
-  CONSULTATION: "相談",
-  CHECKUP: "健診",
-  EMERGENCY: "緊急",
-};
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -75,7 +72,7 @@ export function AppointmentDialog({
 
   const getEndTime = (start: string) => {
     const [h, m] = start.split(":").map(Number);
-    const endMinutes = h * 60 + m + 30;
+    const endMinutes = h * 60 + m + SLOT_MINUTES;
     const endH = Math.floor(endMinutes / 60);
     const endM = endMinutes % 60;
     return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
@@ -226,9 +223,20 @@ export function AppointmentDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>開始時間 *</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="開始時間" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TIME_SLOTS.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -239,9 +247,20 @@ export function AppointmentDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>終了時間 *</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="終了時間" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TIME_SLOTS.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -261,7 +280,7 @@ export function AppointmentDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.entries(typeLabels).map(([value, label]) => (
+                      {Object.entries(pageLabels.type).map(([value, label]) => (
                         <SelectItem key={value} value={value}>
                           {label}
                         </SelectItem>
