@@ -32,7 +32,6 @@ export const START_HOUR = 9;
 /** 予約ステータスの表示色（UIレイヤー用） */
 export const APPOINTMENT_STATUS_COLORS: Record<string, string> = {
   SCHEDULED: "bg-slate-100 border-l-slate-400 text-slate-700",
-  CONFIRMED: "bg-blue-50 border-l-blue-500 text-blue-700",
   WAITING: "bg-amber-50 border-l-amber-500 text-amber-800",
   IN_PROGRESS: "bg-emerald-50 border-l-emerald-500 text-emerald-800",
   COMPLETED: "bg-slate-50 border-l-slate-300 text-slate-500",
@@ -43,7 +42,6 @@ export const APPOINTMENT_STATUS_COLORS: Record<string, string> = {
 /** 月間ビュー用のステータス色（コンパクト版） */
 export const APPOINTMENT_STATUS_COLORS_COMPACT: Record<string, string> = {
   SCHEDULED: "bg-slate-200 text-slate-700",
-  CONFIRMED: "bg-blue-200 text-blue-800",
   WAITING: "bg-amber-200 text-amber-800",
   IN_PROGRESS: "bg-emerald-200 text-emerald-800",
   COMPLETED: "bg-slate-100 text-slate-500",
