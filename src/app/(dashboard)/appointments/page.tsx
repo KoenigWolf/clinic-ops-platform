@@ -32,29 +32,11 @@ import { ja } from "date-fns/locale";
 import { toast } from "sonner";
 import { labels } from "@/lib/labels";
 import { AppointmentStatus } from "@/lib/domain/appointment-status";
+import type { AppointmentView } from "@/lib/domain/appointment";
 
 const { pages: { appointments: pageLabels }, messages } = labels;
 
 type ViewMode = "list" | "day" | "week" | "month";
-
-type SelectedAppointment = {
-  id: string;
-  startTime: Date | string;
-  endTime: Date | string;
-  status: string;
-  isOnline: boolean;
-  reason?: string | null;
-  patient: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    patientNumber: string;
-  };
-  doctor: {
-    id: string;
-    name: string;
-  };
-};
 
 export default function AppointmentsPage() {
   const router = useRouter();
@@ -68,7 +50,7 @@ export default function AppointmentsPage() {
   const [dialogDefaultDate, setDialogDefaultDate] = useState<Date>(new Date());
   const [dialogDefaultTime, setDialogDefaultTime] = useState<string>("09:00");
   const [startingSessionId, setStartingSessionId] = useState<string | null>(null);
-  const [selectedAppointment, setSelectedAppointment] = useState<SelectedAppointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentView | null>(null);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 1 }), [weekStart]);
@@ -121,7 +103,8 @@ export default function AppointmentsPage() {
     { enabled: viewMode === "month" }
   );
 
-  const refetch = viewMode === "list" ? refetchList : viewMode === "day" ? refetchDay : viewMode === "week" ? refetchWeek : refetchMonth;
+  const refetchMap = { list: refetchList, day: refetchDay, week: refetchWeek, month: refetchMonth };
+  const refetch = refetchMap[viewMode];
 
   const updateStatusMutation = trpc.appointment.updateStatus.useMutation({
     onError: () => toast.error(messages.error.appointmentUpdateFailed),
@@ -160,7 +143,7 @@ export default function AppointmentsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleAppointmentClick = (appointment: SelectedAppointment) => {
+  const handleAppointmentClick = (appointment: AppointmentView) => {
     setSelectedAppointment(appointment);
     setIsPopoverOpen(true);
   };
@@ -208,8 +191,10 @@ export default function AppointmentsPage() {
 
   const showNavigation = viewMode !== "list";
 
-  const isLoading = viewMode === "list" ? isListLoading : viewMode === "day" ? isDayLoading : viewMode === "week" ? isWeekLoading : isMonthLoading;
-  const isError = viewMode === "list" ? isListError : viewMode === "day" ? isDayError : viewMode === "week" ? isWeekError : isMonthError;
+  const loadingMap = { list: isListLoading, day: isDayLoading, week: isWeekLoading, month: isMonthLoading };
+  const errorMap = { list: isListError, day: isDayError, week: isWeekError, month: isMonthError };
+  const isLoading = loadingMap[viewMode];
+  const isError = errorMap[viewMode];
 
   return (
     <div className="space-y-4">

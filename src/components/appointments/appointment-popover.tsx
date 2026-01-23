@@ -35,31 +35,13 @@ import {
   shouldShowActions,
   type AppointmentStatusType,
 } from "@/lib/domain/appointment-status";
+import type { AppointmentView } from "@/lib/domain/appointment";
 
 const { pages: { appointments: pageLabels } } = labels;
 const { detail: detailLabels } = pageLabels;
 
-type Appointment = {
-  id: string;
-  startTime: Date | string;
-  endTime: Date | string;
-  status: string;
-  isOnline: boolean;
-  reason?: string | null;
-  patient: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    patientNumber: string;
-  };
-  doctor: {
-    id: string;
-    name: string;
-  };
-};
-
 interface AppointmentPopoverProps {
-  appointment: Appointment | null;
+  appointment: AppointmentView | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStatusChange: (id: string, status: AppointmentStatusType) => void;
@@ -173,7 +155,7 @@ function ForwardActions({
   isUpdating,
   isStartingSession,
 }: {
-  appointment: Appointment;
+  appointment: AppointmentView;
   onStatusChange: (id: string, status: AppointmentStatusType) => void;
   onStartOnline: (id: string) => void;
   isUpdating: boolean;
@@ -238,7 +220,7 @@ function RevertAction({
   onStatusChange,
   isUpdating,
 }: {
-  appointment: Appointment;
+  appointment: AppointmentView;
   onStatusChange: (id: string, status: AppointmentStatusType) => void;
   isUpdating: boolean;
 }) {
