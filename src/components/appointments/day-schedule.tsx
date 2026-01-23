@@ -13,34 +13,16 @@ import {
   getAppointmentHeight,
 } from "@/lib/appointment-config";
 import { labels } from "@/lib/labels";
+import type { AppointmentView } from "@/lib/domain/appointment";
 
 const DAY_SLOT_HEIGHT = SLOT_HEIGHT.day;
 const { pages: { appointments: pageLabels } } = labels;
 
-type Appointment = {
-  id: string;
-  startTime: Date | string;
-  endTime: Date | string;
-  status: string;
-  isOnline: boolean;
-  reason?: string | null;
-  patient: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    patientNumber: string;
-  };
-  doctor: {
-    id: string;
-    name: string;
-  };
-};
-
 interface DayScheduleProps {
   date: Date;
-  appointments: Appointment[];
+  appointments: AppointmentView[];
   onSlotClick: (date: Date, time: string) => void;
-  onAppointmentClick: (appointment: Appointment) => void;
+  onAppointmentClick: (appointment: AppointmentView) => void;
 }
 
 export function DaySchedule({

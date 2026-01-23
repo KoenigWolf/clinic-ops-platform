@@ -12,33 +12,16 @@ import {
   getTimePosition,
   getAppointmentHeight,
 } from "@/lib/appointment-config";
+import type { AppointmentView } from "@/lib/domain/appointment";
 
 const WEEK_SLOT_HEIGHT = SLOT_HEIGHT.week;
 const TIME_COLUMN_WIDTH = "72px";
 
-type Appointment = {
-  id: string;
-  startTime: Date | string;
-  endTime: Date | string;
-  status: string;
-  isOnline: boolean;
-  patient: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    patientNumber: string;
-  };
-  doctor: {
-    id: string;
-    name: string;
-  };
-};
-
 interface WeekScheduleProps {
   weekStart: Date;
-  appointments: Appointment[];
+  appointments: AppointmentView[];
   onSlotClick: (date: Date, time: string) => void;
-  onAppointmentClick: (appointment: Appointment) => void;
+  onAppointmentClick: (appointment: AppointmentView) => void;
 }
 
 export function WeekSchedule({
@@ -54,7 +37,7 @@ export function WeekSchedule({
   const today = new Date();
 
   const appointmentsByDay = useMemo(() => {
-    const byDay: Record<string, Appointment[]> = {};
+    const byDay: Record<string, AppointmentView[]> = {};
     days.forEach((day) => {
       const key = format(day, "yyyy-MM-dd");
       byDay[key] = appointments.filter((apt) =>

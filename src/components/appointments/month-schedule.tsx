@@ -11,38 +11,19 @@ import {
   isSameMonth,
   isToday,
 } from "date-fns";
-import { ja } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Video } from "lucide-react";
 import { APPOINTMENT_STATUS_COLORS_COMPACT } from "@/lib/appointment-config";
 import { labels } from "@/lib/labels";
+import type { AppointmentView } from "@/lib/domain/appointment";
 
 const { pages: { appointments: pageLabels } } = labels;
 
-type Appointment = {
-  id: string;
-  startTime: Date | string;
-  endTime: Date | string;
-  status: string;
-  isOnline: boolean;
-  reason?: string | null;
-  patient: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    patientNumber: string;
-  };
-  doctor: {
-    id: string;
-    name: string;
-  };
-};
-
 interface MonthScheduleProps {
   month: Date;
-  appointments: Appointment[];
+  appointments: AppointmentView[];
   onDateClick: (date: Date) => void;
-  onAppointmentClick: (appointment: Appointment) => void;
+  onAppointmentClick: (appointment: AppointmentView) => void;
 }
 
 const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
@@ -69,7 +50,7 @@ export function MonthSchedule({
   }, [month]);
 
   const appointmentsByDay = useMemo(() => {
-    const byDay: Record<string, Appointment[]> = {};
+    const byDay: Record<string, AppointmentView[]> = {};
     appointments.forEach((apt) => {
       const key = format(new Date(apt.startTime), "yyyy-MM-dd");
       if (!byDay[key]) byDay[key] = [];
