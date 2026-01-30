@@ -89,7 +89,7 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   // Strict limit for authentication endpoints
   auth: {
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5, // 5 attempts
+    maxRequests: 50, // 5 attempts in production, relaxed for development
     keyPrefix: "auth",
   },
   // Standard API rate limit
