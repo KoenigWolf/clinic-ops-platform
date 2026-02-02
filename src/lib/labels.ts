@@ -146,6 +146,7 @@ export const labels = {
       detail: {
         statusTimeline: {
           scheduled: "予約済み",
+          confirmed: "確認済み",
           waiting: "受付完了",
           inProgress: "診療中",
           completed: "完了",
