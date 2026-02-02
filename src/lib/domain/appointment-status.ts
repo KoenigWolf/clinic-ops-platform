@@ -2,7 +2,8 @@
  * 予約ステータス遷移のドメインロジック
  *
  * 業務ルール:
- * - 予約は SCHEDULED → WAITING → IN_PROGRESS → COMPLETED の順で進む
+ * - 予約は SCHEDULED → CONFIRMED → WAITING → IN_PROGRESS → COMPLETED の順で進む
+ * - CONFIRMED は予約確認済みの状態（SCHEDULED からスキップして WAITING に進むことも可能）
  * - 各ステータスから前のステータスに戻すことが可能（誤操作対応）
  * - CANCELLED は SCHEDULED に戻せる（キャンセル取り消し）
  * - NO_SHOW は戻せない（確定状態）
@@ -10,6 +11,7 @@
 
 export const AppointmentStatus = {
   SCHEDULED: "SCHEDULED",
+  CONFIRMED: "CONFIRMED",
   WAITING: "WAITING",
   IN_PROGRESS: "IN_PROGRESS",
   COMPLETED: "COMPLETED",
@@ -20,11 +22,18 @@ export const AppointmentStatus = {
 export type AppointmentStatusType = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
 /**
+ * Zod バリデーション用のステータス値リスト
+ * Router 層で z.enum(APPOINTMENT_STATUS_VALUES) として使用する
+ */
+export const APPOINTMENT_STATUS_VALUES = Object.values(AppointmentStatus) as [AppointmentStatusType, ...AppointmentStatusType[]];
+
+/**
  * 予約ステータスの進行順序（タイムライン表示用）
  * キャンセル・来院なしは通常フローから外れるため含まない
  */
 export const STATUS_FLOW: AppointmentStatusType[] = [
   AppointmentStatus.SCHEDULED,
+  AppointmentStatus.CONFIRMED,
   AppointmentStatus.WAITING,
   AppointmentStatus.IN_PROGRESS,
   AppointmentStatus.COMPLETED,
@@ -53,12 +62,16 @@ type StatusTransition = {
 
 const STATUS_TRANSITIONS: Record<AppointmentStatusType, StatusTransition> = {
   [AppointmentStatus.SCHEDULED]: {
-    forward: [AppointmentStatus.WAITING, AppointmentStatus.CANCELLED],
+    forward: [AppointmentStatus.CONFIRMED, AppointmentStatus.WAITING, AppointmentStatus.CANCELLED],
     revert: null,
+  },
+  [AppointmentStatus.CONFIRMED]: {
+    forward: [AppointmentStatus.WAITING, AppointmentStatus.CANCELLED],
+    revert: AppointmentStatus.SCHEDULED,
   },
   [AppointmentStatus.WAITING]: {
     forward: [AppointmentStatus.IN_PROGRESS, AppointmentStatus.CANCELLED],
-    revert: AppointmentStatus.SCHEDULED,
+    revert: AppointmentStatus.CONFIRMED,
   },
   [AppointmentStatus.IN_PROGRESS]: {
     forward: [AppointmentStatus.COMPLETED],

@@ -131,14 +131,17 @@ export const documentRouter = router({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const document = await ctx.prisma.document.findFirst({
-        where: { id: input.id },
+        where: {
+          id: input.id,
+          patient: { tenantId: ctx.tenantId },
+        },
         include: {
           patient: true,
           template: true,
           medicalRecord: true,
         },
       });
-      if (!document || document.patient.tenantId !== ctx.tenantId) {
+      if (!document) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       return document;

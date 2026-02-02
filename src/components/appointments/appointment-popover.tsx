@@ -53,6 +53,7 @@ interface AppointmentPopoverProps {
 /** ステータスごとのアイコン（UI表現） */
 const STATUS_ICONS: Record<AppointmentStatusType, LucideIcon> = {
   [AppointmentStatus.SCHEDULED]: Calendar,
+  [AppointmentStatus.CONFIRMED]: CheckCircle2,
   [AppointmentStatus.WAITING]: Clock,
   [AppointmentStatus.IN_PROGRESS]: Stethoscope,
   [AppointmentStatus.COMPLETED]: CheckCircle2,
@@ -63,6 +64,7 @@ const STATUS_ICONS: Record<AppointmentStatusType, LucideIcon> = {
 /** ステータスごとのラベルキー（UI表現） */
 const STATUS_LABEL_KEYS: Record<AppointmentStatusType, keyof typeof detailLabels.statusTimeline> = {
   [AppointmentStatus.SCHEDULED]: "scheduled",
+  [AppointmentStatus.CONFIRMED]: "confirmed",
   [AppointmentStatus.WAITING]: "waiting",
   [AppointmentStatus.IN_PROGRESS]: "inProgress",
   [AppointmentStatus.COMPLETED]: "completed",
@@ -140,6 +142,7 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
 /** 戻るラベルのマッピング */
 const REVERT_LABELS: Record<AppointmentStatusType, string> = {
   [AppointmentStatus.SCHEDULED]: pageLabels.actions.revertToScheduled,
+  [AppointmentStatus.CONFIRMED]: pageLabels.actions.revertToScheduled,
   [AppointmentStatus.WAITING]: pageLabels.actions.revertToWaiting,
   [AppointmentStatus.IN_PROGRESS]: pageLabels.actions.revertToInProgress,
   [AppointmentStatus.COMPLETED]: "", // 使用されない

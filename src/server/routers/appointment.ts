@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { APPOINTMENT_STATUS_VALUES } from "@/lib/domain/appointment-status";
 
 const appointmentSchema = z.object({
   patientId: z.string(),
@@ -62,10 +63,7 @@ export const appointmentRouter = router({
       date: z.date().optional(),
       doctorId: z.string().optional(),
       patientId: z.string().optional(),
-      status: z.enum([
-        "SCHEDULED", "CONFIRMED", "WAITING", "IN_PROGRESS",
-        "COMPLETED", "CANCELLED", "NO_SHOW"
-      ]).optional(),
+      status: z.enum(APPOINTMENT_STATUS_VALUES).optional(),
       page: z.number().default(1),
       limit: z.number().default(20),
     }))
@@ -223,10 +221,7 @@ export const appointmentRouter = router({
   updateStatus: protectedProcedure
     .input(z.object({
       id: z.string(),
-      status: z.enum([
-        "SCHEDULED", "CONFIRMED", "WAITING", "IN_PROGRESS",
-        "COMPLETED", "CANCELLED", "NO_SHOW"
-      ]),
+      status: z.enum(APPOINTMENT_STATUS_VALUES),
     }))
     .mutation(async ({ ctx, input }) => {
       const appointment = await ctx.prisma.appointment.findFirst({

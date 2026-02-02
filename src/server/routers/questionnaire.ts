@@ -248,7 +248,7 @@ export const questionnaireRouter = router({
         if (!patient) throw new TRPCError({ code: "NOT_FOUND" });
 
         const template = await ctx.prisma.questionnaireTemplate.findFirst({
-          where: { id: input.templateId },
+          where: { id: input.templateId, tenantId: ctx.tenantId },
         });
         if (!template) throw new TRPCError({ code: "NOT_FOUND" });
 
