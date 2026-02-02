@@ -146,6 +146,15 @@ export const portalRouter = router({
   markMyMessageAsRead: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // テナント検証
+      const message = await ctx.prisma.patientMessage.findFirst({
+        where: { id: input.id },
+        include: { patient: true },
+      });
+      if (!message || message.patient.tenantId !== ctx.tenantId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       return ctx.prisma.patientMessage.update({
         where: { id: input.id },
         data: { isRead: true, readAt: new Date() },

@@ -114,8 +114,11 @@ export const videoRouter = router({
   getToken: protectedProcedure
     .input(z.object({ sessionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const session = await ctx.prisma.videoSession.findUnique({
-        where: { id: input.sessionId },
+      const session = await ctx.prisma.videoSession.findFirst({
+        where: {
+          id: input.sessionId,
+          appointment: { tenantId: ctx.tenantId },
+        },
         include: {
           appointment: {
             include: { patient: true, doctor: true },
@@ -124,11 +127,6 @@ export const videoRouter = router({
       });
 
       if (!session) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
-
-      // Verify tenant access
-      if (session.appointment.tenantId !== ctx.tenantId) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
